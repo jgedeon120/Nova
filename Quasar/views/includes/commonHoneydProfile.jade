@@ -444,7 +444,6 @@ script
                                 port.portNum = 0;
                                 port.protocol = "tcp";
                                 port.behavior = "open";
-                                port.isInherited = false;
                                 port.scriptName = "NA";
                                 port.scriptConfiguration = {};
                         }
@@ -464,12 +463,10 @@ script
                         portIndexes.push(portUID);
                         scriptConfigurations[portUID] = port.scriptConfiguration;
 
-                        //var row = "<tr id='portRow" + portUID + "'>";
                         var row = document.createElement("tr");
                         row.id = "portRow" + portUID;
 
 
-                        //row += "<td><input id='portNum" + portUID + "' type='number' min=1 max=65535 value=" + port.portNum + "> </td>";
                         var numContainer = document.createElement("td");
                         var numInput = document.createElement("input");
                         if (navigator.userAgent.indexOf("MSIE") == "-1") {
@@ -482,7 +479,6 @@ script
                         numContainer.appendChild(numInput);
                         row.appendChild(numContainer);
                                 
-                        //row += "<td><select id ='portType";
                         var typeContainer = document.createElement("td");
                         var typeSelect = document.createElement("select");
                         typeSelect.id = 'portType' + portUID;
@@ -503,7 +499,6 @@ script
                         typeContainer.appendChild(typeSelect);
                         row.appendChild(typeContainer);
 
-                        //row += "<td><select onchange='portBehaviorChanged()' id='portBehavior" + portUID + "'>";
                         var behaviorContainer = document.createElement("td");
                         var behaviorSelect = document.createElement("select");
                         behaviorSelect.id = 'portBehavior' + portUID;
@@ -517,7 +512,6 @@ script
                         {
                                 if (port.behavior == options[j]) 
                                 {
-                                        //row += "<option value='" + j + "' SELECTED>" + longOptions[j] + "</option>";
                                         var option = document.createElement("option");
                                         option.value = j;
                                         option.selected = true;
@@ -526,7 +520,6 @@ script
                                 } 
                                 else 
                                 {
-                                        //row += "<option value='" + j + "'>" + longOptions[j] + "</option>";
                                         var option = document.createElement("option");
                                         option.value = j;
                                         option.innerHTML = longOptions[j];
@@ -534,10 +527,8 @@ script
                                 }
                         }
 
-                        //row += "</select></td>";
                         behaviorContainer.appendChild(behaviorSelect);
                         row.appendChild(behaviorContainer);
-
 
 
                         var scriptContainer = document.createElement("td");
@@ -545,9 +536,6 @@ script
                         scriptSelect.id = 'portScriptDrop' + portUID;
                         scriptSelect.setAttribute("onchange", 'scriptSelectionChanged(' + portUID + ')');
 
-                        //row += "<td><select id='portScriptDrop";
-                        //row += portUID;
-                        //row += "'>"; 
                         var scripts = "#{scripts}";
                         options = scripts.split(",");
                         matchingScriptFound = false;
@@ -556,7 +544,6 @@ script
                         {
                                 if (port.scriptName == options[j]) 
                                 {
-                                        //row += "<option SELECTED>" + options[j] + "</option>";
                                         var option = document.createElement("option");
                                         option.selected = true;
                                         option.innerHTML = options[j];
@@ -565,7 +552,6 @@ script
                                 } 
                                 else 
                                 {
-                                        //row += "<option>" + options[j] + "</option>";
                                         var option = document.createElement("option");
                                         option.innerHTML = options[j];
                                         scriptSelect.appendChild(option);
@@ -612,7 +598,6 @@ script
                         buttonContainer.appendChild(deleteButton);
                         row.appendChild(buttonContainer);
 
-                        //row += "</tr>";
 
                         dojo.byId("portTable").appendChild(row);
 

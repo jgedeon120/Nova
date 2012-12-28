@@ -118,18 +118,15 @@ block content
       input#newPortSetName(type="text", placeholder="Name of new portset")
       button(type="button", onclick = "addNewPortset()") Add Portset
       br
-      label Rename Selected Portset
-      input#portsetRename(type='text', placeholder="name to change to")
-      button(type="button", onclick="renamePortset()") Rename Portset
-      br
 
       label Edit Port Set
       select#portSetSelection(onchange='portSetSelectionChanged()')
       button(type="button", onclick = "deletePortset()") Delete Portset
       br
-            label Rename Selected Port Set  
-            input#newPortsetName(type="text", placeholder="New Portset Name")
-            button(type="button", onclick = "renamePortset()") Rename Portset
+      label Rename Selected Port Set  
+      input#newPortsetName(type="text", placeholder="New Portset Name")
+      button(type="button", onclick = "renamePortset()") Rename Portset
+      br
 
       div#portSetDiv
         label Default TCP Action
@@ -150,11 +147,26 @@ block content
         br
         table#portTable
         button(type="button", onClick="addPort()") Add New Port
-        br
-        table#portTable
-        button(type="button", onClick="addPort()") Add New Port
       br
+  
+      label Default UDP Action
+      select#defaultUDPAction
+        option(value="closed") Closed (respond with ICMP port unreach)
+        option(value="filtered") Filtered (don't respond)
       br
+  
+      label Default ICMP Action
+      select#defaultICMPAction
+        option(value="open") Open (respond to pings)
+        option(value="filtered") Filtered (don't respond)
       br
-      
-      button#saveButton(type="button", onclick="saveChanges()") Save Changes
+  
+      table#portTable
+  
+      button(type="button", onClick="addPort()") Add New Port
+  
+    br
+    br
+    br
+    
+    button#saveButton(type="button", onclick="saveChanges()") Save Changes
