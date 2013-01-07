@@ -223,10 +223,10 @@
 		<configurable>false</configurable>
 	</script>
 	<script>
-		<name>IPP</name>
+		<name>IPP TCP Response</name>
 		<service>ipp</service>
 		<osclass>Linux | Linux</osclass>
-		<path>python /home/addison/Code/Honeyd/scripts/WIP/ipp_wrap.py</path>
+		<path>python /home/addison/Code/Honeyd/scripts/WIP/ipp_tcp_wrap.py</path>
 		<configurable>false</configurable>
 	</script>
 </scripts>
