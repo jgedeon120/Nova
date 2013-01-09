@@ -17,6 +17,7 @@
 extends layout
 block headerAdditions
   //link(rel="stylesheet", type="text/css", href="configstyle.css", media="screen")
+  
   include includes/commonHoneydProfile
 
 block content
@@ -30,6 +31,7 @@ block content
     h2 Editing Profile
 
     form
+
       table(id="tableEditProfile")
         col
         col
@@ -153,7 +155,9 @@ block content
         table#portTable
     
         button(type="button", onClick="addPort()") Add New Port
+    
       br
       br
-      
+      br
+
       button#saveButton(type="button", onclick="saveChanges()") Save Changes

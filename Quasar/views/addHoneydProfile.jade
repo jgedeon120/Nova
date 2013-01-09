@@ -27,7 +27,7 @@ block content
     br
     button#closeLB(onclick='closeLightbox()') Close
   
-  div#setup 
+  div#setup(onclick='handleOnclick(event);')
     h2 Adding Profile
 
     form
@@ -76,8 +76,9 @@ block content
             label Packet Drop Percentage
           td
             input#dropRate(type="number", name="dropRate", min=0, max=100)
-
-
+        tr
+          td
+            br
         tr(id="row5")
           td
             input#inheritUptime(type="checkbox", name="inheritUptime", onclick="inheritanceChanged()") 
@@ -98,6 +99,7 @@ block content
           td
             input#uptimeMin(type="number", name="uptimeMin", min=0)
             input#uptimeMax(type="number", name="uptimeMax", min=0)
+
       br
       
       h3 Profile Ethernet Vendor Configuration
@@ -124,6 +126,10 @@ block content
       label Edit Port Set
       select#portSetSelection(onchange='portSetSelectionChanged()')
       button(type="button", onclick = "deletePortset()") Delete Portset
+      br
+      label Rename Selected Port Set  
+      input#newPortsetName(type="text", placeholder="New Portset Name")
+      button(type="button", onclick = "renamePortset()") Rename Portset
       br
 
       div#portSetDiv
