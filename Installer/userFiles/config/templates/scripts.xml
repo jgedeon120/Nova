@@ -160,7 +160,6 @@
 		<option>
 			<key>HTTPD_SECURE_FILES</key>
 			<value>sysStatus.shtml synOpStatus.shtml sysCfg.shtml synNwCfg.shtml acctSetup.shtml serPortCfg.shtml pwrPortCfg.shtml pwrAutoPing.shtml log.shtml help_text.html</value>
-			<value/>
 		</option>
 		<option>
 			<key>HTTPD_SERVER_VERSION</key>
@@ -220,6 +219,20 @@
 		<service>echo</service>
 		<osclass>Linux | Linux</osclass>
 		<path>bash /usr/share/honeyd/scripts/linux/echo.sh $ipsrc $sport $ipdst $dport</path>
+		<configurable>false</configurable>
+	</script>
+	<script>
+		<name>IPP TCP Response</name>
+		<service>ipp</service>
+		<osclass>Linux | Linux</osclass>
+		<path>python /home/addison/Code/Honeyd/scripts/WIP/ipp_tcp_wrap.py</path>
+		<configurable>false</configurable>
+	</script>
+	<script>
+		<name>SNMP</name>
+		<service>snmp</service>
+		<osclass>Linux | Linux</osclass>
+		<path>python /home/addison/Code/Honeyd/scripts/WIP/ipp_udp_wrap.py</path>
 		<configurable>false</configurable>
 	</script>
 </scripts>
