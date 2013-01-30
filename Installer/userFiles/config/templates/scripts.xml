@@ -225,14 +225,14 @@
 		<name>IPP TCP Response</name>
 		<service>ipp</service>
 		<osclass>Linux | Linux</osclass>
-		<path>python /home/addison/Code/Honeyd/scripts/WIP/ipp_tcp_wrap.py</path>
+		<path>python /usr/share/honeyd/scripts/WIP/IPP/ipp_tcp_wrap.py</path>
 		<configurable>false</configurable>
 	</script>
 	<script>
 		<name>SNMP</name>
 		<service>snmp</service>
 		<osclass>Linux | Linux</osclass>
-		<path>python /home/addison/Code/Honeyd/scripts/WIP/ipp_udp_wrap.py</path>
+		<path>python /usr/share/honeyd/scripts/WIP/IPP/ipp_udp_wrap.py</path>
 		<configurable>false</configurable>
 	</script>
 </scripts>
