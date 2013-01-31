@@ -652,6 +652,17 @@ if(config.ReadSetting('MASTER_UI_ENABLED') === '1')
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
+function cNodeToJs(node)
+{
+	var ret = {};
+    ret.enabled = node.IsEnabled();
+    ret.pfile = node.GetProfile();
+    ret.ip = node.GetIP();
+    ret.mac = node.GetMAC();
+    ret.interface = node.GetInterface();
+	return ret;
+}
+
 app.get('/honeydConfigManage', function(req, res){
   var tab;
   if (req.query["tab"] === undefined)
@@ -670,12 +681,7 @@ app.get('/honeydConfigManage', function(req, res){
   for (var i = 0; i < nodeNames.length; i++)
   {
       var node = honeydConfig.GetNode(nodeNames[i]);
-      var push = {};
-      push.enabled = node.IsEnabled();
-      push.pfile = node.GetProfile();
-      push.ip = node.GetIP();
-      push.mac = node.GetMAC();
-      push.interface = node.GetInterface();
+      var push = cNodeToJs(node);
       nodeList.push(push);
   }
 
@@ -1367,6 +1373,12 @@ app.post('/createNewUser', function (req, res)
 {
     var password = req.body["password"];
     var userName = req.body["username"];
+	
+	if (password.length == 0 || userName.length == 0) {
+      RenderError(res, "Can not have blank username or password!", "/setup1");
+      return;
+	}
+
     dbqCredentialsGetUser.all(userName,
 
     function selectCb(err, results, fields)
@@ -1406,6 +1418,11 @@ app.post('/createInitialUser', function (req, res)
     var password = req.body["password"];
     var userName = req.body["username"];
 
+	if (password.length == 0 || userName.length == 0) {
+      RenderError(res, "Can not have blank username or password!", "/setup1");
+      return;
+	}
+
     dbqCredentialsGetUser.all(userName,
 
     function selectCb(err, results)
@@ -1441,9 +1458,11 @@ app.post('/createInitialUser', function (req, res)
 
 app.get('/autoConfig', function (req, res)
 {
+	var interfaces = config.ListInterfaces().sort();
     res.render('hhautoconfig.jade', {
         user: req.user,
-        INTERFACES: config.ListInterfaces().sort(),
+        INTERFACES: interfaces,
+        interfaceAliases: ConvertInterfacesToAliases(interfaces),
         SCANERROR: "",
         GROUPS: honeydConfig.GetConfigurationsList()
     });
@@ -1700,50 +1719,21 @@ app.post('/honeydConfigManage', function (req, res){
     cloneBool = true;
   }
   
-  if(!cloneBool)
+  if((new RegExp('^[a-zA-Z0-9 -_]+$')).test(newName))
   {
-    if((new RegExp('^[a-zA-Z0-9]+$')).test(newName))
-    {
-      honeydConfig.AddConfiguration(newName, cloneBool, configToClone);
-      
-      honeydConfig.LoadAllTemplates();
-    
-      res.render('saveRedirect.jade', {
-       locals: {
-         redirectLink: '/honeydConfigManage'
-       }
-      });
-    } 
-    else
-    {
-      RenderError(res, 'Unacceptable characters in new configuration name', '/honeydConfigManage');
-    }
-  }
+    honeydConfig.AddConfiguration(newName, cloneBool, configToClone);
+    honeydConfig.SwitchConfiguration(newName);
+    honeydConfig.LoadAllTemplates();
+  
+    res.render('saveRedirect.jade', {
+     locals: {
+       redirectLink: '/honeydConfigManage'
+     }
+    });
+  } 
   else
   {
-    if((new RegExp('^[a-zA-Z0-9]+$')).test(newName))
-    {
-      if((new RegExp('^[a-zA-Z0-9]+$')).test(configToClone))
-      {
-        honeydConfig.AddConfiguration(newName, cloneBool, configToClone);
-        
-        honeydConfig.LoadAllTemplates();
-      
-        res.render('saveRedirect.jade', {
-         locals: {
-           redirectLink: '/honeydConfigManage'
-         }
-        });
-      }
-      else
-      {
-        RenderError(res, 'Unacceptable characters in clone configuration name', '/honeydConfigManage');  
-      }
-    } 
-    else
-    {
-      RenderError(res, 'Unacceptable characters in new configuration name', '/honeydConfigManage');
-    }
+    RenderError(res, 'Unacceptable characters in new configuration name', '/honeydConfigManage');
   }
 });
 
@@ -3203,9 +3193,7 @@ everyone.now.GetConfigSummary = function(configName, callback)
   for (var i = 0; i < nodeNames.length; i++)
   {
     var node = honeydConfig.GetNode(nodeNames[i]);
-    var push = {};
-    
-    push.pfile = node.GetProfile();
+    var push = cNodeToJs(node);
     nodeList.push(push);
   }
   
@@ -3219,15 +3207,8 @@ everyone.now.GetConfigSummary = function(configName, callback)
 
 everyone.now.SwitchConfigurationTo = function(configName)
 {
-  if((new RegExp('^[a-zA-Z0-9]+$')).test(configName))
-  {
-    honeydConfig.SwitchConfiguration(configName); 
+	honeydConfig.SwitchConfiguration(configName); 
     config.WriteSetting('CURRENT_CONFIG', configName);
-  }
-  else
-  {
-    console.log('regular expression detected irregular characters in configName');
-  }
 }
 
 everyone.now.RemoveConfiguration = function(configName, callback)
