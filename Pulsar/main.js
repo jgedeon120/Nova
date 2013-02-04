@@ -88,19 +88,20 @@ var databaseOpenResult = function (err) {
   }
 }
 
-var db = new sql.Database(NovaHomePath + '/data/quasarDatabase.db', sql.OPEN_READWRITE, databaseOpenResult);
+var db = new sql.Database(NovaHomePath + '/data/pulsarDatabase.db', sql.OPEN_READWRITE, databaseOpenResult);
 
 var dbqCredentialsRowCount = db.prepare('SELECT COUNT(*) AS rows from credentials');
 var dbqCredentialsCheckLogin = db.prepare('SELECT user, pass FROM credentials WHERE user = ? AND pass = ?');
 var dbqCredentialsGetUsers = db.prepare('SELECT user FROM credentials');
 var dbqCredentialsGetUser = db.prepare('SELECT user FROM credentials WHERE user = ?');
-var dbqCredentialsChangePassword = db.prepare('UPDATE credentials SET pass = ? WHERE user = ?');
-var dbqCredentialsInsertUser = db.prepare('INSERT INTO credentials VALUES(?, ?)');
+var dbqCredentialsGetSalt = db.prepare('SELECT salt FROM credentials WHERE user = ?');
+var dbqCredentialsChangePassword = db.prepare('UPDATE credentials SET pass = ?, salt = ? WHERE user = ?');
+var dbqCredentialsInsertUser = db.prepare('INSERT INTO credentials VALUES(?, ?, ?)');
 var dbqCredentialsDeleteUser = db.prepare('DELETE FROM credentials WHERE user = ?');
 
-var HashPassword = function (password) {
+var HashPassword = function (password, salt) {
   var shasum = crypto.createHash('sha1');
-  shasum.update(password);
+  shasum.update(password + salt);
   return shasum.digest('hex');
 }
 
@@ -125,7 +126,7 @@ passport.use(new BasicStrategy(function(username, password, done) {
       // If there are no users, add default nova and log in
       if (rowcount[0].rows == 0) {
         console.log('No users in user database. Creating default user.');
-        dbqCredentialsInsertUser.run('nova', HashPassword('toor'), function(err) {
+        dbqCredentialsInsertUser.run('nova', HashPassword('toor', 'root'), 'root', function(err) {
           if (err) 
           {
             throw err;
@@ -134,26 +135,37 @@ passport.use(new BasicStrategy(function(username, password, done) {
           switcher(err, user, true, done);
 
         });
-      } else {
-        dbqCredentialsCheckLogin.all(user, HashPassword(password),
-
-        function selectCb(err, results) {
-          if (err) 
+      } else
+      {
+        dbqCredentialsGetSalt.all(user, function cb(err, salt)
+        {
+          if(err || (salt[0] == undefined))
           {
-            console.log('Database error: ' + err);
+            switcher(err, user, false, done);
           }
-
-          if (results[0] === undefined) 
+          else
           {
-            switcher(err, user, false, done);
-          } 
-          else if (user === results[0].user) 
-          {
-            switcher(err, user, true, done);
-          } 
-          else 
-          {
-            switcher(err, user, false, done);
+            dbqCredentialsCheckLogin.all(user, HashPassword(password, salt[0].salt),
+    
+            function selectCb(err, results) {
+              if (err) 
+              {
+                console.log('Database error: ' + err);
+              }
+    
+              if (results[0] === undefined) 
+              {
+                switcher(err, user, false, done);
+              } 
+              else if (user === results[0].user) 
+              {
+                switcher(err, user, true, done);
+              } 
+              else 
+              {
+                switcher(err, user, false, done);
+              }
+            });
           }
         });
       }
@@ -983,7 +995,7 @@ function populateNovaClients()
   }
   catch(err)
   {
-    console.log('clientIds.txt does not exist, it will be created when quasar next goes down'); 
+    console.log('clientIds.txt does not exist, it will be created when Pulsar next goes down'); 
   } 
 }
 
