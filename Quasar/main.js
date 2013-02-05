@@ -509,7 +509,8 @@ if(NovaCommon.config.ReadSetting('MASTER_UI_ENABLED') === '1')
               var executionString = 'haystackautoconfig';
               var nFlag = '-n';
               var rFlag = '-r';
-              var iFlag = '-i';
+              var iFlag = '--nodeinterface';
+              var eFlag = '-e';
             
               var hhconfigArgs = new Array();
             
@@ -526,6 +527,14 @@ if(NovaCommon.config.ReadSetting('MASTER_UI_ENABLED') === '1')
                 if(json_args.numNodes !== undefined) 
                 {
                   hhconfigArgs.push(rFlag);
+                  hhconfigArgs.push(json_args.numNodes);
+                }
+              }
+              else if(json_args.numNodesType == "range")
+              {
+                if(json_args.numNodes !== undefined)
+                {
+                  hhconfigArgs.push(eFlag);
                   hhconfigArgs.push(json_args.numNodes);
                 }
               }
