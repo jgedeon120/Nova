@@ -52,6 +52,31 @@ button {
     font-size:1em;
 }
 
+div.sideBarHeader {
+  dislay: block;
+  text-align: center;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+input[type=button], input[type=submit], button, .button, .sideBarButton {
+    font-size:13px;
+    background-color: #E4F2FF;
+    border: 1px solid #769DC0;
+    border-radius:4px;
+    padding: 2px 4px 4px;
+  text-align: center;
+  text-decoration: none;
+  color: black;
+  margin-left: 2px;
+  margin-right: 2px;
+}
+
+.sideBarButton {
+  width: 135px;
+  display:block;
+}
+
 .button {
     border-radius:4px;
     background-color: #E4F2FF;
