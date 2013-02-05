@@ -469,47 +469,37 @@ SetScheduledMessage = function(clientId, name, message, eventObj, cb)
   {
     newSchedule.eventType = 'recurring';
     var passObj = new schedule.RecurrenceRule();
-    passObj.dayOfWeek = parseInt(eventObj.dayOfWeek);
+    passObj.dayOfWeek = eventObj.dayOfWeek;
     passObj.hour = parseInt(eventObj.hour);
     passObj.minute = parseInt(eventObj.minute);
     newSchedule.dayOfWeek = passObj.dayOfWeek;
     newSchedule.hour = passObj.hour;
-    newSchedule.minute = passObj.minute;
+    newSchedule.minute = (passObj.minute.toString().length == 2 ? passObj.minute : '0' + passObj.minute);
     newSchedule.job = schedule.scheduleJob(newSchedule.id, passObj, function(){
       MessageSend(message);
     });
     var recurringString = '';
-    for(var i in eventObj)
+    for(var i in eventObj.dayOfWeek)
     {
-      switch(i)
+      switch(eventObj.dayOfWeek[i])
       {
-        case 'dayOfWeek': switch(eventObj.dayOfWeek)
-                          {
-                            case '0': recurringString += 'Sundays at ';
-                                      break;
-                            case '1': recurringString += 'Mondays at ';
-                                      break;
-                            case '2': recurringString += 'Tuesdays at ';
-                                      break;
-                            case '3': recurringString += 'Wednesdays at ';
-                                      break;
-                            case '4': recurringString += 'Thursdays at ';
-                                      break;
-                            case '5': recurringString += 'Fridays at ';
-                                      break;
-                            case '6': recurringString += 'Saturdays at ';
-                                      break;
-                          }
-                          break;
-        case 'hour': recurringString += eventObj.hour + ':';
-                     break;
-        case 'minute': recurringString += eventObj.minute;
-                       break;
-        default: console.log('Unidentified index ' + i + ', doing nothing');
-                 break;
+        case 0: recurringString += 'Su ';
+                  break;
+        case 1: recurringString += 'M ';
+                  break;
+        case 2: recurringString += 'Tu ';
+                  break;
+        case 3: recurringString += 'W ';
+                  break;
+        case 4: recurringString += 'Th ';
+                  break;
+        case 5: recurringString += 'F ';
+                  break;
+        case 6: recurringString += 'Sa ';
+                  break;
       }
     }
-    newSchedule.recurring = recurringString;
+    newSchedule.recurring = recurringString + newSchedule.hour + ':' + newSchedule.minute;
     newSchedule.date = '';
   }
   else if(typeof eventObj == 'string')
