@@ -386,6 +386,7 @@ if(NovaCommon.config.ReadSetting('MASTER_UI_ENABLED') === '1')
     quick.nova = NovaCommon.nova.IsNovadUp(false).toString();
     quick.haystack = NovaCommon.nova.IsHaystackUp(false).toString();
     quick.benignRequest = (benignRequest == true ? 'true' : 'false');
+    quick.port = NovaCommin.nova.ReadSetting("WEB_UI_PORT");
     // I don't know that we HAVE to use UTF8 here, there's a send() method as 
     // well as a 'data' member inside the message objects instead of utf8Data.
     // But, as it was in the Websockets tutorial Pherric found, we'll use it for now

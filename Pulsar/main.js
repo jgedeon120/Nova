@@ -36,6 +36,8 @@ var BasicStrategy = require('passport-http').BasicStrategy;
 var NovaHomePath = config.GetPathHome();
 var NovaSharedPath = config.GetPathShared();
 
+var matchHostToConnection = {};
+
 // Setup TLS
 var app;
 if(config.ReadSetting("PULSAR_WEBUI_TLS_ENABLED") == "1") 
@@ -77,7 +79,7 @@ var DATABASE_HOST = config.ReadSetting('DATABASE_HOST');
 var DATABASE_USER = config.ReadSetting('DATABASE_USER');
 var DATABASE_PASS = config.ReadSetting('DATABASE_PASS');
 
-var databaseOpenResult = function (err) {
+var databaseOpenResult = function(err){
   if (err == null) 
   {
     console.log('Opened sqlite3 database file.');
@@ -99,32 +101,33 @@ var dbqCredentialsChangePassword = db.prepare('UPDATE credentials SET pass = ?, 
 var dbqCredentialsInsertUser = db.prepare('INSERT INTO credentials VALUES(?, ?, ?)');
 var dbqCredentialsDeleteUser = db.prepare('DELETE FROM credentials WHERE user = ?');
 
-var HashPassword = function (password, salt) {
+var HashPassword = function(password, salt){
   var shasum = crypto.createHash('sha1');
   shasum.update(password + salt);
   return shasum.digest('hex');
 }
 
-passport.serializeUser(function(user, done) {
+passport.serializeUser(function(user, done){
   done(null, user);
 });
 
-passport.deserializeUser(function(user, done) {
+passport.deserializeUser(function(user, done){
   done(null, user);
 });
 
-passport.use(new BasicStrategy(function(username, password, done) {
+passport.use(new BasicStrategy(function(username, password, done){
   var user = username;
   
-  process.nextTick(function() {
-    dbqCredentialsRowCount.all(function(err, rowcount) {
-      if (err) 
+  process.nextTick(function(){
+    dbqCredentialsRowCount.all(function(err, rowcount){
+      if(err) 
       {
         console.log('Database error: ' + err);
       }
 
       // If there are no users, add default nova and log in
-      if (rowcount[0].rows == 0) {
+      if(rowcount[0].rows == 0)
+      {
         console.log('No users in user database. Creating default user.');
         dbqCredentialsInsertUser.run('nova', HashPassword('toor', 'root'), 'root', function(err) {
           if (err) 
@@ -133,9 +136,9 @@ passport.use(new BasicStrategy(function(username, password, done) {
           }
 
           switcher(err, user, true, done);
-
         });
-      } else
+      } 
+      else
       {
         dbqCredentialsGetSalt.all(user, function cb(err, salt)
         {
@@ -147,7 +150,7 @@ passport.use(new BasicStrategy(function(username, password, done) {
           {
             dbqCredentialsCheckLogin.all(user, HashPassword(password, salt[0].salt),
     
-            function selectCb(err, results) {
+            function selectCb(err, results){
               if (err) 
               {
                 console.log('Database error: ' + err);
@@ -1058,6 +1061,7 @@ wsServer.on('request', function(request)
 {
 	console.log('connection accepted');
 	var connection = request.accept(null, request.origin);
+  matchHostToConnection[connection] = request.remoteAddress;
   // The most important directive, if we have a message, we need to parse it out
   // and determine what to do from there
 	connection.on('message', function(message){
@@ -1099,8 +1103,13 @@ wsServer.on('request', function(request)
 						     everyone.now.RenderBenignRequests(); 
 						   }
 						}
-						
-						novaClients[json_args.id.toString()] = {statusNova: json_args.nova, statusHaystack: json_args.haystack, connection: connection};
+						console.log('json_args.port == ' + json_args.port);
+						novaClients[json_args.id.toString()] = {statusNova: json_args.nova, 
+						                                        statusHaystack: json_args.haystack, 
+						                                        connection: connection, 
+						                                        url: matchHostToConnection[connection] + ':' + json_args.port};
+            console.log('host: ' + novaClients[json_args.id.toString()].url);
+            delete matchHostToConnection[connection]
 						var date = new Date();
 						WriteNotification(json_args.id + ' connected at ' + date);
 						if(typeof everyone.now.UpdateNotificationsButton == 'function')
@@ -1406,6 +1415,13 @@ function getClients()
 	return ret;
 }
 
+everyone.now.GetClientHost = function(client, cb)
+{
+  if(typeof(cb) == 'function')
+  {
+    cb(novaClients[client].url);
+  }
+}
 
 // A function that reads the file client_groups.txt that contains user-created groups names
 // that have an associated list of last-known clientIds. 

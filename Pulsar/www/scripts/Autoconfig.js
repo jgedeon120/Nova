@@ -228,7 +228,7 @@ function removeAutoconfigElement(target)
 function processAutoconfigElements()
 {
   var loopIter = document.getElementById('autoconfElements');
-  do 
+  while(loopIter.hasChildNodes()) 
   {
     if(loopIter.lastChild != undefined)
     {
@@ -249,7 +249,7 @@ function processAutoconfigElements()
       now.MessageSend(autoconfMessage);
     }
     loopIter.removeChild(loopIter.lastChild);
-  }while(loopIter.hasChildNodes());
+  }
   var uncheck = document.getElementById('clientsList');
   var count = 0;
   for(var i in uncheck.children)

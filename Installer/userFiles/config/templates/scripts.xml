@@ -233,20 +233,6 @@
 		</option>
 	</script>
 	<script>
-		<name>IPP TCP Response</name>
-		<service>ipp</service>
-		<osclass>Linux | Linux</osclass>
-		<path>python /usr/share/honeyd/scripts/WIP/IPP/ipp_tcp_wrap.py</path>
-		<configurable>false</configurable>
-	</script>
-	<script>
-		<name>SNMP</name>
-		<service>snmp</service>
-		<osclass>Linux | Linux</osclass>
-		<path>python /usr/share/honeyd/scripts/WIP/IPP/ipp_udp_wrap.py</path>
-		<configurable>false</configurable>
-	</script>
-	<script>
 		<name>Netbios Name Service</name>
 		<service>nbns</service>
 		<osclass>Microsoft | Windows</osclass>
