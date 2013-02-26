@@ -1,0 +1,228 @@
+////============================================================================
+//// Name        : wysiwyg.jade
+//// Copyright   : DataSoft Corporation 2011-2013
+////  Nova is free software: you can redistribute it and/or modify
+////   it under the terms of the GNU General Public License as published by
+////   the Free Software Foundation, either version 3 of the License, or
+////   (at your option) any later version.
+////
+////   Nova is distributed in the hope that it will be useful,
+////   but WITHOUT ANY WARRANTY; without even the implied warranty of
+////   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+////   GNU General Public License for more details.
+////
+////   You should have received a copy of the GNU General Public License
+////   along with Nova.  If not, see <http://www.gnu.org/licenses/>.
+////============================================================================
+
+extends layout
+
+block headerAdditions
+  link(rel="stylesheet", type="text/css", href="wysiwyg.css", media="screen")
+  script
+    var configurationList = !{JSON.stringify(configurations)};
+    var nodeList = !{JSON.stringify(nodes)};
+    var currentConfig = '#{current}';
+    var theDoc = document;
+    var profilesArray = new Array();
+    var topology = '';
+    var dragMe = '';
+    
+    $(function(){
+      $('#profileInfo').hide();
+      topology = $('#topology');
+      dragMe = $('#dragMe');
+      now.ready(function(){
+        setUpSelects();
+        updateDragHeader();
+        var $sameHeightDivs = $('.sameHeight');
+        var maxHeight = 0;
+        $sameHeightDivs.each(function() {
+          maxHeight = Math.max(maxHeight, $(this).outerHeight());
+        });
+        $sameHeightDivs.css({ height: maxHeight + 'px' });
+
+        topology.on('dragenter', function(e){
+          e.stopPropagation()
+          e.preventDefault();
+          topology.addClass('over');
+        });
+        topology.on('dragleave', function(e){
+          e.stopPropagation()
+          e.preventDefault();
+          topology.removeClass('over');
+        });
+      });
+    });
+    
+    function setUpSelects()
+    {
+      var configSelect = $('#configurations');
+      for(var i in configurationList)
+      {
+        if(configurationList[i] != '' && configurationList[i] != undefined)
+        {
+          var option = theDoc.createElement('option');
+          option.value = configurationList[i];
+          option.innerHTML = configurationList[i];
+          option.id = configurationList[i];
+          configSelect.append(option);
+        }
+      }
+      
+      if(typeof now.GetConfigSummary == 'function')
+      {
+        now.GetConfigSummary(currentConfig, function(scriptProfileBindings, profileObj, profiles, nodes){
+          // manipulate elements here (i.e. pi charts, text, tables, etc.)
+          // Will all be contained in the object parseMe that will use the 
+          // object literal notation of javascript to allow the server side
+          // to do the calculations, and then send the exact data required to
+          // the browser.
+          
+          var profHook = $('#profilesHook');
+          profHook.empty();
+          
+          var endDex = profileObj.length;
+          
+          for(var i in profileObj)
+          {
+            var profile = {};
+            profile.name = profileObj[i].name;
+            profile.parent = profileObj[i].parent;
+            profile.children = [];
+            profile.isSelected = false;
+            profile.listElement = null;
+            profilesArray[profile.name] = profile;
+            var append = theDoc.createElement('tr');
+            var td0 = theDoc.createElement('td');
+            td0.innerHTML = profile.name;
+            append.appendChild(td0);
+            profHook.append(append);
+          }
+          
+          profHook.find('td').first().toggleClass('first');
+          if(profHook.find('td').size() >= 3)
+          {
+            profHook.find('td').slice(1, -1).toggleClass('middle');
+          }
+          profHook.find('td').last().toggleClass('last');
+          
+          for(var i in profilesArray)
+          {
+            for(var j in profilesArray)
+            {
+              if(profilesArray[j].parent == profilesArray[i].name)
+              {
+                profilesArray[i].children.push(profilesArray[j].name);
+              }
+            }
+          }
+        });
+      }
+    }
+    
+    function showProfileInfo(e)
+    {
+      var evt = (e ? e : window.event);
+      var source = evt.target || evt.srcElement;
+      $('#name').html(source.innerHTML);
+      var pointerCss = {top:($(source).position().top + $(source).height()),
+                        left:($(source).position().left + $(source).outerWidth() + 20)}
+      $('#profileInfo').css(pointerCss).fadeIn(200, function(){
+      });
+    }
+    
+    function hideProfileInfo(e)
+    {
+      var evt = (e ? e : window.event);
+      var source = evt.target || evt.srcElement;
+      if($('#profileInfo').find(source) && source.tagName == 'TD')
+      {
+        return;
+      }
+      else
+      {
+        $('#profileInfo').fadeOut(200, function(){
+        });
+      }
+    }
+    
+    function updateDragHeader()
+    {
+      var set = $('#nodeNumber').val();
+      $('#setNumNodes').html(set);
+    }
+    
+    function handleDragStart(e)
+    {
+      var evt = (e ? e : window.event);
+      var source = evt.target || evt.srcElement;
+      source.style.opacity = '0.4';
+      e.dataTransfer.effectAllowed='move';
+      e.dataTransfer.setData("mouse_position_x", e.clientX - e.target.offsetLeft );
+      e.dataTransfer.setData("mouse_position_y", e.clientY - e.target.offsetTop  );
+      e.dataTransfer.setData('text/plain', 'test');
+    }
+    
+    function handleDragOver(e)
+    {
+      e.preventDefault();
+      e.stopPropagation()
+    }
+    
+    function handleDragEnter(e)
+    {
+      topology.addClass('over');
+      return false;
+    }
+    
+    function handleDragLeave(e)
+    {
+      topology.removeClass('over');
+      return false;
+    }
+    
+    function handleDragEnd(e)
+    {
+      var evt = (e ? e : window.event);
+      var source = evt.target || evt.srcElement;
+      source.style.opacity = '1';
+      e.preventDefault();
+    }
+    
+    function handleDrop(e)
+    {
+      //do datatransfer stuff here
+      topology.removeClass('over');
+      e.preventDefault();
+      return false;
+    }
+    
+block content
+  div#pageWrap(onmouseover='hideProfileInfo(event)')
+    h1 Haystack WYSIWYG
+    div#profileInfo
+      label#name
+    div#container
+      div#dragBar(class='sameHeight')
+        bre
+        label Configurations
+        br
+        select#configurations
+        br
+        br
+        label Profiles
+        br
+        table
+          tbody#profilesHook(onmouseover='showProfileInfo(event)')
+        br
+        label Number of nodes 
+        input#nodeNumber(type='number', min='1', max='50', value='1', onchange='updateDragHeader()')
+        br
+        br
+        div#dragMe(draggable='true', ondragstart='handleDragStart(event)', ondragend='handleDragEnd(event)')
+          header#setNumNodes
+      div#nodeCanvas(class='sameHeight')
+        canvas#topology(ondrop='handleDrop(event)', ondragover='handleDragOver(event)')
+    
+
