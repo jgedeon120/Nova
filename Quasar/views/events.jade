@@ -38,13 +38,13 @@ block headerAdditions
   link(rel="stylesheet", type="text/css", href="novagrid.css", media="screen")
   script(type="text/javascript", src="scripts/NovaGrid.js")
   script
-    function finishedClearing(result)
+    function finishedClearing(err)
     {
-        if (result == "true")
+        if (!err)
         {
             window.location.reload();
         } else {
-            alert("There was an error when clearing the event list.");
+            alert("There was an error when clearing the event list: " + err);
         }
     }
 
@@ -128,13 +128,18 @@ block headerAdditions
 
         // Sort by classification by default
         suspectGrid.SetSortByKey(1);
+        suspectGrid.Render();
 
-        susTable.html(suspectGrid.GetTable());
     
         try
         { 
-          now.GetHostileEvents(function (results)
+          now.GetHostileEvents(function (err, results)
           {
+              if (err) {
+                alert("Server error: " + err);
+                return;
+              }
+
               for(var i = 0; i < results.length; i++)
               {
                   var row = new Array();
@@ -144,8 +149,8 @@ block headerAdditions
                   }
 
                   suspectGrid.PushEntry(row);
-              } 
-              susTable.html(suspectGrid.GetTable());
+              }
+              suspectGrid.Render();
           });
         }
         catch(err)
