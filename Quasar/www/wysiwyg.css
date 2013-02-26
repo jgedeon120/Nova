@@ -52,6 +52,7 @@
   width: 100px;
   margin: 0px auto;
   background: url('images/novaIcon.png') no-repeat center;
+  z-index: 1003;
 }
 
 #dragMe header {
@@ -60,6 +61,30 @@
   text-shadow: #000 0 1px;
   padding: 5px;
   box-shadow: 5px;
+  z-index: 1002;
+}
+
+.ui-draggable-dragging {
+  border: 2px solid black;
+  border-radius: 50px;
+  -moz-border-radius: 50px;
+  -webkit-border-radius: 50px;
+  -o-border-radius: 50px;
+  -ms-border-radius: 50px;
+  height: 100px;
+  width: 100px;
+  margin: 0px auto;
+  background: url('images/novaIcon.png') no-repeat center;
+  z-index: 1003;
+}
+
+.ui-draggable-dragging header {
+  color: black;
+  font-size: 16px;
+  text-shadow: #000 0 1px;
+  padding: 5px;
+  box-shadow: 5px;
+  z-index: 1002;
 }
 
 #dragBar label {
@@ -90,6 +115,11 @@
   z-index: 1002;
 }
 
+#dragBar table td:hover {
+  background-color: #F1CC91;
+  border-right: 2px solid #E4F2FF;
+}
+
 .first {
   border-top: 2px solid #000;
 }
@@ -101,11 +131,6 @@
 
 .last {
   border-bottom: 2px solid #000;
-}
-
-#dragBar table td:hover {
-  background-color: #F1CC91;
-  border-right: 2px solid #E4F2FF;
 }
 
 #nodeCanvas {
@@ -142,7 +167,7 @@
 }
 
 #nodeCanvas canvas.over {
-  border: 2px dashed #000;
+  border: 1px dashed #000;
   box-shadow: 5px 0px 5px -5px inset;
 }
 
