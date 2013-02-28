@@ -76,6 +76,7 @@
   margin: 0px auto;
   background: url('images/novaIcon.png') no-repeat center;
   z-index: 1003;
+  opacity: 0.4;
 }
 
 .ui-draggable-dragging header {

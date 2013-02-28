@@ -28,6 +28,7 @@ block headerAdditions
     var profilesArray = new Array();
     var topology = '';
     var dragMe = '';
+    var selectedProfile = undefined;
     
     function setUpSelects()
     {
@@ -128,6 +129,7 @@ block headerAdditions
       var source = evt.target || evt.srcElement;
       $('#profilesHook').find('td').css('background-color', '');
       $(source).css('background-color', '#E8A02F');
+      selectedProfile = source.innerHTML;
     }
     
     function updateDragHeader()
@@ -135,8 +137,8 @@ block headerAdditions
       var set = $('#nodeNumber').val();
       $('#setNumNodes').html(set);
     }
-    /*
-    function handleDragStart(e)
+    
+    /*function handleDragStart(e)
     {
       var evt = (e ? e : window.event);
       var source = evt.target || evt.srcElement;
@@ -186,6 +188,12 @@ block headerAdditions
       e.preventDefault();
       return false;
     }*/
+  
+    function clearProfileSelected()
+    {
+      selectedProfile = undefined;
+      $('#profilesHook').find('td').css('background-color', '');
+    }
     
     $(function(){
       $('#profileInfo').hide();
