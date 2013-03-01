@@ -26,7 +26,8 @@
   min-height: 80%;
   height: auto;
   width: 150px;
-  min-width: 20%;
+  max-width: 150px;
+  min-width: 150px;
   position: relative;
 }
 
@@ -43,6 +44,9 @@
 
 #dragMe {
   border: 2px solid black;
+  opacity: 1;
+  -webkit-transition: border 0.2s linear;
+  -moz-transition: border 0.2s linear;
   border-radius: 50px;
   -moz-border-radius: 50px;
   -webkit-border-radius: 50px;
@@ -71,8 +75,8 @@
   -webkit-border-radius: 50px;
   -o-border-radius: 50px;
   -ms-border-radius: 50px;
-  height: 100px;
-  width: 100px;
+  height: 50px;
+  width: 50px;
   margin: 0px auto;
   background: url('images/novaIcon.png') no-repeat center;
   z-index: 1003;
@@ -156,20 +160,36 @@
   height: auto;
   margin-right: 10px;
   margin-bottom: 0px;
-  overflow: hidden;
 }
 
-#nodeCanvas canvas {
+#topology {
   -webkit-transition: box-shadow 0.2s linear;
-  -webkit-transition: border 0.2s linear;
   -moz-transition: box-shadow 0.2s linear;
-  -moz-transition: border 0.2s linear;
-  margin: 0 auto;
+  border-right: 2px solid #000;
+  border-top: 2px solid #000;
+  border-bottom: 2px solid #000;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+  -webkit-border-top-right-radius: 5px;
+  -webkit-border-bottom-right-radius: 5px;
+  -ms-border-top-right-radius: 5px;
+  -ms-border-bottom-right-radius: 5px;
+  -moz-border-top-right-radius: 5px;
+  -moz-border-bottom-right-radius: 5px;
+  -o-border-top-right-radius: 5px;
+  -o-border-bottom-right-radius: 5px;
+  position: relative;
+  overflow: hidden;
+  min-width: 70%;
+  width: auto;
+  min-height: 80%;
+  height: auto;
+  margin-right: 10px;
+  margin-bottom: 0px;
 }
 
-#nodeCanvas canvas.over {
-  border: 1px dashed #000;
-  box-shadow: 5px 0px 5px -5px inset;
+.over {
+  box-shadow: 0px 0px 5px 5px #F1CC91 inset;
 }
 
 #profileInfo {
@@ -185,6 +205,8 @@
   -moz-transition: top 0.2s linear;
   background-color: white;
   border-radius: 10px;
+  text-align: center;
+  background-color: #E4F2FF;
 }
 
 #profileInfo:before {
@@ -200,9 +222,24 @@
   z-index: 1001;
 }
 
+#profileInfo label {
+  margin-right: 10px;
+}
+
+#pres {
+  margin: 10px 10px 10px 10px;
+  text-align: left;
+}
+
+#name {
+  font-weight: bold;
+  font-size: 20px;
+}
+
 #pageWrap {
   height: 100%;
   width: 100%;
+  overflow-y: hidden;
 }
 
 #nodeNumber {

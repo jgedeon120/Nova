@@ -92,7 +92,7 @@ everyone.now.deleteScriptOptionValue = function (script, key, value, cb) {
 everyone.now.createHoneydNodes = function(ipType, ip1, ip2, ip3, ip4, profile, portSet, vendor, ethinterface, count, cb)
 {
     var ipAddress;
-    if(ipType == "DHCP")
+    if(ipType.toUpperCase() == "DHCP")
     {
         ipAddress = "DHCP";
     }

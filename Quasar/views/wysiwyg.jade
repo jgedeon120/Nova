@@ -19,7 +19,7 @@ extends layout
 
 block headerAdditions
   link(rel="stylesheet", type="text/css", href="wysiwyg.css", media="screen")
-  script(type='text/javascript', src='scripts/jquery-ui-1.10.1.custom/js/jquery-ui-1.10.1.custom.js')
+  script(type='text/javascript', src='scripts/jquery-ui-1.10.1.custom.js')
   script
     var configurationList = !{JSON.stringify(configurations)};
     var nodeList = !{JSON.stringify(nodes)};
@@ -28,7 +28,11 @@ block headerAdditions
     var profilesArray = new Array();
     var topology = '';
     var dragMe = '';
+    var clicked = false;
     var selectedProfile = undefined;
+    var nodesToCreate = {};
+    var eleCount = 0;
+    var drawElements = {};
     
     function setUpSelects()
     {
@@ -44,6 +48,77 @@ block headerAdditions
           configSelect.append(option);
         }
       }
+      
+      repopulateProfilesList();
+    }
+    
+    function showProfileInfo(e)
+    {
+      if(!clicked)
+      {
+        var evt = (e ? e : window.event);
+        var source = evt.target || evt.srcElement;
+        $('#name').html(source.innerHTML);
+        var pointerCss = {top:($(source).position().top + $(source).height()),
+                          left:($(source).position().left + $(source).outerWidth() + 20)}
+        $('#profileInfo').css(pointerCss).fadeIn(200, function(){
+        });
+      }
+    }
+    
+    function hideProfileInfo(e)
+    {
+      if(!clicked)
+      {
+        if(e == undefined)
+        {
+          $('#profileInfo').fadeOut(200, function(){
+          });
+          return;
+        }
+        var evt = (e ? e : window.event);
+        var source = evt.target || evt.srcElement;
+        if($('#profilesHook').find(source) && source.tagName == 'TD')
+        {
+          return;
+        }
+        else
+        {
+          $('#profileInfo').fadeOut(200, function(){
+          });
+        }
+      }
+    }
+    
+    function profileClicked(e)
+    {
+      if(clicked)
+      {
+        return;
+      }
+      var evt = (e ? e : window.event);
+      var source = evt.target || evt.srcElement;
+      $('#profilesHook').find('td').css('background-color', '');
+      $(source).css('background-color', '#E8A02F');
+      selectedProfile = source.innerHTML;
+      clicked = true;
+    }
+    
+    function updateDragHeader()
+    {
+      var set = $('#nodeNumber').val();
+      $('#setNumNodes').html(set);
+    }
+  
+    function clearProfileSelected()
+    {
+      selectedProfile = undefined;
+      $('#profilesHook').find('td').css('background-color', '');
+    }
+    
+    function repopulateProfilesList()
+    {
+      currentConfig = $('#configurations').val();
       
       if(typeof now.GetConfigSummary == 'function')
       {
@@ -97,143 +172,190 @@ block headerAdditions
       }
     }
     
-    function showProfileInfo(e)
+    function createNodes()
     {
-      var evt = (e ? e : window.event);
-      var source = evt.target || evt.srcElement;
-      $('#name').html(source.innerHTML);
-      var pointerCss = {top:($(source).position().top + $(source).height()),
-                        left:($(source).position().left + $(source).outerWidth() + 20)}
-      $('#profileInfo').css(pointerCss).fadeIn(200, function(){
-      });
+      for(var i in nodesToCreate)
+      {
+        var ipType = 'DHCP';
+        var ip1, ip2, ip3, ip4 = '0';
+        var profile = nodesToCreate[i].selectedProfile;
+        var portset = '';
+        var vendor = '';
+        var ethInterface = '';
+        var count = nodesToCreate[i].count;  
+        now.createHoneydNodes(ipType, ip1, ip2, ip3, ip4, profile, portset, vendor, ethInterface, count); 
+      }
     }
     
-    function hideProfileInfo(e)
+    function saveSelectedParameters()
     {
-      var evt = (e ? e : window.event);
-      var source = evt.target || evt.srcElement;
-      if($('#profilesHook').find(source) && source.tagName == 'TD')
+      clicked = false;
+      dragMe.draggable('enable');
+      var dragMeCss = {border:'2px solid black',
+                       opacity:'1'};
+      dragMe.css(dragMeCss);
+      hideProfileInfo();
+      var profileObject = {};
+      profileObject.selectedProfile = selectedProfile;
+      profileObject.count = $('#nodeNumber').val();
+      nodesToCreate[eleCount] = profileObject;
+    }
+    
+    function showIpBlock()
+    {
+      if($('#allocationType').val() != 'DHCP')
       {
-        return;
+        $('#ipBlock').css('display', 'block');
       }
       else
       {
-        $('#profileInfo').fadeOut(200, function(){
-        });
+        $('#ipBlock').css('display', 'none');
       }
     }
     
-    function profileClicked(e)
+    function adjustColumns()
     {
-      var evt = (e ? e : window.event);
-      var source = evt.target || evt.srcElement;
-      $('#profilesHook').find('td').css('background-color', '');
-      $(source).css('background-color', '#E8A02F');
-      selectedProfile = source.innerHTML;
+      var $sameHeightDivs = $('.sameHeight');
+      var maxHeight = 0;
+      $sameHeightDivs.each(function(){
+        maxHeight = Math.max(maxHeight, $(this).outerHeight());
+      });
+      $sameHeightDivs.css({height: maxHeight + 'px'});
     }
     
-    function updateDragHeader()
-    {
-      var set = $('#nodeNumber').val();
-      $('#setNumNodes').html(set);
-    }
-    
-    /*function handleDragStart(e)
-    {
-      var evt = (e ? e : window.event);
-      var source = evt.target || evt.srcElement;
-      source.style.opacity = '0.4';
-      e.dataTransfer.effectAllowed='move';
-      e.dataTransfer.setData("mouse_position_x", e.clientX - e.target.offsetLeft );
-      e.dataTransfer.setData("mouse_position_y", e.clientY - e.target.offsetTop  );
-      e.dataTransfer.setData('text/plain', 'test');
-    }
-    
-    function handleDragOver(e)
-    {
-      e.preventDefault();
-      e.stopPropagation()
-    }
-    
-    function handleDragEnter(e)
-    {
-      e.preventDefault(); 
-      e.stopPropagation();
-      console.log('test');
-      $('#topology').toggleClass('over');
-    }
-    
-    function handleDragLeave(e)
-    {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('test');
-      $('#topology').toggleClass('over');
-    }
-    
-    function handleDragEnd(e)
-    {
-      var evt = (e ? e : window.event);
-      var source = evt.target || evt.srcElement;
-      dragging = false;
-      source.style.opacity = '1';
-      e.preventDefault();
-    }
-    
-    function handleDrop(e)
-    {
-      //do datatransfer stuff here
-      dragging = false;
-      topology.toggleClass('over');
-      e.preventDefault();
-      return false;
-    }*/
-  
-    function clearProfileSelected()
-    {
-      selectedProfile = undefined;
-      $('#profilesHook').find('td').css('background-color', '');
-    }
+    var x = 0;
+    var y = 0;
     
     $(function(){
       $('#profileInfo').hide();
-      topology = $('#topology');
+      topology = $('#nodeCanvas');
+      topology.css('width', '1');
       dragMe = $('#dragMe');
       now.ready(function(){
         setUpSelects();
         updateDragHeader();
-        var $sameHeightDivs = $('.sameHeight');
-        var maxHeight = 0;
-        $sameHeightDivs.each(function(){
-          maxHeight = Math.max(maxHeight, $(this).outerHeight());
-        });
-        $sameHeightDivs.css({height: maxHeight + 'px'});
-        var draggableOptions = {helper:'clone'}
+        
+        var draggableOptions = {helper:'clone',
+                                tolerance: 'pointer',
+                                cursorAt: {top:25,left:10},
+                                containment:'topology'}
         dragMe.draggable(draggableOptions);
         dragMe.on('dragstart', function(event, ui){
           var evt = (event ? event : window.event);
           var source = evt.target || evt.srcElement;
           source.style.opacity = '0.4';
         });
+        
         dragMe.on('dragstop', function(event, ui){
           var evt = (event ? event : window.event);
           var source = evt.target || evt.srcElement;
-          source.style.opacity = '1';
+          var dragMeCss = {border:'2px dashed black',
+                           opacity:'0.4'};
+          dragMe.css(dragMeCss);
+        });
+        
+        dragMe.draggable('disable');
+        var dragMeCss = {border:'2px dashed black',
+                         opacity:'0.4'};
+        dragMe.css(dragMeCss);
+        
+        var droppableOptions = {accept:'#dragMe'};
+        topology.droppable(droppableOptions);
+        topology.on('dropover', function(event, ui){
+          topology.addClass('over');
+        });
+        
+        topology.on('dropout', function(event, ui){
+          topology.removeClass('over');
+        });
+        
+        topology.on('drop', function(event, ui){
+          topology.removeClass('over');
+          console.log('would drop ' + selectedProfile);
+          clearProfileSelected();
+          dragMe.draggable('disable');
+          var dragMeCss = {border:'2px dashed black',
+                           opacity:'0.4'};
+          dragMe.css(dragMeCss);
+          
+          var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
+          var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
+          
+          if(x < 0)
+          {
+            x = 0;
+          }
+          else if(x > $('#nodeCanvas').outerWidth())
+          {
+            x = $('#nodeCanvas').outerWidth() - ui.helper.outerWidth();
+          }
+          if(y < 0)
+          {
+            y = 0;
+          }
+          else if(y > $('#nodeCanvas').outerHeight())
+          {
+            y = $('#nodeCanvas').outerHeight() - ui.helper.outerHeight();
+          }
+          
+          console.log('x == ' + x);
+          console.log('y == ' + y);
+          
+          var imageObj = new Image();
+          imageObj.onload = function(){
+            //topology[0].getContext('2d').drawImage(imageObj, (x/2), (y/2));
+            topology.append(imageObj); 
+            imageObj.left = (x/2);
+            imageObj.top = (y/2);
+            x = 0; 
+            y = 0;
+          }
+          imageObj.alt = 'Node';
+          imageObj.src = 'images/greendot.png';
+                    
+          var push = {x:x, y:y};
+          drawElements[eleCount] = push;
+          eleCount += 1;
         });
       });
+      setTimeout(function(){adjustColumns();}, 1000);
     });
     
 block content
   div#pageWrap(onmouseover='hideProfileInfo(event)')
     h1 Haystack WYSIWYG
     div#profileInfo
-      label#name
+      div#pres
+        label#name
+        br
+        br
+        label Port Sets
+        select#portSets
+        br
+        label Ethernet Vendors
+        select#vendors
+        br
+        label Ethernet Interfaces
+        select#ifaces
+        br
+        label Ip Address Allocation Type
+        select#allocationType(onchange='showIpBlock()')
+          option DHCP
+          option IP Range
+        br
+        div#ipBlock(style='display: none;')
+          input#ip1(type='number', min='0', max='255', value='0', step='1')
+          input#ip2(type='number', min='0', max='255', value='0', step='1')
+          input#ip3(type='number', min='0', max='255', value='0', step='1')
+          input#ip4(type='number', min='0', max='255', value='0', step='1')
+        br
+        button(onclick='saveSelectedParameters()') Save Parameters
     div#container
       div#dragBar(class='sameHeight')
         bre
         label Configurations
         br
-        select#configurations
+        select#configurations(onchange='repopulateProfilesList()')
         br
         br
         label Profiles
@@ -245,9 +367,9 @@ block content
         input#nodeNumber(type='number', min='1', max='50', value='1', onchange='updateDragHeader()')
         br
         br
-        div#dragMe
+        div#dragMe(class='notDraggableYet')
           header#setNumNodes
+        button#createNodes(style='margin-top: 20px;', onclick='createNodes()') Save Topology
       div#nodeCanvas(class='sameHeight')
-        canvas#topology
     
 
