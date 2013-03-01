@@ -19,15 +19,17 @@ extends layout
 
 block headerAdditions
   link(rel="stylesheet", type="text/css", href="wysiwyg.css", media="screen")
-  script(type='text/javascript', src='scripts/jquery-ui-1.10.1.custom.js')
+  script(src='//ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/jquery-ui.min.js')
   script
+    window.jQuery.ui || document.write(unescape('%3Cscript src="scripts/jquery-ui-1.10.1.custom.js"%3E%3C%/script%3E'));
+    
     var configurationList = !{JSON.stringify(configurations)};
     var nodeList = !{JSON.stringify(nodes)};
     var currentConfig = '#{current}';
     var theDoc = document;
     var profilesArray = new Array();
-    var topology = '';
-    var dragMe = '';
+    var $topology = '';
+    var $dragMe = '';
     var clicked = false;
     var selectedProfile = undefined;
     var nodesToCreate = {};
@@ -192,10 +194,10 @@ block headerAdditions
     function saveSelectedParameters()
     {
       clicked = false;
-      dragMe.draggable('enable');
+      $dragMe.draggable('enable');
       var dragMeCss = {border:'2px solid black',
                        opacity:'1'};
-      dragMe.css(dragMeCss);
+      $dragMe.css(dragMeCss);
       hideProfileInfo();
       var profileObject = {};
       profileObject.selectedProfile = selectedProfile;
@@ -223,15 +225,15 @@ block headerAdditions
         maxHeight = Math.max(maxHeight, $(this).outerHeight());
       });
       $sameHeightDivs.css({height: maxHeight + 'px'});
-      oldHeight = topology.outerHeight();
-      oldWidth = topology.outerWidth();
+      oldHeight = $topology.outerHeight();
+      oldWidth = $topology.outerWidth();
     }
     
     $(function(){
       $('#profileInfo').hide();
-      topology = $('#nodeCanvas');
-      topology.css('width', '1');
-      dragMe = $('#dragMe');
+      $topology = $('#nodeCanvas');
+      $topology.css('width', '1');
+      $dragMe = $('#dragMe');
       now.ready(function(){
         setUpSelects();
         updateDragHeader();
@@ -242,42 +244,42 @@ block headerAdditions
                                 cursor: 'move',
                                 containment:'#nodeCanvas',
                                 revert: 'invalid'}
-        dragMe.draggable(draggableOptions);
-        dragMe.on('dragstart', function(event, ui){
+        $dragMe.draggable(draggableOptions);
+        $dragMe.on('dragstart', function(event, ui){
           var evt = (event ? event : window.event);
           var source = evt.target || evt.srcElement;
           source.style.opacity = '0.4';
         });
         
-        dragMe.on('dragstop', function(event, ui){
+        $dragMe.on('dragstop', function(event, ui){
           var evt = (event ? event : window.event);
           var source = evt.target || evt.srcElement;
           var dragMeCss = {border:'2px dashed black',
                            opacity:'0.4'};
-          dragMe.css(dragMeCss);
+          $dragMe.css(dragMeCss);
         });
         
-        dragMe.draggable('disable');
+        $dragMe.draggable('disable');
         var dragMeCss = {border:'2px dashed black',
                          opacity:'0.4'};
-        dragMe.css(dragMeCss);
+        $dragMe.css(dragMeCss);
         
         var droppableOptions = {accept:'.ui-draggable'};
-        topology.droppable(droppableOptions);
-        topology.on('dropover', function(event, ui){
-          topology.addClass('over');
+        $topology.droppable(droppableOptions);
+        $topology.on('dropover', function(event, ui){
+          $topology.addClass('over');
         });
         
-        topology.on('dropout', function(event, ui){
-          topology.removeClass('over');
+        $topology.on('dropout', function(event, ui){
+          $topology.removeClass('over');
         });
         
-        topology.on('drop', function(event, ui){
-          topology.removeClass('over');
-          dragMe.draggable('disable');
+        $topology.on('drop', function(event, ui){
+          $topology.removeClass('over');
+          $dragMe.draggable('disable');
           var dragMeCss = {border:'2px dashed black',
                            opacity:'0.4'};
-          dragMe.css(dragMeCss);
+          $dragMe.css(dragMeCss);
           if(ui.draggable.attr('class').indexOf('canvasElement') == -1)
           {
             clearProfileSelected();
@@ -303,7 +305,7 @@ block headerAdditions
             text.id = eleCount + 'text';
             div.appendChild(text);
 
-            topology.append(div);
+            $topology.append(div);
 
             var push = {x:x, y:y, count:$('#nodeNumber').val()};
             drawElements[eleCount] = push;
@@ -324,24 +326,24 @@ block headerAdditions
     });
     
     $(window).resize(function(){
-      if(topology.outerWidth() < oldWidth || topology.outerHeight() < oldHeight)
+      if($topology.outerWidth() < oldWidth || $topology.outerHeight() < oldHeight)
       {
         for(var i in drawElements)
         {
-          if(drawElements[i].x > topology.outerWidth())
+          if(drawElements[i].x > $topology.outerWidth())
           {
-            drawElements[i].x = (drawElements[i].x * (topology.outerWidth() / oldWidth));
+            drawElements[i].x = (drawElements[i].x * ($topology.outerWidth() / oldWidth));
           }
-          if(drawElements[i].y > topology.outerHeight())
+          if(drawElements[i].y > $topology.outerHeight())
           {
-            drawElements[i].y = (drawElements[i].y * (topology.outerHeight() / oldHeight));
+            drawElements[i].y = (drawElements[i].y * ($topology.outerHeight() / oldHeight));
           }
           var newCoords = {left:drawElements[i].x, top:drawElements[i].y};
           $('#' + i).css(newCoords);
         }
       }
-      oldWidth = topology.outerWidth();
-      oldHeight = topology.outerHeight();
+      oldWidth = $topology.outerWidth();
+      oldHeight = $topology.outerHeight();
     });
     
 block content

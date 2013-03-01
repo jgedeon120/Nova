@@ -24,9 +24,12 @@ html(lang="en", onclick='removeContextMenu();')
 
     script(type="text/javascript", src="/nowjs/now.js")
     script(type="text/javascript", src="/scripts/knockout.js")
-    script(type="text/javascript", src="/scripts/jquery.js")
+    script(src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js")
     script(type="text/javascript", src="/dojo/dojo/dojo.js", data-dojo-config="async:true, parseOnLoad:true")
     script
+      // CDN fallback for jQuery
+      window.jQuery || document.write('<script src="scripts/jquery.js"><\\/script>');
+      
       // This function should be replaced in other jade files, and will be called when the DOM is ready
       function init() {};
 
