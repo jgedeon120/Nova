@@ -24,12 +24,12 @@ else
      echo 'in rm call'
      rm -f '/etc/rsyslog.d/41-nova.conf'
      sudo restart rsyslog
-     exit 1
+     exit 0
   }
   else
   {
      echo 'Usage: nova_rsyslog_helper (TARGET_IP:TARGET_PORT|remove)'
-     exit 1
+     exit 2
   }
   fi
 }
@@ -51,3 +51,4 @@ else
 fi
 
 sudo restart rsyslog
+exit 0
