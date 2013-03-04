@@ -11,7 +11,7 @@
   overflow: hidden;
   text-align: center;
   vertical-align: middle;
-  background: url('images/ok.png') center;
+  background: url('images/ok.png') no-repeat center;
   background-size: contain;
   border: 1px solid black;
   border-radius: 50px;

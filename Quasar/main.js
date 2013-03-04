@@ -654,10 +654,13 @@ app.get('/wysiwyg', function(req, res){
     nodeList.push(push);
   }
   
+  var interfaces = NovaCommon.config.ListInterfaces().sort();
+  
   res.render('wysiwyg.jade', { locals: {
       configurations: NovaCommon.honeydConfig.GetConfigurationsList(),
       current: NovaCommon.config.GetCurrentConfig(),
-      nodes: nodeList
+      nodes: nodeList,
+      interfaces: interfaces
     }
   });
 });

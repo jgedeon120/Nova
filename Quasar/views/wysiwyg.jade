@@ -25,6 +25,7 @@ block headerAdditions
     
     var configurationList = !{JSON.stringify(configurations)};
     var nodeList = !{JSON.stringify(nodes)};
+    var interfaces = !{JSON.stringify(interfaces)};
     var currentConfig = '#{current}';
     var theDoc = document;
     var profilesArray = new Array();
@@ -63,9 +64,39 @@ block headerAdditions
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
         $('#name').html(source.innerHTML);
-        var pointerCss = {top:($(source).position().top + $(source).height()),
-                          left:($(source).position().left + $(source).outerWidth() + 20)}
-        $('#profileInfo').css(pointerCss).fadeIn(200, function(){
+        now.GetProfile(source.innerHTML, function(profile){
+          var $vendors = $('#vendors');
+          var $portSets = $('#portSets');
+          var $interfaces = $('#interfaces');
+          
+          $vendors.empty();
+          $portSets.empty();
+          $interfaces.empty();
+          
+          for(var i in profile.ethernet)
+          {
+            var option = theDoc.createElement('option');
+            option.innerHTML = profile.ethernet[i].vendor;
+            $vendors.append(option);
+          }
+          for(var i in profile.portSets)
+          {
+            var option = theDoc.createElement('option');
+            option.innerHTML = profile.portSets[i].setName;
+            $portSets.append(option);
+          }
+          for(var i in interfaces)
+          {
+            var option = theDoc.createElement('option');
+            option.innerHTML = interfaces[i];
+            $interfaces.append(option);
+          }
+          
+          var pointerCss = {top:($(source).position().top + $(source).height()),
+                            left:($(source).position().left + $(source).outerWidth() + 20)};
+                            
+          $('#profileInfo').css(pointerCss).fadeIn(200, function(){
+          });
         });
       }
     }
@@ -96,8 +127,19 @@ block headerAdditions
     
     function profileClicked(e)
     {
-      if(clicked)
+      var evt = (e ? e : window.event);
+      var source = evt.target || evt.srcElement;
+      if(clicked && source.innerHTML != selectedProfile)
       {
+        return;
+      }
+      else if(clicked && source.innerHTML == selectedProfile)
+      {
+        $('#profilesHook').find('td').css('background-color', '');
+        selectedProfile = undefined;
+        clicked = false
+        $('#profileInfo').fadeOut(200, function(){
+        });
         return;
       }
       var evt = (e ? e : window.event);
@@ -180,12 +222,19 @@ block headerAdditions
     {
       for(var i in nodesToCreate)
       {
-        var ipType = 'DHCP';
+        var ipType = nodesToCreate[i].ipType;
         var ip1, ip2, ip3, ip4 = '0';
+        if(nodesToCreate[i].ipType != 'DHCP')
+        {
+          ip1 = nodesToCreate[i].ip.ip1;
+          ip2 = nodesToCreate[i].ip.ip2;
+          ip3 = nodesToCreate[i].ip.ip3;
+          ip4 = nodesToCreate[i].ip.ip4;
+        }
         var profile = nodesToCreate[i].selectedProfile;
-        var portset = '';
-        var vendor = '';
-        var ethInterface = '';
+        var portset = nodesToCreate[i].portset;
+        var vendor = nodesToCreate[i].vendor;
+        var ethInterface = nodesToCreate[i].iface;
         var count = nodesToCreate[i].count;  
         now.createHoneydNodes(ipType, ip1, ip2, ip3, ip4, profile, portset, vendor, ethInterface, count); 
       }
@@ -202,6 +251,14 @@ block headerAdditions
       var profileObject = {};
       profileObject.selectedProfile = selectedProfile;
       profileObject.count = $('#nodeNumber').val();
+      profileObject.portset = $('#portSets').val();
+      profileObject.vendor = $('#vendors').val();
+      profileObject.ipType = $('#allocationType').val();
+      profileObject.iface = $('#interfaces').val();
+      if(profileObject.ipType != 'DHCP')
+      {
+        profileObject.ip = {ip1:$('#ip1').val(), ip2:$('#ip2').val(), ip3:$('#ip3').val(), ip4:$('#ip4').val()};
+      }
       nodesToCreate[eleCount] = profileObject;
     }
     
@@ -361,7 +418,7 @@ block content
         select#vendors
         br
         label Ethernet Interfaces
-        select#ifaces
+        select#interfaces
         br
         label Ip Address Allocation Type
         select#allocationType(onchange='showIpBlock()')
@@ -383,13 +440,13 @@ block content
         select#configurations(onchange='repopulateProfilesList()')
         br
         br
+        label Number of nodes 
+        input#nodeNumber(type='number', min='1', max='50', value='1', onchange='updateDragHeader()')
+        br
         label Profiles
         br
         table
           tbody#profilesHook(onmouseover='showProfileInfo(event)')
-        br
-        label Number of nodes 
-        input#nodeNumber(type='number', min='1', max='50', value='1', onchange='updateDragHeader()')
         br
         br
         div#dragMe(class='notDraggableYet')
