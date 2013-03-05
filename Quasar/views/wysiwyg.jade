@@ -31,9 +31,11 @@ block headerAdditions
     var profilesArray = new Array();
     var $topology = '';
     var $dragMe = '';
+    var $hoverInfo = '';
     var clicked = false;
     var selectedProfile = undefined;
     var nodesToCreate = {};
+    var nodeCount = {};
     var eleCount = 0;
     var drawElements = {};
     var oldWidth = 0;
@@ -53,8 +55,6 @@ block headerAdditions
           configSelect.append(option);
         }
       }
-      
-      repopulateProfilesList();
     }
     
     function showProfileInfo(e)
@@ -95,7 +95,7 @@ block headerAdditions
           var pointerCss = {top:($(source).position().top + $(source).height()),
                             left:($(source).position().left + $(source).outerWidth() + 20)};
                             
-          $('#profileInfo').css(pointerCss).fadeIn(200, function(){
+          $profileInfo.css(pointerCss).fadeIn(200, function(){
           });
         });
       }
@@ -107,7 +107,7 @@ block headerAdditions
       {
         if(e == undefined)
         {
-          $('#profileInfo').fadeOut(200, function(){
+          $profileInfo.fadeOut(200, function(){
           });
           return;
         }
@@ -119,7 +119,7 @@ block headerAdditions
         }
         else
         {
-          $('#profileInfo').fadeOut(200, function(){
+          $profileInfo.fadeOut(200, function(){
           });
         }
       }
@@ -135,16 +135,15 @@ block headerAdditions
       }
       else if(clicked && source.innerHTML == selectedProfile)
       {
-        $('#profilesHook').find('td').css('background-color', '');
+        $(source).css('background-color', '');
         selectedProfile = undefined;
         clicked = false
-        $('#profileInfo').fadeOut(200, function(){
+        $profileInfo.fadeOut(200, function(){
         });
         return;
       }
       var evt = (e ? e : window.event);
       var source = evt.target || evt.srcElement;
-      $('#profilesHook').find('td').css('background-color', '');
       $(source).css('background-color', '#E8A02F');
       selectedProfile = source.innerHTML;
       clicked = true;
@@ -158,23 +157,17 @@ block headerAdditions
   
     function clearProfileSelected()
     {
-      selectedProfile = undefined;
       $('#profilesHook').find('td').css('background-color', '');
+      selectedProfile = undefined;
     }
     
-    function repopulateProfilesList()
+    function repopulateProfilesList(cb)
     {
       currentConfig = $('#configurations').val();
       
       if(typeof now.GetConfigSummary == 'function')
       {
         now.GetConfigSummary(currentConfig, function(scriptProfileBindings, profileObj, profiles, nodes){
-          // manipulate elements here (i.e. pi charts, text, tables, etc.)
-          // Will all be contained in the object parseMe that will use the 
-          // object literal notation of javascript to allow the server side
-          // to do the calculations, and then send the exact data required to
-          // the browser.
-          
           var profHook = $('#profilesHook');
           profHook.empty();
           
@@ -182,19 +175,20 @@ block headerAdditions
           
           for(var i in profileObj)
           {
-            var profile = {};
-            profile.name = profileObj[i].name;
-            profile.parent = profileObj[i].parent;
-            profile.children = [];
-            profile.isSelected = false;
-            profile.listElement = null;
-            profilesArray[profile.name] = profile;
-            var append = theDoc.createElement('tr');
-            var td0 = theDoc.createElement('td');
-            td0.innerHTML = profile.name;
-            td0.onclick = profileClicked;
-            append.appendChild(td0);
-            profHook.append(append);
+            if(profileObj[i].name != 'default')
+            {
+              var profile = {};
+              profile.name = profileObj[i].name;
+              profile.parent = profileObj[i].parent;
+              profile.children = [];
+              profilesArray[profile.name] = profile;
+              var append = theDoc.createElement('tr');
+              var td0 = theDoc.createElement('td');
+              td0.innerHTML = profile.name;
+              td0.onclick = profileClicked;
+              append.appendChild(td0);
+              profHook.append(append);
+            }
           }
           
           profHook.find('td').first().toggleClass('first');
@@ -214,6 +208,7 @@ block headerAdditions
               }
             }
           }
+          cb && cb()
         });
       }
     }
@@ -238,6 +233,7 @@ block headerAdditions
         var count = nodesToCreate[i].count;  
         now.createHoneydNodes(ipType, ip1, ip2, ip3, ip4, profile, portset, vendor, ethInterface, count); 
       }
+      nodesToCreate = {};
     }
     
     function saveSelectedParameters()
@@ -250,6 +246,30 @@ block headerAdditions
       hideProfileInfo();
       var profileObject = {};
       profileObject.selectedProfile = selectedProfile;
+      var personality
+      now.GetProfile(selectedProfile, function(pfile){
+        var pers = pfile.personality;
+        if(pers.indexOf('Windows') != -1)
+        {
+          $dragMe.css('background-image', 'url("images/wysiwyg/win_75.png")');
+        }
+        else if(pers.indexOf('OpenBSD') != -1)
+        {
+          $dragMe.css('background-image', 'url("images/wysiwyg/openbsd_75.png")');
+        }
+        else if(pers.indexOf('Linux') != -1)
+        {
+          $dragMe.css('background-image', 'url("images/wysiwyg/linux_75.png")');
+        }
+        else if(pers.indexOf('Mac OS X') != -1)
+        {
+          $dragMe.css('background-image', 'url("images/wysiwyg/macosx_75.png")');
+        }
+        else
+        {
+          $dragMe.css('background-image', 'url("images/wysiwyg/unknown_75.png")');
+        }
+      });
       profileObject.count = $('#nodeNumber').val();
       profileObject.portset = $('#portSets').val();
       profileObject.vendor = $('#vendors').val();
@@ -286,21 +306,159 @@ block headerAdditions
       oldWidth = $topology.outerWidth();
     }
     
+    function handleCanvasEleHover(e)
+    {
+      console.log('e.type == ' + e.type);
+      if(e.type == 'mouseenter')
+      {
+        var evt = (event ? event : window.event);
+        var source = evt.target || evt.srcElement;
+        var hoverInfoCss = {top:($(source).position().top),
+                            left:($(source).position().left + $(source).outerWidth()) + 10};
+        $hoverInfo.css(hoverInfoCss).fadeIn(200, function(){
+        });
+      }
+      else if(e.type == 'mouseleave')
+      {
+        $hoverInfo.fadeOut(200, function(){
+        });
+      }
+      else if(e.type == 'drag')
+      {
+        $hoverInfo.fadeOut(200, function(){
+        });
+      }
+      else if(e.type == 'dragstop')
+      {
+        var evt = (event ? event : window.event);
+        var source = evt.target || evt.srcElement;
+        var hoverInfoCss = {top:($(source).position().top),
+                            left:($(source).position().left + $(source).outerWidth()) + 10};
+        $hoverInfo.css(hoverInfoCss).fadeIn(200, function(){
+        });
+      }
+    }
+    
+    function prepopulateCanvasWithNodes()
+    {
+      var xEleCount = 0;
+      var yEleCount = 0;
+      for(var i in nodeCount)
+      {
+        var div = theDoc.createElement('div');
+              
+        $(div).draggable({tolerance: 'pointer',
+                          cursorAt: {top:25, left:10},
+                          cursor: 'move',
+                          containment:'#nodeCanvas',
+                          revert: 'invalid'});
+                          
+        var y = (yEleCount * 50);
+        var x = (xEleCount * 50);
+        
+        if(x > $topology.outerWidth())
+        {
+          yEleCount = 1;
+          xEleCount = 0;
+          y = (yEleCount * 50);
+          x = (xEleCount * 50);
+        }
+        
+        div.setAttribute('class', 'canvasElement ui-draggable');
+        div.style.left = x + 'px';
+        div.style.top = y + 'px';
+        div.title = i;
+        
+        $(div)
+        .on('dragstop', function(e){
+          handleCanvasEleHover(e);
+          $(this).on('mouseenter', function(e){
+            e.stopImmediatePropagation();
+            handleCanvasEleHover(e);
+          })
+          .on('mouseleave', function(e){
+            e.stopImmediatePropagation();
+            handleCanvasEleHover(e);
+          })
+        })
+        .on('mouseenter', function(e){
+          e.stopImmediatePropagation();
+          handleCanvasEleHover(e);
+        })
+        .on('mouseleave', function(e){
+          e.stopImmediatePropagation();
+          handleCanvasEleHover(e);
+        })
+        .on('drag', function(e){
+          e.stopImmediatePropagation();
+          handleCanvasEleHover(e);
+          $(this).off('mouseleave');
+          $(this).off('mouseenter');
+        });
+        
+        div.id = eleCount;
+        
+        var text = theDoc.createElement('label');
+        text.innerHTML = nodeCount[i];
+        text.style.fontSize = '18px';
+        text.id = eleCount + 'text';
+        div.appendChild(text);
+  
+        $topology.append(div);
+        
+        var push = {x:x, y:y, count:nodeCount[i]};
+        drawElements[eleCount] = push;
+        eleCount += 1;
+        xEleCount += 1;
+      }
+    }
+    
+    function debugDrop(x, y, count)
+    {
+        var div = theDoc.createElement('div');
+              
+        $(div).draggable({tolerance: 'pointer',
+                          cursorAt: {top:25, left:10},
+                          cursor: 'move',
+                          containment:'#nodeCanvas',
+                          revert: 'invalid'});
+        
+        div.setAttribute('class', 'canvasElement ui-draggable');
+        div.style.left = x + 'px';
+        div.style.top = y + 'px';
+        div.title = 'test';
+        div.setAttribute('onmouseover', 'handleCanvasEleHover(event)');
+        div.setAttribute('onmouseout', 'handleCanvasEleHover(event)');
+        div.id = count;
+        
+        var text = theDoc.createElement('label');
+        text.innerHTML = count;
+        text.style.fontSize = '18px';
+        text.id = count + 'text';
+        div.appendChild(text);
+  
+        $topology.append(div);
+    }
+    
     $(function(){
-      $('#profileInfo').hide();
+      $profileInfo = $('#profileInfo');
+      $profileInfo.hide();
       $topology = $('#nodeCanvas');
       $topology.css('width', '1');
       $dragMe = $('#dragMe');
+      $hoverInfo = $('#hoverInfo');
+      $hoverInfo.hide();
       now.ready(function(){
         setUpSelects();
         updateDragHeader();
         
         var draggableOptions = {helper:'clone',
                                 tolerance: 'pointer',
-                                cursorAt: {top:25,left:10},
+                                cursorAt: {top:25,left:15},
                                 cursor: 'move',
                                 containment:'#nodeCanvas',
-                                revert: 'invalid'}
+                                revert: 'invalid'};
+                                
         $dragMe.draggable(draggableOptions);
         $dragMe.on('dragstart', function(event, ui){
           var evt = (event ? event : window.event);
@@ -322,6 +480,7 @@ block headerAdditions
         $dragMe.css(dragMeCss);
         
         var droppableOptions = {accept:'.ui-draggable'};
+        
         $topology.droppable(droppableOptions);
         $topology.on('dropover', function(event, ui){
           $topology.addClass('over');
@@ -337,8 +496,11 @@ block headerAdditions
           var dragMeCss = {border:'2px dashed black',
                            opacity:'0.4'};
           $dragMe.css(dragMeCss);
+          
           if(ui.draggable.attr('class').indexOf('canvasElement') == -1)
           {
+            var title = selectedProfile;
+            
             clearProfileSelected();
             
             var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
@@ -347,15 +509,24 @@ block headerAdditions
             var div = theDoc.createElement('div');
             
             $(div).draggable({tolerance: 'pointer',
-                              cursorAt: {top:25,left:10},
+                              cursorAt: {top:25,left:15},
                               cursor: 'move',
                               containment:'#nodeCanvas',
                               revert: 'invalid'});
-                              
+            
             div.setAttribute('class', 'canvasElement ui-draggable');
-            div.style.left = x + 'px';
+            
+            // Need to compensate for the width of the already-appended elements, 
+            // as they seem to affect the css left value.
+            div.style.left = (x - (eleCount * 50)) + 'px';
+            
             div.style.top = y + 'px';
+            div.title = title;
+            div.style.backgroundColor = profileColor[title];
+            div.setAttribute('onmouseover', 'handleCanvasEleHover(event)');
+            div.setAttribute('onmouseout', 'handleCanvasEleHover(event)');
             div.id = eleCount;
+            
             var text = theDoc.createElement('label');
             text.innerHTML = $('#nodeNumber').val();
             text.style.fontSize = '18px';
@@ -377,6 +548,22 @@ block headerAdditions
             var push = {x:x, y:y, count:drawElements[index].count};
             drawElements[index] = push;
           }
+        });
+  
+        for(var i in nodeList)
+        {
+          if(nodeCount[nodeList[i].pfile] == undefined)
+          {
+            nodeCount[nodeList[i].pfile] = 1;
+          }
+          else
+          {
+            nodeCount[nodeList[i].pfile] += 1;
+          }
+        }
+              
+        repopulateProfilesList(function(){
+          prepopulateCanvasWithNodes();
         });
       });
       setTimeout(function(){adjustColumns();}, 1000);
@@ -453,5 +640,6 @@ block content
           header#setNumNodes
         button#createNodes(style='margin-top: 20px;', onclick='createNodes()') Save Topology
       div#nodeCanvas(class='sameHeight')
+        div#hoverInfo
     
 

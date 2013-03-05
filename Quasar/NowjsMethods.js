@@ -1072,7 +1072,6 @@ everyone.now.GetProfile = function (profileName, cb)
 {
     var profile = NovaCommon.honeydConfig.GetProfile(profileName);
 
-    
     if(profile == null)
     {
         cb(null);
