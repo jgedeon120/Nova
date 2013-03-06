@@ -19,7 +19,8 @@ extends layout
 
 block headerAdditions
   link(rel="stylesheet", type="text/css", href="wysiwyg.css", media="screen")
-  script(src='//ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/jquery-ui.min.js')
+  script(type='text/javascript', src='scripts/jquery-ui-1.10.1.custom.js')
+  script(type='text/javascript', src='scripts/jquery.ui.selectable.js')
   script
     window.jQuery.ui || document.write(unescape('%3Cscript src="scripts/jquery-ui-1.10.1.custom.js"%3E%3C%/script%3E'));
     
@@ -35,11 +36,15 @@ block headerAdditions
     var clicked = false;
     var selectedProfile = undefined;
     var nodesToCreate = {};
+    var nodesToDelete = {};
     var nodeCount = {};
     var eleCount = 0;
     var drawElements = {};
     var oldWidth = 0;
     var oldHeight = 0;
+    var oldX = 0;
+    var oldY = 0;
+    var selected = [];
     
     function setUpSelects()
     {
@@ -246,35 +251,12 @@ block headerAdditions
       hideProfileInfo();
       var profileObject = {};
       profileObject.selectedProfile = selectedProfile;
-      var personality
-      now.GetProfile(selectedProfile, function(pfile){
-        var pers = pfile.personality;
-        if(pers.indexOf('Windows') != -1)
-        {
-          $dragMe.css('background-image', 'url("images/wysiwyg/win_75.png")');
-        }
-        else if(pers.indexOf('OpenBSD') != -1)
-        {
-          $dragMe.css('background-image', 'url("images/wysiwyg/openbsd_75.png")');
-        }
-        else if(pers.indexOf('Linux') != -1)
-        {
-          $dragMe.css('background-image', 'url("images/wysiwyg/linux_75.png")');
-        }
-        else if(pers.indexOf('Mac OS X') != -1)
-        {
-          $dragMe.css('background-image', 'url("images/wysiwyg/macosx_75.png")');
-        }
-        else
-        {
-          $dragMe.css('background-image', 'url("images/wysiwyg/unknown_75.png")');
-        }
-      });
+      placeBackgroundImage($dragMe, selectedProfile);
       profileObject.count = $('#nodeNumber').val();
       profileObject.portset = $('#portSets').val();
       profileObject.vendor = $('#vendors').val();
-      profileObject.ipType = $('#allocationType').val();
       profileObject.iface = $('#interfaces').val();
+      profileObject.ipType = $('#allocationType').val();
       if(profileObject.ipType != 'DHCP')
       {
         profileObject.ip = {ip1:$('#ip1').val(), ip2:$('#ip2').val(), ip3:$('#ip3').val(), ip4:$('#ip4').val()};
@@ -306,15 +288,39 @@ block headerAdditions
       oldWidth = $topology.outerWidth();
     }
     
-    function handleCanvasEleHover(e)
+    function handleCanvasEleHover(e, ui)
     {
-      console.log('e.type == ' + e.type);
       if(e.type == 'mouseenter')
       {
         var evt = (event ? event : window.event);
         var source = evt.target || evt.srcElement;
         var hoverInfoCss = {top:($(source).position().top),
                             left:($(source).position().left + $(source).outerWidth()) + 10};
+        var titleCss = {'font-weight':'bold', 'font-size':'18px'};
+        
+        $('#hoverName').css(titleCss).html($(source).data('title'));
+        
+        if(nodesToCreate[source.id] != undefined)
+        {
+          $('#hoverPortset').html(nodesToCreate[source.id].portset);
+          $('#hoverVendor').html(nodesToCreate[source.id].vendor);
+          $('#hoverInterface').html(nodesToCreate[source.id].iface);
+          
+          if(nodesToCreate[source.id].ipType != 'DHCP')
+          {
+            var address = '';
+            for(var i in nodesToCreate[source.id].ip)
+            {
+              address += nodesToCreate[source.id].ip[i] + '.';
+            }
+            address = address.substring(0, address.length - 1);
+            $('#hoverAddress').html('IP Range starting at: ' + address);
+          }
+          else
+          {
+            $('#hoverAddress').html('DHCP');
+          }
+        }
         $hoverInfo.css(hoverInfoCss).fadeIn(200, function(){
         });
       }
@@ -327,6 +333,24 @@ block headerAdditions
       {
         $hoverInfo.fadeOut(200, function(){
         });
+        var evt = (event ? event : window.event);
+        var source = evt.target || evt.srcElement;
+        var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
+        var dx = x - oldX;
+        var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
+        var dy = y - oldY;
+        
+        if($(source).attr('class') != undefined && $(source).attr('class').indexOf('ui-selected') != -1)
+        {
+          $('.ui-selected').not($(source)).each(function(){
+            var relX = parseInt(dx) + parseInt($(this).css('left'));
+            var relY = parseInt(dy) + parseInt($(this).css('top'));
+            var adjustPos = {left:relX,top:relY};
+            $(this).css(adjustPos);    
+          });
+        }
+        oldX = x;
+        oldY = y;
       }
       else if(e.type == 'dragstop')
       {
@@ -352,13 +376,13 @@ block headerAdditions
                           cursor: 'move',
                           containment:'#nodeCanvas',
                           revert: 'invalid'});
-                          
+        
         var y = (yEleCount * 50);
         var x = (xEleCount * 50);
         
         if(x > $topology.outerWidth())
         {
-          yEleCount = 1;
+          yEleCount += 1;
           xEleCount = 0;
           y = (yEleCount * 50);
           x = (xEleCount * 50);
@@ -367,8 +391,8 @@ block headerAdditions
         div.setAttribute('class', 'canvasElement ui-draggable');
         div.style.left = x + 'px';
         div.style.top = y + 'px';
-        div.title = i;
-        
+        $(div).data('title', i);
+        placeBackgroundImage($(div), i);
         $(div)
         .on('dragstop', function(e){
           handleCanvasEleHover(e);
@@ -389,11 +413,19 @@ block headerAdditions
           e.stopImmediatePropagation();
           handleCanvasEleHover(e);
         })
-        .on('drag', function(e){
+        .on('drag', function(e, ui){
           e.stopImmediatePropagation();
-          handleCanvasEleHover(e);
+          handleCanvasEleHover(e, ui);
           $(this).off('mouseleave');
           $(this).off('mouseenter');
+        })
+        .on('dragstart', function(e, ui){
+          oldX = ui.helper.offset().left - $('#nodeCanvas').offset().left;
+          oldY = ui.helper.offset().top - $('#nodeCanvas').offset().top;
+          if($(this).attr('class').indexOf('ui-selected') == -1)
+          {
+            clearSelectedCanvas();
+          }
         });
         
         div.id = eleCount;
@@ -413,6 +445,42 @@ block headerAdditions
       }
     }
     
+    function placeBackgroundImage(ele, profile)
+    {
+      var append = ' no-repeat center';
+      if(profile == undefined)
+      {
+        ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append);
+        ele.find('label').css('color', 'white');
+        return;
+      }
+      now.GetProfile(profile, function(pfile){
+        var pers = pfile.personality;
+        if(pers.indexOf('Windows') != -1)
+        {
+          ele.css('background', 'url("images/wysiwyg/win_75.png")' + append);
+        }
+        else if(pers.indexOf('OpenBSD') != -1)
+        {
+          ele.css('background', 'url("images/wysiwyg/openbsd_75.png")' + append);
+        }
+        else if(pers.indexOf('Linux') != -1)
+        {
+          ele.css('background', 'url("images/wysiwyg/linux_75.png")' + append);
+          ele.find('label').css('color', 'white');
+        }
+        else if(pers.indexOf('Mac OS X') != -1)
+        {
+          ele.css('background', 'url("images/wysiwyg/macosx_75.png")' + append);
+        }
+        else
+        {
+          ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append);
+          ele.find('label').css('color', 'white');
+        }
+      });
+    }
+    
     function debugDrop(x, y, count)
     {
         var div = theDoc.createElement('div');
@@ -426,9 +494,9 @@ block headerAdditions
         div.setAttribute('class', 'canvasElement ui-draggable');
         div.style.left = x + 'px';
         div.style.top = y + 'px';
-        div.title = 'test';
-        div.setAttribute('onmouseover', 'handleCanvasEleHover(event)');
-        div.setAttribute('onmouseout', 'handleCanvasEleHover(event)');
+        $(div).data('title', 'test');
+        div.setAttribute('onmouseenter', 'handleCanvasEleHover(event)');
+        div.setAttribute('onmouseleave', 'handleCanvasEleHover(event)');
         div.id = count;
         
         var text = theDoc.createElement('label');
@@ -440,11 +508,54 @@ block headerAdditions
         $topology.append(div);
     }
     
+    function clearSelectedCanvas()
+    {
+      for(var i in selected)
+      {
+        $(selected[i]).removeClass('ui-selected');
+        $(selected[i]).css('border', '');
+      }
+      selected = [];
+    }
+    
     $(function(){
       $profileInfo = $('#profileInfo');
       $profileInfo.hide();
       $topology = $('#nodeCanvas');
-      $topology.css('width', '1');
+      $topology.css('width', '1')
+               .selectable({appendTo:'#nodeCanvas',
+                            distance:30,
+                            cancel:'.canvasElement',
+                            filter:'.canvasElement'})
+               .on('selectablestart', function(e, ui){
+                 console.log('selectablestart');
+                 e.preventDefault();
+                 $('.canvasElement').off('mouseenter');
+               })
+               .on('selectableselecting', function(e, ui){
+                 console.log('selecting ' + $(ui.selecting).data('title'));
+                 selected.push(ui.selecting);
+                 $(ui.selecting).css('border', '1px ridge red');
+               })
+               .on('selectableunselecting', function(e, ui){
+                 console.log('unselecting ' + $(ui.unselecting).data('title'));
+                 for(var i in selected)
+                 {
+                   if(selected[i] == ui.unselecting)
+                   {
+                     delete selected[i];
+                   }
+                 }
+                 $(ui.unselecting).css('border', '');
+               })
+               .on('selectablestop', function(e, ui){
+                 console.log('selectablestop');
+                 $('.canvasElement').on('mouseenter', function(e){
+                   e.stopImmediatePropagation();
+                   handleCanvasEleHover(e);
+                 });
+               });
+                
       $dragMe = $('#dragMe');
       $hoverInfo = $('#hoverInfo');
       $hoverInfo.hide();
@@ -493,6 +604,7 @@ block headerAdditions
         $topology.on('drop', function(event, ui){
           $topology.removeClass('over');
           $dragMe.draggable('disable');
+          placeBackgroundImage($dragMe);
           var dragMeCss = {border:'2px dashed black',
                            opacity:'0.4'};
           $dragMe.css(dragMeCss);
@@ -515,17 +627,47 @@ block headerAdditions
                               revert: 'invalid'});
             
             div.setAttribute('class', 'canvasElement ui-draggable');
-            
+            $(div).removeClass('ui-draggable-dragging');
             // Need to compensate for the width of the already-appended elements, 
             // as they seem to affect the css left value.
             div.style.left = (x - (eleCount * 50)) + 'px';
             
             div.style.top = y + 'px';
-            div.title = title;
-            div.style.backgroundColor = profileColor[title];
-            div.setAttribute('onmouseover', 'handleCanvasEleHover(event)');
-            div.setAttribute('onmouseout', 'handleCanvasEleHover(event)');
+            $(div).data('profile', title);
+            div.setAttribute('onmouseenter', 'handleCanvasEleHover(event)');
+            div.setAttribute('onmouseleave', 'handleCanvasEleHover(event)');
             div.id = eleCount;
+            placeBackgroundImage($(div), title);
+            
+            $(div).on('dragstop', function(e){
+               handleCanvasEleHover(e);
+              $(this).on('mouseenter', function(e){
+                e.stopImmediatePropagation();
+                handleCanvasEleHover(e);
+              })
+              .on('mouseleave', function(e){
+                e.stopImmediatePropagation();
+                handleCanvasEleHover(e);
+              })
+            })
+            .on('mouseenter', function(e){
+              e.stopImmediatePropagation();
+              handleCanvasEleHover(e);
+            })
+            .on('mouseleave', function(e){
+              e.stopImmediatePropagation();
+              handleCanvasEleHover(e);
+            })
+            .on('drag', function(e){
+              e.stopImmediatePropagation();
+              handleCanvasEleHover(e);
+              $(this).off('mouseleave');
+              $(this).off('mouseenter');
+            })
+            .on('dragstart', function(e){
+              oldX = 0;
+              oldY = 0;
+            });
             
             var text = theDoc.createElement('label');
             text.innerHTML = $('#nodeNumber').val();
@@ -639,7 +781,21 @@ block content
         div#dragMe(class='notDraggableYet')
           header#setNumNodes
         button#createNodes(style='margin-top: 20px;', onclick='createNodes()') Save Topology
-      div#nodeCanvas(class='sameHeight')
+      div#nodeCanvas(class='sameHeight', onclick='clearSelectedCanvas()')
         div#hoverInfo
-    
-
+          div#pres
+            label#hoverName
+            br
+            br
+            label Port Set: 
+            div#hoverPortset
+            br
+            label Ethernet Vendor: 
+            div#hoverVendor
+            br
+            label Ethernet Interface: 
+            div#hoverInterface
+            br
+            label Ip Address Allocation Type: 
+            div#hoverAddress
+            

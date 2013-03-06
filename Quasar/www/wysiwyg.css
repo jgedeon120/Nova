@@ -5,7 +5,28 @@
   user-select: none;
 }
 
+.ui-selecting {
+  border: 2px dotted black;
+}
+
+.ui-selected {
+  border: 2px ridge red;
+}
+
+.ui-selectable-helper {
+  position: absolute;
+  z-index: 1010;
+  border: 1px dotted black;
+  left: 0px;
+  top: 0px;
+}
+
 .canvasElement {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
   position: absolute;
   float: left;
   overflow: hidden;
@@ -62,15 +83,9 @@
   opacity: 1;
   -webkit-transition: border 0.2s linear;
   -moz-transition: border 0.2s linear;
-  -webkit-transition: border-radius 0.2s linear;
-  -moz-transition: border-radius 0.2s linear;
-  border-radius: 50px;
-  -moz-border-radius: 50px;
-  -webkit-border-radius: 50px;
-  -o-border-radius: 50px;
-  -ms-border-radius: 50px;
-  height: 90px;
-  width: 90px;
+  border-radius: 15px;
+  height: 75px;
+  width: 75px;
   margin: 0px auto;
   background: url('images/wysiwyg/unknown_75.png') no-repeat center;
   z-index: 1003;
@@ -244,7 +259,12 @@
 }
 
 #hoverInfo {
-  width: 300px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  width: 200px;
   height: auto;
   min-height: 300px;
   border: 2px solid #000;
@@ -275,6 +295,7 @@
 
 #hoverInfo label {
   margin-right: 10px;
+  font-weight: bold;
 }
 
 #pres {

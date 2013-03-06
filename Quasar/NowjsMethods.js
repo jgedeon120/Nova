@@ -1110,7 +1110,6 @@ everyone.now.GetProfile = function (profileName, cb)
 
     profile.ethernet = ethVendorList;
 
-
     cb(profile);
 };
 
