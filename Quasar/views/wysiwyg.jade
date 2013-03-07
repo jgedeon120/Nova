@@ -21,9 +21,10 @@ block headerAdditions
   link(rel="stylesheet", type="text/css", href="wysiwyg.css", media="screen")
   script(type='text/javascript', src='scripts/jquery-ui-1.10.1.custom.js')
   script(type='text/javascript', src='scripts/jquery.ui.selectable.js')
+  script(type='text/javascript', src='https://flexicontent.googlecode.com/svn-history/r1517/trunk/com_flexicontent_v2.x/site/librairies/fancybox/lib/jquery.mousewheel-3.0.6.pack.js')
   script
-    window.jQuery.ui || document.write(unescape('%3Cscript src="scripts/jquery-ui-1.10.1.custom.js"%3E%3C%/script%3E'));
-    
+    window.jQuery.ui || document.write('<script src="scripts/jquery-ui-1.10.1.custom.js"><\\/script>');
+    window.jQuery.mousewheel || document.write('<script type="text/javascript" src="scripts/jquery-mousewheel.min.js"><\\/script>');
     var configurationList = !{JSON.stringify(configurations)};
     var nodeList = !{JSON.stringify(nodes)};
     var interfaces = !{JSON.stringify(interfaces)};
@@ -45,6 +46,7 @@ block headerAdditions
     var oldX = 0;
     var oldY = 0;
     var selected = [];
+    var topoDrag = false;
     
     function setUpSelects()
     {
@@ -292,7 +294,7 @@ block headerAdditions
     {
       if(e.type == 'mouseenter')
       {
-        var evt = (event ? event : window.event);
+        var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
         var hoverInfoCss = {top:($(source).position().top),
                             left:($(source).position().left + $(source).outerWidth()) + 10};
@@ -333,7 +335,7 @@ block headerAdditions
       {
         $hoverInfo.fadeOut(200, function(){
         });
-        var evt = (event ? event : window.event);
+        var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
         var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
         var dx = x - oldX;
@@ -344,8 +346,24 @@ block headerAdditions
         {
           $('.ui-selected').not($(source)).each(function(){
             var relX = parseInt(dx) + parseInt($(this).css('left'));
+            if(relX > $topology.outerWidth() - 100)
+            {
+              relX = $topology.outerWidth() - 100;
+            }
+            else if(relX < 0)
+            {
+              relX = 0;
+            }
             var relY = parseInt(dy) + parseInt($(this).css('top'));
-            var adjustPos = {left:relX,top:relY};
+            if(relY > $topology.outerHeight() - 50)
+            {
+              relY = $topology.outerHeight() - 50;
+            }
+            else if(relY < 0)
+            {
+              relY = 0;
+            }
+            var adjustPos = {left:relX, top:relY};
             $(this).css(adjustPos);    
           });
         }
@@ -354,7 +372,7 @@ block headerAdditions
       }
       else if(e.type == 'dragstop')
       {
-        var evt = (event ? event : window.event);
+        var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
         var hoverInfoCss = {top:($(source).position().top),
                             left:($(source).position().left + $(source).outerWidth()) + 10};
@@ -554,7 +572,57 @@ block headerAdditions
                    e.stopImmediatePropagation();
                    handleCanvasEleHover(e);
                  });
-               });
+               })
+               .mousewheel(function(e, delta){
+                 $('.canvasElement').each(function(){
+                   if(($(this).outerWidth() <= (25 + parseInt($(this).css('border-width'))) && delta < 0)
+                   || ($(this).outerWidth() > (75 + parseInt($(this).css('border-width'))) && delta > 0))
+                   {
+                     return;
+                   }
+                   var width = parseInt($(this).outerWidth()) + parseInt(delta) - 2;
+                   var height = parseInt($(this).outerHeight()) + parseInt(delta) - 2;
+                   var zoom = {width:width, height:height};
+                   $(this).css(zoom);
+                 });
+               })
+              .mousedown(function(e){
+                topoDrag = true;
+                $topology.css('cursor', 'move');
+                oldX = e.clientX;
+                oldY = e.clientY;
+                $topology.off('mouseenter');
+              })
+              .mouseup(function(e){
+                topoDrag = false;
+                $topology.css('cursor', '');
+                $topology.on('mouseenter', function(){
+                  e.stopImmediatePropagation();
+                  handleCanvasEleHover(e);
+                });
+              })
+              .mouseout(function(e){
+                topoDrag = false;
+                $topology.css('cursor', '');
+                $topology.on('mouseenter', function(){
+                  e.stopImmediatePropagation();
+                  handleCanvasEleHover(e);
+                });
+              })
+              .mousemove(function(e){
+                if(topoDrag)
+                {
+                  var relX = (e.clientX - oldX);
+                  var relY = (e.clientY - oldY);
+                  $('.canvasElement').each(function(){
+                    var newPos = {left:parseInt($(this).css('left')) + parseInt(relX),
+                                  top:parseInt($(this).css('top')) + parseInt(relY)};
+                    $(this).css(newPos);
+                  });
+                  oldX = e.clientX;
+                  oldY = e.clientY;
+                }
+              });
                 
       $dragMe = $('#dragMe');
       $hoverInfo = $('#hoverInfo');
@@ -664,9 +732,13 @@ block headerAdditions
               $(this).off('mouseleave');
               $(this).off('mouseenter');
             })
-            .on('dragstart', function(e){
-              oldX = 0;
-              oldY = 0;
+            .on('dragstart', function(e, ui){
+              oldX = ui.helper.offset().left - $('#nodeCanvas').offset().left;
+              oldY = ui.helper.offset().top - $('#nodeCanvas').offset().top;
+              if($(this).attr('class').indexOf('ui-selected') == -1)
+              {
+                clearSelectedCanvas();
+              }
             });
             
             var text = theDoc.createElement('label');
@@ -711,7 +783,7 @@ block headerAdditions
       setTimeout(function(){adjustColumns();}, 1000);
     });
     
-    $(window).resize(function(){
+    /*$(window).resize(function(){
       if($topology.outerWidth() < oldWidth || $topology.outerHeight() < oldHeight)
       {
         for(var i in drawElements)
@@ -730,7 +802,7 @@ block headerAdditions
       }
       oldWidth = $topology.outerWidth();
       oldHeight = $topology.outerHeight();
-    });
+    });*/
     
 block content
   div#pageWrap(onmouseover='hideProfileInfo(event)')
