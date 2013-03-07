@@ -524,6 +524,62 @@ block headerAdditions
         $topology.append(div);
     }
     
+    function handleOffscreenIndicators()
+    {
+      var width = $topology.outerWidth();
+      var height = $topology.outerHeight();
+      $('.canvasElement').each(function(){
+        console.log(this.id + '.css("left") + 50 == ' + parseInt($(this).css("left") + 50));
+        console.log('top == ' + $(this).css('top'));
+        if(parseInt($(this).css('left')) > width)
+        {
+          if(theDoc.getElementById(this.id + 'osir') == undefined)
+          {
+            console.log('creating osil for ' + this.id);
+            var div = theDoc.createElement('div');
+            div.className = 'offscreenIndicatorRight';
+            div.id = this.id + 'osir';
+            var pos = {left:width, top:$(this).css('top')};
+            $(div).css(pos);
+            $topology.append(div);
+          }
+          else
+          {
+            var pos = {top:$(this).css('top')};
+            $('#' + this.id + 'osir').css(pos);
+          }
+        }
+        else if(parseInt($(this).css('left')) + 50 <= 0)
+        {
+          if(theDoc.getElementById(this.id + 'osil') == undefined)
+          {
+            console.log('creating osil for ' + this.id);
+            var div = theDoc.createElement('div');
+            div.className = 'offscreenIndicatorLeft';
+            div.id = this.id + 'osil';
+            var pos = {left:-20, top:$(this).css('top')};
+            $(div).css(pos);
+            $topology.append(div);
+          }
+          else
+          {
+            var pos = {top:$(this).css('top')};
+            $('#' + this.id + 'osil').css(pos);
+          }
+        }
+        if(parseInt($(this).css('left')) < width - 50)
+        {
+          console.log('deleting #' + this.id + 'osir');
+          $('#' + this.id + 'osir').remove();
+        }
+        if(parseInt($(this).css('left')) >= 0)
+        {
+          console.log('deleting #' + this.id + 'osil');
+          $('#' + this.id + 'osil').remove();
+        }
+      });
+    }
+    
     function clearSelectedCanvas()
     {
       for(var i in selected)
@@ -626,6 +682,7 @@ block headerAdditions
                                   top:parseInt($(this).css('top')) + parseInt(relY)};
                     $(this).css(newPos);
                   });
+                  handleOffscreenIndicators();
                   oldX = e.clientX;
                   oldY = e.clientY;
                 }
@@ -791,50 +848,7 @@ block headerAdditions
     });
     
     $(window).resize(function(){
-      var width = $topology.outerWidth();
-      var height = $topology.outerHeight();
-      console.log('in resize');
-      $('.canvasElement').each(function(){
-        console.log(this.id + '.css("left") + 50 == ' + parseInt($(this).css("left") + 50));
-        if(parseInt($(this).css('left')) > $topology.outerWidth())
-        {
-          if(theDoc.getElementById(this.id + 'osir') == undefined)
-          {
-            console.log('creating osil for ' + this.id);
-            var div = theDoc.createElement('div');
-            div.className = 'offscreenIndicatorRight';
-            div.id = this.id + 'osir';
-            var pos = {left:$topology.outerWidth(), top:$(this).css('top')};
-            $(div).css(pos);
-            $topology.append(div);
-          }
-        }
-        else if(parseInt($(this).css('left')) + 50 <= 0)
-        {
-          if(theDoc.getElementById(this.id + 'osil') == undefined)
-          {
-            console.log('creating osil for ' + this.id);
-            var div = theDoc.createElement('div');
-            div.className = 'offscreenIndicatorLeft';
-            div.id = this.id + 'osil';
-            var pos = {left:-20, top:$(this).css('top')};
-            $(div).css(pos);
-            $topology.append(div);
-          }
-        }
-        if(parseInt($(this).css('left')) < $topology.outerWidth() - 50)
-        {
-          console.log('deleting #' + this.id + 'osir');
-          //Have to do this twice -- won't happen with only one remove() call
-          $('#' + this.id + 'osir').remove();
-        }
-        if(parseInt($(this).css('left')) >= 0)
-        {
-          console.log('deleting #' + this.id + 'osil');
-          //Have to do this twice -- won't happen with only one remove() call
-          $('#' + this.id + 'osil').remove();
-        }
-      });
+      handleOffscreenIndicators();
     });
     
 block content
