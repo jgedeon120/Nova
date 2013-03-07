@@ -194,32 +194,6 @@
   margin-bottom: 0px;
 }
 
-#topology {
-  -webkit-transition: box-shadow 0.2s linear;
-  -moz-transition: box-shadow 0.2s linear;
-  border-right: 2px solid #000;
-  border-top: 2px solid #000;
-  border-bottom: 2px solid #000;
-  border-top-right-radius: 5px;
-  border-bottom-right-radius: 5px;
-  -webkit-border-top-right-radius: 5px;
-  -webkit-border-bottom-right-radius: 5px;
-  -ms-border-top-right-radius: 5px;
-  -ms-border-bottom-right-radius: 5px;
-  -moz-border-top-right-radius: 5px;
-  -moz-border-bottom-right-radius: 5px;
-  -o-border-top-right-radius: 5px;
-  -o-border-bottom-right-radius: 5px;
-  position: relative;
-  overflow: hidden;
-  min-width: 70%;
-  width: auto;
-  min-height: 80%;
-  height: auto;
-  margin-right: 10px;
-  margin-bottom: 0px;
-}
-
 .over {
   box-shadow: 0px 0px 5px 5px #F1CC91 inset;
 }
@@ -274,7 +248,6 @@
   -webkit-transition: top 0.2s linear;
   -moz-transition: display 0.2s linear;
   -moz-transition: top 0.2s linear;
-  background-color: white;
   border-radius: 10px;
   text-align: center;
   background-color: #E4F2FF;
@@ -292,6 +265,55 @@
   border-bottom: 10px solid transparent;
   z-index: 1001;
 }
+
+.offscreenIndicatorRight {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  width: 20px;
+  height: 20px;
+  z-index: 2006;
+  position: absolute;
+}
+
+.offscreenIndicatorRight:before {
+  content: "";
+  position: absolute;
+  right: 100%;
+  width: 0;
+  height: 0;
+  border-top: 20px solid transparent;
+  border-left: 40px solid #000;
+  border-bottom: 20px solid transparent;
+  z-index: 2006;
+}
+
+.offscreenIndicatorLeft {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  width: 20px;
+  height: 20px;
+  z-index: 2006;
+  position: absolute;
+}
+
+.offscreenIndicatorLeft:after {
+  content: "";
+  position: absolute;
+  left: 100%;
+  width: 0;
+  height: 0;
+  border-top: 20px solid transparent;
+  border-right: 40px solid #000;
+  border-bottom: 20px solid transparent;
+  z-index: 2006;
+}
+
 
 #hoverInfo label {
   margin-right: 10px;

@@ -21,9 +21,9 @@ block headerAdditions
   link(rel="stylesheet", type="text/css", href="wysiwyg.css", media="screen")
   script(type='text/javascript', src='scripts/jquery-ui-1.10.1.custom.js')
   script(type='text/javascript', src='scripts/jquery.ui.selectable.js')
-  script(type='text/javascript', src='https://flexicontent.googlecode.com/svn-history/r1517/trunk/com_flexicontent_v2.x/site/librairies/fancybox/lib/jquery.mousewheel-3.0.6.pack.js')
+  script(type='text/plain', src='https://flexicontent.googlecode.com/svn-history/r1517/trunk/com_flexicontent_v2.x/site/librairies/fancybox/lib/jquery.mousewheel-3.0.6.pack.js')
   script
-    window.jQuery.ui || document.write('<script src="scripts/jquery-ui-1.10.1.custom.js"><\\/script>');
+    window.jQuery.ui || document.write('<script type="text/javascript" src="scripts/jquery-ui-1.10.1.custom.js"><\\/script>');
     window.jQuery.mousewheel || document.write('<script type="text/javascript" src="scripts/jquery-mousewheel.min.js"><\\/script>');
     var configurationList = !{JSON.stringify(configurations)};
     var nodeList = !{JSON.stringify(nodes)};
@@ -41,8 +41,6 @@ block headerAdditions
     var nodeCount = {};
     var eleCount = 0;
     var drawElements = {};
-    var oldWidth = 0;
-    var oldHeight = 0;
     var oldX = 0;
     var oldY = 0;
     var selected = [];
@@ -286,8 +284,6 @@ block headerAdditions
         maxHeight = Math.max(maxHeight, $(this).outerHeight());
       });
       $sameHeightDivs.css({height: maxHeight + 'px'});
-      oldHeight = $topology.outerHeight();
-      oldWidth = $topology.outerWidth();
     }
     
     function handleCanvasEleHover(e, ui)
@@ -587,30 +583,39 @@ block headerAdditions
                  });
                })
               .mousedown(function(e){
-                topoDrag = true;
-                $topology.css('cursor', 'move');
-                oldX = e.clientX;
-                oldY = e.clientY;
-                $topology.off('mouseenter');
+                if(e.which == 2)
+                {
+                  topoDrag = true;
+                  $topology.css('cursor', 'move');
+                  oldX = e.clientX;
+                  oldY = e.clientY;
+                  $topology.off('mouseenter');
+                }
               })
               .mouseup(function(e){
-                topoDrag = false;
-                $topology.css('cursor', '');
-                $topology.on('mouseenter', function(){
-                  e.stopImmediatePropagation();
-                  handleCanvasEleHover(e);
-                });
+                if(e.which == 2)
+                {
+                  topoDrag = false;
+                  $topology.css('cursor', '');
+                  $topology.on('mouseenter', function(){
+                    e.stopImmediatePropagation();
+                    handleCanvasEleHover(e);
+                  });
+                }
               })
               .mouseout(function(e){
-                topoDrag = false;
-                $topology.css('cursor', '');
-                $topology.on('mouseenter', function(){
-                  e.stopImmediatePropagation();
-                  handleCanvasEleHover(e);
-                });
+                if(e.which == 2)
+                {
+                  topoDrag = false;
+                  $topology.css('cursor', '');
+                  $topology.on('mouseenter', function(){
+                    e.stopImmediatePropagation();
+                    handleCanvasEleHover(e);
+                  });
+                }
               })
               .mousemove(function(e){
-                if(topoDrag)
+                if(topoDrag && e.which == 2)
                 {
                   var relX = (e.clientX - oldX);
                   var relY = (e.clientY - oldY);
@@ -783,26 +788,52 @@ block headerAdditions
       setTimeout(function(){adjustColumns();}, 1000);
     });
     
-    /*$(window).resize(function(){
-      if($topology.outerWidth() < oldWidth || $topology.outerHeight() < oldHeight)
-      {
-        for(var i in drawElements)
+    $(window).resize(function(){
+      var width = $topology.outerWidth();
+      var height = $topology.outerHeight();
+      console.log('in resize');
+      $('.canvasElement').each(function(){
+        console.log(this.id + '.css("left") + 50 == ' + parseInt($(this).css("left") + 50));
+        if(parseInt($(this).css('left')) > $topology.outerWidth())
         {
-          if(drawElements[i].x > $topology.outerWidth())
+          if(theDoc.getElementById(this.id + 'osir') == undefined)
           {
-            drawElements[i].x = (drawElements[i].x * ($topology.outerWidth() / oldWidth));
+            console.log('creating osil for ' + this.id);
+            var div = theDoc.createElement('div');
+            div.className = 'offscreenIndicatorRight';
+            div.id = this.id + 'osir';
+            var pos = {left:$topology.outerWidth(), top:$(this).css('top')};
+            $(div).css(pos);
+            $topology.append(div);
           }
-          if(drawElements[i].y > $topology.outerHeight())
-          {
-            drawElements[i].y = (drawElements[i].y * ($topology.outerHeight() / oldHeight));
-          }
-          var newCoords = {left:drawElements[i].x, top:drawElements[i].y};
-          $('#' + i).css(newCoords);
         }
-      }
-      oldWidth = $topology.outerWidth();
-      oldHeight = $topology.outerHeight();
-    });*/
+        else if(parseInt($(this).css('left')) + 50 <= 0)
+        {
+          if(theDoc.getElementById(this.id + 'osil') == undefined)
+          {
+            console.log('creating osil for ' + this.id);
+            var div = theDoc.createElement('div');
+            div.className = 'offscreenIndicatorLeft';
+            div.id = this.id + 'osil';
+            var pos = {left:-20, top:$(this).css('top')};
+            $(div).css(pos);
+            $topology.append(div);
+          }
+        }
+        if(parseInt($(this).css('left')) < $topology.outerWidth() - 50)
+        {
+          console.log('deleting #' + this.id + 'osir');
+          //Have to do this twice -- won't happen with only one remove() call
+          $('#' + this.id + 'osir').remove();
+        }
+        if(parseInt($(this).css('left')) >= 0)
+        {
+          console.log('deleting #' + this.id + 'osil');
+          //Have to do this twice -- won't happen with only one remove() call
+          $('#' + this.id + 'osil').remove();
+        }
+      });
+    });
     
 block content
   div#pageWrap(onmouseover='hideProfileInfo(event)')
