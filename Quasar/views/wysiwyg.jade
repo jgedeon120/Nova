@@ -402,9 +402,10 @@ block headerAdditions
           x = (xEleCount * 50);
         }
         
-        div.setAttribute('class', 'canvasElement ui-draggable');
+        div.setAttribute('class', 'ui-draggable canvasElement');
         div.style.left = x + 'px';
         div.style.top = y + 'px';
+        div.style.position = 'absolute';
         $(div).data('title', i);
         placeBackgroundImage($(div), i);
         $(div)
@@ -508,6 +509,7 @@ block headerAdditions
         div.setAttribute('class', 'canvasElement ui-draggable');
         div.style.left = x + 'px';
         div.style.top = y + 'px';
+        div.style.position = 'absolute';
         $(div).data('title', 'test');
         div.setAttribute('onmouseenter', 'handleCanvasEleHover(event)');
         div.setAttribute('onmouseleave', 'handleCanvasEleHover(event)');
@@ -704,8 +706,8 @@ block headerAdditions
             // Need to compensate for the width of the already-appended elements, 
             // as they seem to affect the css left value.
             div.style.left = (x - (eleCount * 50)) + 'px';
-            
             div.style.top = y + 'px';
+                    div.style.position = 'absolute';
             $(div).data('profile', title);
             div.setAttribute('onmouseenter', 'handleCanvasEleHover(event)');
             div.setAttribute('onmouseleave', 'handleCanvasEleHover(event)');
