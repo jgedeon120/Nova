@@ -78,6 +78,14 @@
   cursor: move;
 }
 
+#nodeContextMenu {
+  border-radius: 15px;
+  border: 1px solid rgb(118, 157, 192);
+  background-color: rgb(175, 217, 255);
+  height: 100px;
+  width: 100px; 
+}
+
 #dragMe {
   border: 2px solid black;
   opacity: 1;
@@ -101,7 +109,7 @@
 }
 
 .ui-draggable-dragging {
-  border: 2px solid black;
+  border: 1px solid black;
   border-radius: 15px;
   -moz-border-radius: 15px;
   -webkit-border-radius: 15px;

@@ -30,14 +30,16 @@ block headerAdditions
     var interfaces = !{JSON.stringify(interfaces)};
     var currentConfig = '#{current}';
     var theDoc = document;
+    var haveMac = [];
     var profilesArray = new Array();
     var $topology = '';
     var $dragMe = '';
     var $hoverInfo = '';
+    var $profileInfo = '';
+    var $context = '';
     var clicked = false;
     var selectedProfile = undefined;
     var nodesToCreate = {};
-    var nodesToDelete = {};
     var nodeCount = {};
     var eleCount = 0;
     var drawElements = {};
@@ -45,6 +47,7 @@ block headerAdditions
     var oldY = 0;
     var selected = [];
     var topoDrag = false;
+    var noclick = false;
     
     function setUpSelects()
     {
@@ -218,29 +221,6 @@ block headerAdditions
       }
     }
     
-    function createNodes()
-    {
-      for(var i in nodesToCreate)
-      {
-        var ipType = nodesToCreate[i].ipType;
-        var ip1, ip2, ip3, ip4 = '0';
-        if(nodesToCreate[i].ipType != 'DHCP')
-        {
-          ip1 = nodesToCreate[i].ip.ip1;
-          ip2 = nodesToCreate[i].ip.ip2;
-          ip3 = nodesToCreate[i].ip.ip3;
-          ip4 = nodesToCreate[i].ip.ip4;
-        }
-        var profile = nodesToCreate[i].selectedProfile;
-        var portset = nodesToCreate[i].portset;
-        var vendor = nodesToCreate[i].vendor;
-        var ethInterface = nodesToCreate[i].iface;
-        var count = nodesToCreate[i].count;  
-        now.createHoneydNodes(ipType, ip1, ip2, ip3, ip4, profile, portset, vendor, ethInterface, count); 
-      }
-      nodesToCreate = {};
-    }
-    
     function saveSelectedParameters()
     {
       clicked = false;
@@ -296,7 +276,7 @@ block headerAdditions
                             left:($(source).position().left + $(source).outerWidth()) + 10};
         var titleCss = {'font-weight':'bold', 'font-size':'18px'};
         
-        $('#hoverName').css(titleCss).html($(source).data('title'));
+        $('#hoverName').css(titleCss).html($(source).data('profile'));
         
         if(nodesToCreate[source.id] != undefined)
         {
@@ -377,6 +357,41 @@ block headerAdditions
       }
     }
     
+    function canvasElementOnclick(e)
+    {
+      if(!noclick)
+      {
+        e.stopImmediatePropagation();
+        var evt = (e ? e : window.event);
+        var source = evt.target || evt.srcElement;
+        
+        if(source.tagName != 'DIV')
+        {
+          source = source.parentNode;
+        }
+        if($(source).attr('class').indexOf('ui-selected') != -1)
+        {
+          $(source).css('border', '').removeClass('ui-selected');
+          for(var i in selected)
+          {
+            if(selected[i] == source)
+            {
+              delete selected[i];
+            }
+          }
+        }
+        else
+        {
+          $(source).css('border', '1px ridge red').addClass('ui-selected');
+          selected.push(source);
+        }
+      }
+      else
+      {
+        noclick = false;
+      }
+    }
+    
     function prepopulateCanvasWithNodes()
     {
       var xEleCount = 0;
@@ -385,12 +400,15 @@ block headerAdditions
       {
         var div = theDoc.createElement('div');
               
-        $(div).draggable({tolerance: 'pointer',
-                          cursorAt: {top:25, left:10},
-                          cursor: 'move',
-                          containment:'#nodeCanvas',
-                          revert: 'invalid'});
-        
+        $(div).click(function(e){
+                canvasElementOnclick(e);
+              })
+              .draggable({tolerance: 'pointer',
+                cursorAt: {top:25,left:15},
+                cursor: 'move',
+                containment:'#nodeCanvas',
+                revert: 'invalid'});
+    
         var y = (yEleCount * 50);
         var x = (xEleCount * 50);
         
@@ -402,25 +420,24 @@ block headerAdditions
           x = (xEleCount * 50);
         }
         
-        div.setAttribute('class', 'ui-draggable canvasElement');
-        div.style.left = x + 'px';
-        div.style.top = y + 'px';
-        div.style.position = 'absolute';
-        $(div).data('title', i);
+        var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
+        $(div).data('profile', i).data('preexisting', true)
+              .data('mac', nodeCount[i].mac).css(prepopCss)
+              .attr('class', 'ui-draggable canvasElement');
         placeBackgroundImage($(div), i);
         setCanvasElementEventHandlers(div);
         
         div.id = eleCount;
         
         var text = theDoc.createElement('label');
-        text.innerHTML = nodeCount[i];
+        text.innerHTML = nodeCount[i].count;
         text.style.fontSize = '18px';
         text.id = eleCount + 'text';
         div.appendChild(text);
   
         $topology.append(div);
         
-        var push = {x:x, y:y, count:nodeCount[i]};
+        var push = {x:x, y:y, count:nodeCount[i].count};
         drawElements[eleCount] = push;
         eleCount += 1;
         xEleCount += 1;
@@ -477,7 +494,7 @@ block headerAdditions
         div.style.left = x + 'px';
         div.style.top = y + 'px';
         div.style.position = 'absolute';
-        $(div).data('title', 'test');
+        $(div).data('profile', 'test');
         div.setAttribute('onmouseenter', 'handleCanvasEleHover(event)');
         div.setAttribute('onmouseleave', 'handleCanvasEleHover(event)');
         div.id = count;
@@ -607,6 +624,7 @@ block headerAdditions
         })
         .on('drag', function(e, ui){
           e.stopImmediatePropagation();
+          $(this).css('border', '').removeClass('ui-selected');
           handleCanvasEleHover(e, ui);
           $(this).off('mouseleave');
           $(this).off('mouseenter');
@@ -618,7 +636,65 @@ block headerAdditions
           {
             clearSelectedCanvas();
           }
+        })
+        .on('contextmenu', function(e){
+          e.preventDefault();
+          $hoverInfo.fadeOut(200);
+          toggleContextMenu(e);
         });
+    }
+    
+    function toggleContextMenu(e)
+    {
+      var evt = (e ? e : window.event);
+      var source = evt.target || evt.srcElement;
+      
+      var left = $(source).css('left');
+      var top = $(source).css('top');
+      
+      if($contextMenu.is(':hidden'))
+      {
+        var $delN = $('#deleteNodes');
+        var $mergeN = $('#mergeNodes');
+        var $splitN = $('#splitNodes');
+        
+        if(source.className.indexOf('ui-selected') != -1)
+        {
+          console.log('right clicked selected element');
+        }
+        else
+        {
+          console.log('right clicked non-lassoed element');
+          $mergeN.on('click', function(e){
+            
+          });
+          $splitN.on('click', function(e){
+              
+          });
+        }
+
+        $delN.on('click', function(e){
+          
+        });
+        $contextMenu.fadeIn(200, function(){
+          
+        });
+      }
+    }
+    
+    function deleteSelected()
+    {
+      var deleteNodes = [];
+      $('.ui-selected').each(function(){
+        if(nodesToCreate[$(this).attr('id')] != undefined)
+        {
+          delete nodesToCreate[$(this).attr('id')];
+        }
+        deleteNodes.push($(this).data('mac'));
+        $(this).remove();
+      });
+      
+      now.deleteNodes(deleteNodes);
     }
     
     function clearSelectedCanvas()
@@ -628,102 +704,113 @@ block headerAdditions
         $(selected[i]).removeClass('ui-selected');
         $(selected[i]).css('border', '');
       }
+      $contextMenu.fadeOut(200);
       selected = [];
     }
     
     $(function(){
       $profileInfo = $('#profileInfo');
       $profileInfo.hide();
+      $contextMenu = $('#nodeContextMenu');
+      $contextMenu.hide();
       $topology = $('#nodeCanvas');
-      $topology.css('width', '1')
-               .selectable({appendTo:'#nodeCanvas',
-                            distance:30,
-                            cancel:'.canvasElement',
-                            filter:'.canvasElement'})
-               .on('selectablestart', function(e, ui){
-                 e.preventDefault();
-                 $('.canvasElement').off('mouseenter');
-               })
-               .on('selectableselecting', function(e, ui){
-                 selected.push(ui.selecting);
-                 $(ui.selecting).css('border', '1px ridge red');
-               })
-               .on('selectableunselecting', function(e, ui){
-                 for(var i in selected)
-                 {
-                   if(selected[i] == ui.unselecting)
-                   {
-                     delete selected[i];
-                   }
-                 }
-                 $(ui.unselecting).css('border', '');
-               })
-               .on('selectablestop', function(e, ui){
-                 $('.canvasElement').on('mouseenter', function(e){
-                   e.stopImmediatePropagation();
-                   handleCanvasEleHover(e);
-                 });
-               })
-               .mousewheel(function(e, delta){
-                 $('.canvasElement').each(function(){
-                   if(($(this).outerWidth() <= (25 + parseInt($(this).css('border-width'))) && delta < 0)
-                   || ($(this).outerWidth() > (75 + parseInt($(this).css('border-width'))) && delta > 0))
-                   {
-                     return;
-                   }
-                   var width = parseInt($(this).outerWidth()) + parseInt(delta) - 2;
-                   var height = parseInt($(this).outerHeight()) + parseInt(delta) - 2;
-                   var zoom = {width:width, height:height};
-                   $(this).css(zoom);
-                 });
-               })
-              .mousedown(function(e){
-                if(e.which == 2)
-                {
-                  topoDrag = true;
-                  $topology.css('cursor', 'move');
-                  oldX = e.clientX;
-                  oldY = e.clientY;
-                  $topology.off('mouseenter');
-                }
-              })
-              .mouseup(function(e){
-                if(e.which == 2)
-                {
-                  topoDrag = false;
-                  $topology.css('cursor', '');
-                  $topology.on('mouseenter', function(){
-                    e.stopImmediatePropagation();
-                    handleCanvasEleHover(e);
-                  });
-                }
-              })
-              .mouseout(function(e){
-                if(e.which == 2)
-                {
-                  topoDrag = false;
-                  $topology.css('cursor', '');
-                  $topology.on('mouseenter', function(){
-                    e.stopImmediatePropagation();
-                    handleCanvasEleHover(e);
-                  });
-                }
-              })
-              .mousemove(function(e){
-                if(topoDrag && e.which == 2)
-                {
-                  var relX = (e.clientX - oldX);
-                  var relY = (e.clientY - oldY);
-                  $('.canvasElement').each(function(){
-                    var newPos = {left:parseInt($(this).css('left')) + parseInt(relX),
-                                  top:parseInt($(this).css('top')) + parseInt(relY)};
-                    $(this).css(newPos);
-                  });
-                  handleOffscreenIndicators();
-                  oldX = e.clientX;
-                  oldY = e.clientY;
-                }
-              });
+      $topology.empty();
+      $(document).keydown(function(e){
+        if(e.keyCode == 46)
+        {
+          deleteSelected();
+        }
+      })
+      $topology
+        .css('width', '1')
+        .selectable({appendTo:'#nodeCanvas',
+                     distance:30,
+                     cancel:'.canvasElement',
+                     filter:'.canvasElement'})
+        .on('selectablestart', function(e, ui){
+          e.preventDefault();
+          $('.canvasElement').off('mouseenter');
+        })
+        .on('selectableselecting', function(e, ui){
+          selected.push(ui.selecting);
+          $(ui.selecting).css('border', '1px ridge red');
+        })
+        .on('selectableunselecting', function(e, ui){
+          for(var i in selected)
+          {
+            if(selected[i] == ui.unselecting)
+            {
+              delete selected[i];
+            }
+          }
+          $(ui.unselecting).css('border', '');
+        })
+        .on('selectablestop', function(e, ui){
+          $('.canvasElement').on('mouseenter', function(e){
+            e.stopImmediatePropagation();
+            handleCanvasEleHover(e);
+          });
+        })
+        .mousewheel(function(e, delta){
+          $('.canvasElement').each(function(){
+            if(($(this).outerWidth() <= (25 + parseInt($(this).css('border-width'))) && delta < 0)
+            || ($(this).outerWidth() > (75 + parseInt($(this).css('border-width'))) && delta > 0))
+            {
+              return;
+            }
+            var width = parseInt($(this).outerWidth()) + parseInt(delta) - 2;
+            var height = parseInt($(this).outerHeight()) + parseInt(delta) - 2;
+            var zoom = {width:width, height:height};
+            $(this).css(zoom);
+          });
+        })
+        .mousedown(function(e){
+          if(e.which == 2)
+          {
+            topoDrag = true;
+            $topology.css('cursor', 'move');
+            oldX = e.clientX;
+            oldY = e.clientY;
+            $topology.off('mouseenter');
+          }
+        })
+        .mouseup(function(e){
+          if(e.which == 2)
+          {
+            topoDrag = false;
+            $topology.css('cursor', '');
+            $topology.on('mouseenter', function(){
+              e.stopImmediatePropagation();
+              handleCanvasEleHover(e);
+            });
+          }
+        })
+        .mouseout(function(e){
+          if(e.which == 2)
+          {
+            topoDrag = false;
+            $topology.css('cursor', '');
+            $topology.on('mouseenter', function(){
+              e.stopImmediatePropagation();
+              handleCanvasEleHover(e);
+            });
+          }
+        })
+        .mousemove(function(e){
+          if(topoDrag && e.which == 2)
+          {
+            var relX = (e.clientX - oldX);
+            var relY = (e.clientY - oldY);
+            $('.canvasElement').each(function(){
+              var newPos = {left:parseInt($(this).css('left')) + parseInt(relX),
+                            top:parseInt($(this).css('top')) + parseInt(relY)};
+              $(this).css(newPos);
+            });
+            handleOffscreenIndicators();
+            oldX = e.clientX;
+            oldY = e.clientY;
+          }
+        });
                 
       $dragMe = $('#dragMe');
       $hoverInfo = $('#hoverInfo');
@@ -771,6 +858,7 @@ block headerAdditions
         });
         
         $topology.on('drop', function(event, ui){
+          noclick = true;
           $topology.removeClass('over');
           $dragMe.draggable('disable');
           placeBackgroundImage($dragMe);
@@ -789,20 +877,20 @@ block headerAdditions
             
             var div = theDoc.createElement('div');
             
-            $(div).draggable({tolerance: 'pointer',
-                              cursorAt: {top:25,left:15},
-                              cursor: 'move',
-                              containment:'#nodeCanvas',
-                              revert: 'invalid'});
+            $(div).click(function(e){
+                    canvasElementOnclick(e);
+                  })
+                  .draggable({tolerance: 'pointer',
+                    cursorAt: {top:25,left:15},
+                    cursor: 'move',
+                    containment:'#nodeCanvas',
+                    revert: 'invalid'});
             
             div.setAttribute('class', 'canvasElement ui-draggable');
             $(div).removeClass('ui-draggable-dragging');
-            // Need to compensate for the width of the already-appended elements, 
-            // as they seem to affect the css left value.
-            div.style.left = (x - (eleCount * 50)) + 'px';
-            div.style.top = y + 'px';
-            div.style.position = 'absolute';
-            $(div).data('profile', title);
+            
+            var dropCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
+            $(div).data('profile', title).data('preexisting', false).css(dropCss);
             div.setAttribute('onmouseenter', 'handleCanvasEleHover(event)');
             div.setAttribute('onmouseleave', 'handleCanvasEleHover(event)');
             div.id = eleCount;
@@ -814,6 +902,46 @@ block headerAdditions
             text.style.fontSize = '18px';
             text.id = eleCount + 'text';
             div.appendChild(text);
+
+            var ipType = nodesToCreate[eleCount].ipType;
+            var ip1, ip2, ip3, ip4 = '0';
+            if(nodesToCreate[eleCount].ipType != 'DHCP')
+            {
+              ip1 = nodesToCreate[eleCount].ip.ip1;
+              ip2 = nodesToCreate[eleCount].ip.ip2;
+              ip3 = nodesToCreate[eleCount].ip.ip3;
+              ip4 = nodesToCreate[eleCount].ip.ip4;
+            }
+            var profile = nodesToCreate[eleCount].selectedProfile;
+            var portset = nodesToCreate[eleCount].portset;
+            var vendor = nodesToCreate[eleCount].vendor;
+            var ethInterface = nodesToCreate[eleCount].iface;
+            var count = nodesToCreate[eleCount].count;  
+            now.createHoneydNodes(ipType, ip1, ip2, ip3, ip4, profile, portset, vendor, ethInterface, count);
+            nodesToCreate = {};
+
+            nodes = [];
+
+            now.GetNodes(function(nodeList){
+              nodes = nodeList;
+              var add = true;
+              for(var i in nodes)
+              {
+                add = true;
+                for(var j in haveMac)
+                {
+                  if(haveMac[j] == nodes[i].mac)
+                  {
+                    add = false;
+                  }
+                }
+                if(add)
+                {
+                  haveMac.push(nodes[i].mac);
+                  $(div).data('mac', nodes[i].mac);
+                } 
+              }
+            });
 
             $topology.append(div);
 
@@ -830,17 +958,22 @@ block headerAdditions
             var push = {x:x, y:y, count:drawElements[index].count};
             drawElements[index] = push;
           }
+          
         });
   
         for(var i in nodeList)
         {
+          haveMac.push(nodeList[i].mac);
           if(nodeCount[nodeList[i].pfile] == undefined)
           {
-            nodeCount[nodeList[i].pfile] = 1;
+            nodeCount[nodeList[i].pfile] = {};
+            nodeCount[nodeList[i].pfile].count = 1;
+            nodeCount[nodeList[i].pfile].mac = nodeList[i].mac;
           }
           else
           {
-            nodeCount[nodeList[i].pfile] += 1;
+            nodeCount[nodeList[i].pfile].count += 1;
+            nodeCount[nodeList[i].pfile].mac += ',' + nodeList[i].mac;
           }
         }
               
@@ -903,7 +1036,6 @@ block content
         br
         div#dragMe(class='notDraggableYet')
           header#setNumNodes
-        button#createNodes(style='margin-top: 20px;', onclick='createNodes()') Save Topology
       div#nodeCanvas(class='sameHeight', onclick='clearSelectedCanvas()')
         div#hoverInfo
           div#pres
@@ -921,4 +1053,8 @@ block content
             br
             label Ip Address Allocation Type: 
             div#hoverAddress
+        div#nodeContextMenu
+         div#deleteNodes
+         div#mergeNodes
+         div#splitNodes
             

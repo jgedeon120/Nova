@@ -48,6 +48,18 @@ function objCopy(src, dst)
     }
 }
 
+everyone.now.GetNodes = function(cb){
+  var nodeNames = NovaCommon.honeydConfig.GetNodeMACs();
+  var nodes = [];
+  for(var i = 0; i < nodeNames.length; i++)
+  {
+    var node = NovaCommon.honeydConfig.GetNode(nodeNames[i]);
+    var push = NovaCommon.cNodeToJs(node);
+    nodes.push(push);
+  }
+  cb && cb(nodes);
+}
+
 everyone.now.shutdownQuasar = function() {
     LOG("ALERT", "Quasar is exiting due to user issued shutdown command on the web interface");
     process.exit(1);
@@ -362,7 +374,7 @@ everyone.now.deleteNodes = function (nodeNames, cb)
     nodeName = nodeNames[i];
     if(nodeName != null && !NovaCommon.honeydConfig.DeleteNode(nodeName))
     {
-      cb(false, "Failed to delete node " + nodeName);
+      cb && cb(false, "Failed to delete node " + nodeName);
       return;
     }
 
@@ -370,11 +382,11 @@ everyone.now.deleteNodes = function (nodeNames, cb)
 
   if(!NovaCommon.honeydConfig.SaveAll())
   {
-    cb(false, "Failed to save XML templates");
+    cb && cb(false, "Failed to save XML templates");
     return;
   }
 
-  cb(true, "");
+  cb && cb(true, "");
 };
 
 everyone.now.deleteProfiles = function (profileNames, cb)
@@ -1325,10 +1337,7 @@ everyone.now.MarkAllHoneydLogEntriesSeen = function(cb) {
 		cb && cb(null);
 	});
 };
-
-
 }
-
 
 module.exports = NowjsMethods;
 
