@@ -314,6 +314,53 @@
   z-index: 2006;
 }
 
+.offscreenIndicatorTop {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  width: 20px;
+  height: 20px;
+  z-index: 2006;
+  position: absolute;
+}
+
+.offscreenIndicatorTop:after {
+  content: "";
+  position: absolute;
+  left: 100%;
+  width: 0;
+  height: 0;
+  border-bottom: 40px solid #000;
+  border-right: 20px solid transparent;
+  border-left: 20px solid transparent;
+  z-index: 2006;
+}
+
+.offscreenIndicatorBottom {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  width: 20px;
+  height: 20px;
+  z-index: 2006;
+  position: absolute;
+}
+
+.offscreenIndicatorBottom:after {
+  content: "";
+  position: absolute;
+  left: 100%;
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-top: 40px solid #000;
+  z-index: 2006;
+}
 
 #hoverInfo label {
   margin-right: 10px;

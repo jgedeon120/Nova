@@ -529,13 +529,10 @@ block headerAdditions
       var width = $topology.outerWidth();
       var height = $topology.outerHeight();
       $('.canvasElement').each(function(){
-        console.log(this.id + '.css("left") + 50 == ' + parseInt($(this).css("left") + 50));
-        console.log('top == ' + $(this).css('top'));
         if(parseInt($(this).css('left')) > width)
         {
           if(theDoc.getElementById(this.id + 'osir') == undefined)
           {
-            console.log('creating osil for ' + this.id);
             var div = theDoc.createElement('div');
             div.className = 'offscreenIndicatorRight';
             div.id = this.id + 'osir';
@@ -553,7 +550,6 @@ block headerAdditions
         {
           if(theDoc.getElementById(this.id + 'osil') == undefined)
           {
-            console.log('creating osil for ' + this.id);
             var div = theDoc.createElement('div');
             div.className = 'offscreenIndicatorLeft';
             div.id = this.id + 'osil';
@@ -567,14 +563,54 @@ block headerAdditions
             $('#' + this.id + 'osil').css(pos);
           }
         }
+        else if(parseInt($(this).css('top')) < -50)
+        {
+          if(theDoc.getElementById(this.id + 'osit') == undefined)
+          {
+            var div = theDoc.createElement('div');
+            div.className = 'offscreenIndicatorTop';
+            div.id = this.id + 'osit';
+            var pos = {left:$(this).css('left'), top:0};
+            $(div).css(pos);
+            $topology.append(div);
+          }
+          else
+          {
+            var pos = {left:$(this).css('left')};
+            $('#' + this.id + 'osit').css(pos);
+          }
+        }
+        else if(parseInt($(this).css('top')) > height)
+        {
+          if(theDoc.getElementById(this.id + 'osib') == undefined)
+          {
+            var div = theDoc.createElement('div');
+            div.className = 'offscreenIndicatorBottom';
+            div.id = this.id + 'osib';
+            var pos = {left:$(this).css('left'), top:height - 40};
+            $(div).css(pos);
+            $topology.append(div);
+          }
+          else
+          {
+            var pos = {left:$(this).css('left')};
+            $('#' + this.id + 'osib').css(pos);
+          }
+        }
+        if(parseInt($(this).css('top')) > 0)
+        {
+          $('#' + this.id + 'osit').remove();
+        }
+        if(parseInt($(this).css('top')) < height)
+        {
+          $('#' + this.id + 'osib').remove();
+        }
         if(parseInt($(this).css('left')) < width - 50)
         {
-          console.log('deleting #' + this.id + 'osir');
           $('#' + this.id + 'osir').remove();
         }
         if(parseInt($(this).css('left')) >= 0)
         {
-          console.log('deleting #' + this.id + 'osil');
           $('#' + this.id + 'osil').remove();
         }
       });
