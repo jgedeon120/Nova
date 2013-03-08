@@ -408,40 +408,7 @@ block headerAdditions
         div.style.position = 'absolute';
         $(div).data('title', i);
         placeBackgroundImage($(div), i);
-        $(div)
-        .on('dragstop', function(e){
-          handleCanvasEleHover(e);
-          $(this).on('mouseenter', function(e){
-            e.stopImmediatePropagation();
-            handleCanvasEleHover(e);
-          })
-          .on('mouseleave', function(e){
-            e.stopImmediatePropagation();
-            handleCanvasEleHover(e);
-          })
-        })
-        .on('mouseenter', function(e){
-          e.stopImmediatePropagation();
-          handleCanvasEleHover(e);
-        })
-        .on('mouseleave', function(e){
-          e.stopImmediatePropagation();
-          handleCanvasEleHover(e);
-        })
-        .on('drag', function(e, ui){
-          e.stopImmediatePropagation();
-          handleCanvasEleHover(e, ui);
-          $(this).off('mouseleave');
-          $(this).off('mouseenter');
-        })
-        .on('dragstart', function(e, ui){
-          oldX = ui.helper.offset().left - $('#nodeCanvas').offset().left;
-          oldY = ui.helper.offset().top - $('#nodeCanvas').offset().top;
-          if($(this).attr('class').indexOf('ui-selected') == -1)
-          {
-            clearSelectedCanvas();
-          }
-        });
+        setCanvasElementEventHandlers(div);
         
         div.id = eleCount;
         
@@ -616,6 +583,44 @@ block headerAdditions
       });
     }
     
+    function setCanvasElementEventHandlers(ele)
+    {
+      $(ele)
+        .on('dragstop', function(e){
+          handleCanvasEleHover(e);
+          $(this).on('mouseenter', function(e){
+            e.stopImmediatePropagation();
+            handleCanvasEleHover(e);
+          })
+          .on('mouseleave', function(e){
+            e.stopImmediatePropagation();
+            handleCanvasEleHover(e);
+          })
+        })
+        .on('mouseenter', function(e){
+          e.stopImmediatePropagation();
+          handleCanvasEleHover(e);
+        })
+        .on('mouseleave', function(e){
+          e.stopImmediatePropagation();
+          handleCanvasEleHover(e);
+        })
+        .on('drag', function(e, ui){
+          e.stopImmediatePropagation();
+          handleCanvasEleHover(e, ui);
+          $(this).off('mouseleave');
+          $(this).off('mouseenter');
+        })
+        .on('dragstart', function(e, ui){
+          oldX = ui.helper.offset().left - $('#nodeCanvas').offset().left;
+          oldY = ui.helper.offset().top - $('#nodeCanvas').offset().top;
+          if($(this).attr('class').indexOf('ui-selected') == -1)
+          {
+            clearSelectedCanvas();
+          }
+        });
+    }
+    
     function clearSelectedCanvas()
     {
       for(var i in selected)
@@ -636,17 +641,14 @@ block headerAdditions
                             cancel:'.canvasElement',
                             filter:'.canvasElement'})
                .on('selectablestart', function(e, ui){
-                 console.log('selectablestart');
                  e.preventDefault();
                  $('.canvasElement').off('mouseenter');
                })
                .on('selectableselecting', function(e, ui){
-                 console.log('selecting ' + $(ui.selecting).data('title'));
                  selected.push(ui.selecting);
                  $(ui.selecting).css('border', '1px ridge red');
                })
                .on('selectableunselecting', function(e, ui){
-                 console.log('unselecting ' + $(ui.unselecting).data('title'));
                  for(var i in selected)
                  {
                    if(selected[i] == ui.unselecting)
@@ -657,7 +659,6 @@ block headerAdditions
                  $(ui.unselecting).css('border', '');
                })
                .on('selectablestop', function(e, ui){
-                 console.log('selectablestop');
                  $('.canvasElement').on('mouseenter', function(e){
                    e.stopImmediatePropagation();
                    handleCanvasEleHover(e);
@@ -806,40 +807,7 @@ block headerAdditions
             div.setAttribute('onmouseleave', 'handleCanvasEleHover(event)');
             div.id = eleCount;
             placeBackgroundImage($(div), title);
-            
-            $(div).on('dragstop', function(e){
-               handleCanvasEleHover(e);
-              $(this).on('mouseenter', function(e){
-                e.stopImmediatePropagation();
-                handleCanvasEleHover(e);
-              })
-              .on('mouseleave', function(e){
-                e.stopImmediatePropagation();
-                handleCanvasEleHover(e);
-              })
-            })
-            .on('mouseenter', function(e){
-              e.stopImmediatePropagation();
-              handleCanvasEleHover(e);
-            })
-            .on('mouseleave', function(e){
-              e.stopImmediatePropagation();
-              handleCanvasEleHover(e);
-            })
-            .on('drag', function(e){
-              e.stopImmediatePropagation();
-              handleCanvasEleHover(e);
-              $(this).off('mouseleave');
-              $(this).off('mouseenter');
-            })
-            .on('dragstart', function(e, ui){
-              oldX = ui.helper.offset().left - $('#nodeCanvas').offset().left;
-              oldY = ui.helper.offset().top - $('#nodeCanvas').offset().top;
-              if($(this).attr('class').indexOf('ui-selected') == -1)
-              {
-                clearSelectedCanvas();
-              }
-            });
+            setCanvasElementEventHandlers(div);
             
             var text = theDoc.createElement('label');
             text.innerHTML = $('#nodeNumber').val();
