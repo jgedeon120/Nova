@@ -1533,4 +1533,13 @@ vector<string> HoneydConfiguration::GetLeafProfileNames_helper(Profile *item)
 	return ret;
 }
 
+string HoneydConfiguration::GetNodeVendor(string nodeMAC)
+{
+	if(m_nodes.keyExists(nodeMAC))
+	{
+		return m_macAddresses.LookupVendor(m_macAddresses.AtoMACPrefix(nodeMAC));
+	}
+	return "";
+}
+
 }

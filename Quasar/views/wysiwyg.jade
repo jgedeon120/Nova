@@ -21,7 +21,7 @@ block headerAdditions
   link(rel="stylesheet", type="text/css", href="wysiwyg.css", media="screen")
   script(type='text/javascript', src='scripts/jquery-ui-1.10.1.custom.js')
   script(type='text/javascript', src='scripts/jquery.ui.selectable.js')
-  script(type='text/plain', src='https://flexicontent.googlecode.com/svn-history/r1517/trunk/com_flexicontent_v2.x/site/librairies/fancybox/lib/jquery.mousewheel-3.0.6.pack.js')
+  script(type='text/javascript', src='https://flexicontent.googlecode.com/svn-history/r1517/trunk/com_flexicontent_v2.x/site/librairies/fancybox/lib/jquery.mousewheel-3.0.6.pack.js')
   script
     window.jQuery.ui || document.write('<script type="text/javascript" src="scripts/jquery-ui-1.10.1.custom.js"><\\/script>');
     window.jQuery.mousewheel || document.write('<script type="text/javascript" src="scripts/jquery-mousewheel.min.js"><\\/script>');
@@ -37,6 +37,7 @@ block headerAdditions
     var $hoverInfo = '';
     var $profileInfo = '';
     var $context = '';
+    var $modalSplit = '';
     var clicked = false;
     var selectedProfile = undefined;
     var nodesToCreate = {};
@@ -273,12 +274,12 @@ block headerAdditions
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
         var hoverInfoCss = {top:($(source).position().top),
-                            left:($(source).position().left + $(source).outerWidth()) + 10};
+                            left:(($(source).position().left + $(source).outerWidth()) + 10)};
         var titleCss = {'font-weight':'bold', 'font-size':'18px'};
         
         $('#hoverName').css(titleCss).html($(source).data('profile'));
         
-        if(nodesToCreate[source.id] != undefined)
+        if(nodesToCreate[source.id] != undefined && !$(source).data('preexisting'))
         {
           $('#hoverPortset').html(nodesToCreate[source.id].portset);
           $('#hoverVendor').html(nodesToCreate[source.id].vendor);
@@ -299,6 +300,29 @@ block headerAdditions
             $('#hoverAddress').html('DHCP');
           }
         }
+        else
+        {
+          var splitMac = $(source).data('mac');
+          var mac = splitMac.split(',')[0];
+          for(var i in nodeList)
+          {
+            if(nodeList[i].mac == mac)
+            {
+              $('#hoverInterface').html(nodeList[i].interface);
+              $('#hoverPortset').html(nodeList[i].portset);
+              $('#hoverVendor').html(nodeList[i].vendor);
+              if(nodeList[i].ip != 'DHCP')
+              {
+                $('#hoverAddress').html('IP Range starting at: ' + nodeList[i].ip);
+              }
+              else
+              {
+                $('#hoverAddress').html(nodeList[i].ip);
+              }
+            }
+          }
+        }
+        
         $hoverInfo.css(hoverInfoCss).fadeIn(200, function(){
         });
       }
@@ -309,7 +333,9 @@ block headerAdditions
       }
       else if(e.type == 'drag')
       {
-        $hoverInfo.fadeOut(200, function(){
+        $hoverInfo.fadeOut(150, function(){
+        });
+        $contextMenu.fadeOut(150, function(){
         });
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
@@ -364,7 +390,7 @@ block headerAdditions
         e.stopImmediatePropagation();
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
-        
+       
         if(source.tagName != 'DIV')
         {
           source = source.parentNode;
@@ -446,7 +472,7 @@ block headerAdditions
     
     function placeBackgroundImage(ele, profile)
     {
-      var append = ' no-repeat center';
+      var append = ' no-repeat center, #E4F2FF';
       if(profile == undefined)
       {
         ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append);
@@ -646,11 +672,21 @@ block headerAdditions
     
     function toggleContextMenu(e)
     {
+      $hoverInfo.fadeOut(200, function(){
+      });
+      
       var evt = (e ? e : window.event);
       var source = evt.target || evt.srcElement;
       
+      $(source).off('mouseenter').css('border', '1px ridge red').addClass('ui-selected');
+      
+      selected.push(source);
+      
       var left = $(source).css('left');
       var top = $(source).css('top');
+      
+      console.log('left == ' + left);
+      console.log('top == ' + top);
       
       if($contextMenu.is(':hidden'))
       {
@@ -658,28 +694,45 @@ block headerAdditions
         var $mergeN = $('#mergeNodes');
         var $splitN = $('#splitNodes');
         
-        if(source.className.indexOf('ui-selected') != -1)
+        if($('ui-selected').size() > 1 && $(source).attr('class').indexOf('ui-selected') != -1)
         {
           console.log('right clicked selected element');
+          $mergeN.on('click', function(e){
+            var profiles = [];
+            $('ui-selected').each(function(){
+              mergeSelected();
+            });
+          }).show();
         }
         else
         {
           console.log('right clicked non-lassoed element');
-          $mergeN.on('click', function(e){
-            
-          });
-          $splitN.on('click', function(e){
-              
-          });
+          $mergeN.hide();
         }
-
-        $delN.on('click', function(e){
-          
+        
+        $splitN.on('click', function(e){
+          splitSelected();
         });
-        $contextMenu.fadeIn(200, function(){
-          
+        $delN.on('click', function(e){
+          deleteSelected();
+        });
+        
+        var cmCss = {left: (parseInt(left) + 25),
+                     top: (parseInt(top) + 25)};
+                     
+        $contextMenu.css(cmCss).fadeIn(200, function(){
         });
       }
+    }
+    
+    function splitSelected()
+    {
+      $modalSplit.css('z-index', '3000').dialog('open');
+    }
+    
+    function mergeSelected()
+    {
+      
     }
     
     function deleteSelected()
@@ -704,23 +757,44 @@ block headerAdditions
         $(selected[i]).removeClass('ui-selected');
         $(selected[i]).css('border', '');
       }
+      $('.canvasElement').on('mouseenter', function(e){
+        e.stopImmediatePropagation();
+        handleCanvasEleHover(e);
+      });
       $contextMenu.fadeOut(200);
+      $modalSplit.dialog('close');
       selected = [];
     }
     
     $(function(){
+      $dragMe = $('#dragMe');
+      $hoverInfo = $('#hoverInfo');
+      $hoverInfo.hide();
       $profileInfo = $('#profileInfo');
       $profileInfo.hide();
       $contextMenu = $('#nodeContextMenu');
       $contextMenu.hide();
       $topology = $('#nodeCanvas');
-      $topology.empty();
+      $modalSplit = $('#modalDialog');
+      $modalSplit.dialog({
+        appendTo: '#container',
+        height: 140,
+        width: 140,
+        draggable: true,
+        autoOpen: false,
+        closeOnEscape: true,
+        hide: 200,
+        modal: false,
+        show: 200
+      });
+      
       $(document).keydown(function(e){
         if(e.keyCode == 46)
         {
           deleteSelected();
         }
-      })
+      });
+      
       $topology
         .css('width', '1')
         .selectable({appendTo:'#nodeCanvas',
@@ -753,15 +827,20 @@ block headerAdditions
         })
         .mousewheel(function(e, delta){
           $('.canvasElement').each(function(){
-            if(($(this).outerWidth() <= (25 + parseInt($(this).css('border-width'))) && delta < 0)
-            || ($(this).outerWidth() > (75 + parseInt($(this).css('border-width'))) && delta > 0))
+            var d = parseInt(delta);
+            var bWidth = isNaN(parseInt($(this).css('border-width'))) ? 0 : parseInt($(this).css('border-width'));
+            if(((parseInt($(this).outerWidth()) <= parseInt(25 + bWidth)) && d < 0)
+            || ((parseInt($(this).outerWidth()) >= parseInt(75 + bWidth)) && d > 0))
             {
               return;
             }
-            var width = parseInt($(this).outerWidth()) + parseInt(delta) - 2;
-            var height = parseInt($(this).outerHeight()) + parseInt(delta) - 2;
-            var zoom = {width:width, height:height};
-            $(this).css(zoom);
+            else
+            {
+              var width = parseInt($(this).outerWidth()) + parseInt(delta) - 2;
+              var height = parseInt($(this).outerHeight()) + parseInt(delta) - 2;
+              var zoom = {width:width, height:height};
+              $(this).css(zoom);
+            }
           });
         })
         .mousedown(function(e){
@@ -773,6 +852,7 @@ block headerAdditions
             oldY = e.clientY;
             $topology.off('mouseenter');
           }
+          return false;
         })
         .mouseup(function(e){
           if(e.which == 2)
@@ -797,7 +877,7 @@ block headerAdditions
           }
         })
         .mousemove(function(e){
-          if(topoDrag && e.which == 2)
+          if(topoDrag)
           {
             var relX = (e.clientX - oldX);
             var relY = (e.clientY - oldY);
@@ -812,9 +892,6 @@ block headerAdditions
           }
         });
                 
-      $dragMe = $('#dragMe');
-      $hoverInfo = $('#hoverInfo');
-      $hoverInfo.hide();
       now.ready(function(){
         setUpSelects();
         updateDragHeader();
@@ -991,6 +1068,7 @@ block headerAdditions
 block content
   div#pageWrap(onmouseover='hideProfileInfo(event)')
     h1 Haystack WYSIWYG
+    div#modalDialog(title='Split Nodes')
     div#profileInfo
       div#pres
         label#name
@@ -1037,6 +1115,10 @@ block content
         div#dragMe(class='notDraggableYet')
           header#setNumNodes
       div#nodeCanvas(class='sameHeight', onclick='clearSelectedCanvas()')
+        div#nodeContextMenu
+          div#deleteNodes Delete Selected
+          div#mergeNodes Merge Selected
+          div#splitNodes Split Selected
         div#hoverInfo
           div#pres
             label#hoverName
@@ -1053,8 +1135,4 @@ block content
             br
             label Ip Address Allocation Type: 
             div#hoverAddress
-        div#nodeContextMenu
-         div#deleteNodes
-         div#mergeNodes
-         div#splitNodes
             

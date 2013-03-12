@@ -43,6 +43,8 @@ var NovaCommon = new function() {
         ret.ip = node.GetIP();
         ret.mac = node.GetMAC();
         ret.interface = node.GetInterface();
+        ret.portset = node.GetPortSet();
+        ret.vendor = this.honeydConfig.GetNodeVendor(ret.mac);
         return ret;
     }
 

@@ -122,6 +122,8 @@ public:
 	//TODO: Unsafe pointer access into table
 	Node *GetNode(std::string nodeMAC);
 
+	std::string GetNodeVendor(std::string nodeMAC);
+
 	//Get a vector of PortSets associated with a particular profile
 	std::vector<PortSet*> GetPortSets(std::string profileName);
 	PortSet* GetPortSet(std::string profileName, std::string portSetName);
