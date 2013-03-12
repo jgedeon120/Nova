@@ -379,20 +379,11 @@ NovaNode::~NovaNode()
 // Update our internal suspect list to that of novad
 void NovaNode::SynchInternalList()
 {
-	vector<SuspectID_pb> suspects = GetSuspectList(SUSPECTLIST_ALL);
+	vector<Suspect*> suspects = GetSuspects(SUSPECTLIST_ALL);
 
 	for (uint i = 0; i < suspects.size(); i++)
 	{
-		Suspect *suspect = GetSuspect(suspects.at(i));
-
-		if (suspect != NULL)
-		{
-			HandleNewSuspect(suspect);
-		}
-		else
-		{
-			cout << "Error: No suspect received" << endl;
-		}
+		HandleNewSuspect(suspects[i]);
 	}
 }
 
