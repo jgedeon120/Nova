@@ -302,22 +302,25 @@ block headerAdditions
         }
         else
         {
-          var splitMac = $(source).data('mac');
-          var mac = splitMac.split(',')[0];
-          for(var i in nodeList)
+          if($(source).data('mac') != undefined)
           {
-            if(nodeList[i].mac == mac)
+            var splitMac = $(source).data('mac');
+            var mac = splitMac.split(',')[0];
+            for(var i in nodeList)
             {
-              $('#hoverInterface').html(nodeList[i].interface);
-              $('#hoverPortset').html(nodeList[i].portset);
-              $('#hoverVendor').html(nodeList[i].vendor);
-              if(nodeList[i].ip != 'DHCP')
+              if(nodeList[i].mac == mac)
               {
-                $('#hoverAddress').html('IP Range starting at: ' + nodeList[i].ip);
-              }
-              else
-              {
-                $('#hoverAddress').html(nodeList[i].ip);
+                $('#hoverInterface').html(nodeList[i].interface);
+                $('#hoverPortset').html(nodeList[i].portset);
+                $('#hoverVendor').html(nodeList[i].vendor);
+                if(nodeList[i].ip != 'DHCP')
+                {
+                  $('#hoverAddress').html('IP Range starting at: ' + nodeList[i].ip);
+                }
+                else
+                {
+                  $('#hoverAddress').html(nodeList[i].ip);
+                }
               }
             }
           }
@@ -678,6 +681,11 @@ block headerAdditions
       var evt = (e ? e : window.event);
       var source = evt.target || evt.srcElement;
       
+      if(source.className.indexOf('canvasElement') == -1)
+      {
+        return;
+      }
+      
       $(source).off('mouseenter').css('border', '1px ridge red').addClass('ui-selected');
       
       selected.push(source);
@@ -685,34 +693,40 @@ block headerAdditions
       var left = $(source).css('left');
       var top = $(source).css('top');
       
-      console.log('left == ' + left);
-      console.log('top == ' + top);
-      
       if($contextMenu.is(':hidden'))
       {
         var $delN = $('#deleteNodes');
         var $mergeN = $('#mergeNodes');
         var $splitN = $('#splitNodes');
         
-        if($('ui-selected').size() > 1 && $(source).attr('class').indexOf('ui-selected') != -1)
+        if(($('.ui-selected').size() > 1) && ($(source).attr('class').indexOf('ui-selected') != -1))
         {
-          console.log('right clicked selected element');
+          $delN.removeClass('single');
           $mergeN.on('click', function(e){
             var profiles = [];
-            $('ui-selected').each(function(){
+            $('.ui-selected').each(function(){
               mergeSelected();
             });
           }).show();
+          $splitN.hide();
         }
-        else
+        else if(($('.ui-selected').size() == 1) && ($(source).attr('class').indexOf('ui-selected') != -1))
         {
-          console.log('right clicked non-lassoed element');
+          $splitN.hide();
+          if(parseInt($('#' + source.id + 'text').html()) > 1)
+          {
+            $splitN.on('click', function(e){
+              splitSelected();
+            }).show();
+            $delN.removeClass('single');
+          }
+          else
+          {
+            $delN.addClass('single');
+          }
           $mergeN.hide();
         }
         
-        $splitN.on('click', function(e){
-          splitSelected();
-        });
         $delN.on('click', function(e){
           deleteSelected();
         });
@@ -722,12 +736,14 @@ block headerAdditions
                      
         $contextMenu.css(cmCss).fadeIn(200, function(){
         });
+        cmCss.left += 25;
+        $modalSplit.css(cmCss);
       }
     }
     
     function splitSelected()
     {
-      $modalSplit.css('z-index', '3000').dialog('open');
+      $modalSplit.dialog('open');
     }
     
     function mergeSelected()
@@ -743,9 +759,18 @@ block headerAdditions
         {
           delete nodesToCreate[$(this).attr('id')];
         }
-        deleteNodes.push($(this).data('mac'));
+        var splitMac = $(this).data('mac').split(',');
+        for(var i in splitMac)
+        {
+          deleteNodes.push(splitMac[i]);
+        }
         $(this).remove();
       });
+      
+      for(var i in deleteNodes)
+      {
+        console.log('deleteNodes[' + i + '] == ' + deleteNodes[i]);
+      }
       
       now.deleteNodes(deleteNodes);
     }
@@ -762,7 +787,6 @@ block headerAdditions
         handleCanvasEleHover(e);
       });
       $contextMenu.fadeOut(200);
-      $modalSplit.dialog('close');
       selected = [];
     }
     
@@ -780,13 +804,20 @@ block headerAdditions
         appendTo: '#container',
         height: 140,
         width: 140,
+        dialogClass: 'novaModal',
         draggable: true,
         autoOpen: false,
         closeOnEscape: true,
-        hide: 200,
-        modal: false,
-        show: 200
-      });
+        modal: true,
+        show: 200,
+        hide: 200
+      })
+      .on('dialogdrag', function(e, ui){
+        
+      })
+      .on('dialogdragstop', function(e, ui){
+        $modalSplit.hide();
+      })
       
       $(document).keydown(function(e){
         if(e.keyCode == 46)
@@ -943,7 +974,7 @@ block headerAdditions
                            opacity:'0.4'};
           $dragMe.css(dragMeCss);
           
-          if(ui.draggable.attr('class').indexOf('canvasElement') == -1)
+          if(ui.draggable.attr('class').indexOf('canvasElement') == -1 && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
           {
             var title = selectedProfile;
             
@@ -998,6 +1029,7 @@ block headerAdditions
             nodesToCreate = {};
 
             nodes = [];
+            var setMAC = [];
 
             now.GetNodes(function(nodeList){
               nodes = nodeList;
@@ -1015,9 +1047,10 @@ block headerAdditions
                 if(add)
                 {
                   haveMac.push(nodes[i].mac);
-                  $(div).data('mac', nodes[i].mac);
+                  setMAC.push(nodes[i].mac);
                 } 
               }
+              $(div).data('mac', setMAC.join());
             });
 
             $topology.append(div);
@@ -1026,7 +1059,7 @@ block headerAdditions
             drawElements[eleCount] = push;
             eleCount += 1;
           }
-          else
+          else if(ui.draggable.attr('class').indexOf('canvasElement') != -1 && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
           {
             var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
             var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
