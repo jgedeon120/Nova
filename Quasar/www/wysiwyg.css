@@ -21,7 +21,7 @@
   top: 0px;
 }
 
-.novaModal {
+.ui-dialog {
   border: 1px solid black;
   border-radius: 15px;
   opacity: 1;
@@ -30,6 +30,7 @@
   top: 0px;
   background-color: #E4F2FF;
   position: absolute;
+  text-align: center;
 }
 
 .canvasElement {

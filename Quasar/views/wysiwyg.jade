@@ -716,7 +716,7 @@ block headerAdditions
           if(parseInt($('#' + source.id + 'text').html()) > 1)
           {
             $splitN.on('click', function(e){
-              splitSelected();
+              splitSelected(source);
             }).show();
             $delN.removeClass('single');
           }
@@ -741,9 +741,198 @@ block headerAdditions
       }
     }
     
-    function splitSelected()
+    function splitSelected(ele)
     {
-      $modalSplit.dialog('open');
+      $('#rangeDiv').empty();
+      var text = theDoc.createElement('p');
+      var slider = theDoc.createElement('input');
+      slider.id = 'splitRange';
+      slider.setAttribute('type', 'range');
+      if(slider.type == 'range')
+      {
+        $(text).html('Use the slider to split the nodes into two groups:');
+        $(slider).attr('step', 1);
+        $(slider).attr('min', 1);
+        $(slider).attr('max', (parseInt($('#' + ele.id + 'text').html()) - 1));
+        $(slider).attr('value', Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
+        var counter = theDoc.createElement('label');
+        counter.id = 'updateMe';
+        counter.innerHTML = Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2) + ', ' + (parseInt($('#' + ele.id + 'text').html()) - Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
+        var container = theDoc.createElement('div');
+        var bottom = theDoc.createElement('label');
+        bottom.id = 'bottom';
+        var top = theDoc.createElement('label');
+        top.id = 'top';
+        $(bottom).html('1');
+        $(top).html($('#' + ele.id + 'text').html());
+        $(container).append(bottom);
+        $(container).append(slider);
+        $(container).append(top);
+        
+        function updateCounter(id)
+        {
+          $('#updateMe').html($('#splitRange').val() + ', ' + ($('#' + id + 'text').html() - $('#splitRange').val()));
+        }
+        
+        $(slider).on('change', function(){updateCounter(ele.id)});
+        
+        $('#rangeDiv').append(text);
+        $('#rangeDiv').append(counter);
+        $('#rangeDiv').append(container);
+        
+        $('#splitAccept').on('click', function(){
+          eleCount++;
+          var div = theDoc.createElement('div');
+          
+          $(div)
+          .click(function(e){
+            canvasElementOnclick(e);
+          })
+          .draggable({tolerance: 'pointer',
+            cursorAt: {top:25,left:15},
+            cursor: 'move',
+            containment:'#nodeCanvas',
+            revert: 'invalid'});
+        
+          var y = parseInt($(ele).css('top'));
+          var x = parseInt($(ele).css('left')) + 50;
+          
+          var splitEnd = parseInt($('#splitRange').val());
+          var getSplitMacs = $(ele).data('mac').split(',');
+          var group1Macs = [];
+          var group2Macs = [];
+          
+          for(var i = 0; i < splitEnd; i++)
+          {
+            group1Macs.push(getSplitMacs[i]);
+          }
+          for(var i = splitEnd; i < getSplitMacs.length; i++)
+          {
+            group2Macs.push(getSplitMacs[i]);
+          }
+          
+          $('#' + ele.id).data('mac', group1Macs.join());
+          var newCount = parseInt($('#' + ele.id + 'text').html()) - parseInt($('#splitRange').val());
+          $('#' + ele.id + 'text').html(newCount);
+          
+          var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
+          $(div).data('profile', $('#' + ele.id)
+                .data('profile'))
+                .data('preexisting', true)
+                .data('mac', group2Macs.join())
+                .css(prepopCss)
+                .attr('class', 'ui-draggable canvasElement');
+          placeBackgroundImage($(div), $(div).data('profile'));
+          setCanvasElementEventHandlers(div);
+          
+          div.id = eleCount;
+          
+          var text = theDoc.createElement('label');
+          text.innerHTML = parseInt($('#splitRange').val());
+          text.style.fontSize = '18px';
+          text.id = eleCount + 'text';
+          div.appendChild(text);
+    
+          $topology.append(div);
+          
+          var push = {x:x, y:y, count:parseInt($('#splitRange').val())};
+          drawElements[eleCount] = push;
+          eleCount += 1;
+          $modalSplit.dialog('close');
+        });
+        $modalSplit.dialog('open');
+      }
+      else
+      {
+        $(text).html('Use the input box to split the nodes into two groups:');
+        $(slider).attr('min', 1);
+        $(slider).attr('max', (parseInt($('#' + ele.id + 'text').html()) - 1));
+        $(slider).attr('value', Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
+        var counter = theDoc.createElement('label');
+        counter.id = 'updateMe';
+        counter.innerHTML = Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2) + ', ' + (parseInt($('#' + ele.id + 'text').html()) - Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
+        var container = theDoc.createElement('div');
+        $(container).append(bottom);
+        $(container).append(slider);
+        $(container).append(top);
+        
+        function updateCounter(id)
+        {
+          if($('#splitRange').val() > $('#splitRange').attr('max') || $('#splitRange').val() < 1)
+          {
+            $('#splitRange').val('1');
+          }
+          $('#updateMe').html($('#splitRange').val() + ', ' + ($('#' + id + 'text').html() - $('#splitRange').val()));
+        }
+        
+        $(slider).on('change', function(){updateCounter(ele.id)});
+        
+        $('#rangeDiv').append(text);
+        $('#rangeDiv').append(counter);
+        $('#rangeDiv').append(container);
+        
+        $('#splitAccept').on('click', function(){
+          eleCount++;
+          var div = theDoc.createElement('div');
+          
+          $(div)
+          .click(function(e){
+            canvasElementOnclick(e);
+          })
+          .draggable({tolerance: 'pointer',
+            cursorAt: {top:25,left:15},
+            cursor: 'move',
+            containment:'#nodeCanvas',
+            revert: 'invalid'});
+        
+          var y = parseInt($(ele).css('top'));
+          var x = parseInt($(ele).css('left')) + 50;
+          
+          var splitEnd = parseInt($('#splitRange').val());
+          var getSplitMacs = $(ele).data('mac').split(',');
+          var group1Macs = [];
+          var group2Macs = [];
+          
+          for(var i = 0; i < splitEnd; i++)
+          {
+            group1Macs.push(getSplitMacs[i]);
+          }
+          for(var i = splitEnd; i < getSplitMacs.length; i++)
+          {
+            group2Macs.push(getSplitMacs[i]);
+          }
+          
+          $('#' + ele.id).data('mac', group1Macs.join());
+          var newCount = parseInt($('#' + ele.id + 'text').html()) - parseInt($('#splitRange').val());
+          $('#' + ele.id + 'text').html(newCount);
+          
+          var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
+          $(div).data('profile', $('#' + ele.id)
+                .data('profile'))
+                .data('preexisting', true)
+                .data('mac', group2Macs.join())
+                .css(prepopCss)
+                .attr('class', 'ui-draggable canvasElement');
+          placeBackgroundImage($(div), $(div).data('profile'));
+          setCanvasElementEventHandlers(div);
+          
+          div.id = eleCount;
+          
+          var text = theDoc.createElement('label');
+          text.innerHTML = parseInt($('#splitRange').val());
+          text.style.fontSize = '18px';
+          text.id = eleCount + 'text';
+          div.appendChild(text);
+    
+          $topology.append(div);
+          
+          var push = {x:x, y:y, count:parseInt($('#splitRange').val())};
+          drawElements[eleCount] = push;
+          eleCount += 1;
+          $modalSplit.dialog('close');
+        });
+        $modalSplit.dialog('open');
+      }
     }
     
     function mergeSelected()
@@ -766,11 +955,6 @@ block headerAdditions
         }
         $(this).remove();
       });
-      
-      for(var i in deleteNodes)
-      {
-        console.log('deleteNodes[' + i + '] == ' + deleteNodes[i]);
-      }
       
       now.deleteNodes(deleteNodes);
     }
@@ -802,9 +986,8 @@ block headerAdditions
       $modalSplit = $('#modalDialog');
       $modalSplit.dialog({
         appendTo: '#container',
-        height: 140,
-        width: 140,
-        dialogClass: 'novaModal',
+        height: 180,
+        width: 200,
         draggable: true,
         autoOpen: false,
         closeOnEscape: true,
@@ -1102,6 +1285,8 @@ block content
   div#pageWrap(onmouseover='hideProfileInfo(event)')
     h1 Haystack WYSIWYG
     div#modalDialog(title='Split Nodes')
+      div#rangeDiv
+      button#splitAccept Split Nodes
     div#profileInfo
       div#pres
         label#name
