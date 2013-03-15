@@ -157,7 +157,7 @@ Profile *HoneydConfiguration::ReadProfilesXML_helper(ptree &ptree, Profile *pare
 			{
 				if(!string(portsets.first.data()).compare("portset"))
 				{
-					PortSet *portSet = new PortSet(portsets.second.get<string>("name"));
+					PortSet *portSet = new PortSet();
 
 					portSet->m_defaultTCPBehavior = Port::StringToPortBehavior(portsets.second.get<string>("defaultTCPBehavior"));
 					portSet->m_defaultUDPBehavior = Port::StringToPortBehavior(portsets.second.get<string>("defaultUDPBehavior"));
@@ -558,8 +558,6 @@ bool HoneydConfiguration::WriteProfilesToXML_helper(Profile *root, ptree &propTr
 		{
 			ptree portSet;
 
-			portSet.put<string>("name", root->m_portSets[i]->m_name);
-
 			portSet.put<string>("defaultTCPBehavior", Port::PortBehaviorToString(root->m_portSets[i]->m_defaultTCPBehavior));
 			portSet.put<string>("defaultUDPBehavior", Port::PortBehaviorToString(root->m_portSets[i]->m_defaultUDPBehavior));
 			portSet.put<string>("defaultICMPBehavior", Port::PortBehaviorToString(root->m_portSets[i]->m_defaultICMPBehavior));
@@ -668,7 +666,7 @@ bool HoneydConfiguration::WriteHoneydConfiguration(string path)
 		if(item != NULL)
 		{
 			//Print the profile
-			out << item->ToString(it->second.m_portSetName, nodeName);
+			out << item->ToString(it->second.m_portSetIndex, nodeName);
 			//Then we need to add node-specific information to the profile's output
 			if(!it->second.m_IP.compare("DHCP"))
 			{
@@ -703,7 +701,7 @@ bool HoneydConfiguration::WriteHoneydConfiguration(string path)
 }
 
 bool HoneydConfiguration::AddNode(string profileName, string ipAddress, string macAddress,
-		string interface, PortSet *portSet)
+		string interface, int portSetIndex)
 {
 	Node newNode;
 	uint macPrefix = m_macAddresses.AtoMACPrefix(macAddress);
@@ -713,6 +711,7 @@ bool HoneydConfiguration::AddNode(string profileName, string ipAddress, string m
 	newNode.m_interface = interface;
 	newNode.m_pfile = profileName;
 	newNode.m_enabled = true;
+	newNode.m_portSetIndex = portSetIndex;
 
 	//Check the IP  and MAC address
 	if(ipAddress.compare("DHCP"))
@@ -749,13 +748,6 @@ bool HoneydConfiguration::AddNode(string profileName, string ipAddress, string m
 		return false;
 	}
 
-	if(portSet == NULL)
-	{
-		portSet = profile->GetRandomPortSet();
-	}
-	newNode.m_portSetName = portSet->m_name;
-
-
 	if(m_nodes.keyExists(newNode.m_MAC))
 	{
 		return false;
@@ -780,7 +772,7 @@ bool HoneydConfiguration::AddNode(Node node)
 	}
 }
 
-bool HoneydConfiguration::AddNodes(string profileName, string portSetName, string macVendor, string ipAddress, string interface, int numberOfNodes)
+bool HoneydConfiguration::AddNodes(string profileName, int portSetIndex, string macVendor, string ipAddress, string interface, int numberOfNodes)
 {
 	Profile *profile = GetProfile(profileName);
 	if(profile == NULL)
@@ -801,7 +793,7 @@ bool HoneydConfiguration::AddNodes(string profileName, string portSetName, strin
 		for(int i = 0; i < numberOfNodes; i++)
 		{
 			string macAddress = m_macAddresses.GenerateRandomMAC(macVendor);
-			if(!AddNode(profileName, ipAddress, macAddress, interface, GetPortSet(profileName, portSetName)))
+			if(!AddNode(profileName, ipAddress, macAddress, interface, portSetIndex))
 			{
 				LOG(WARNING, "Adding new nodes failed during node creation!", "");
 				return false;
@@ -826,7 +818,7 @@ bool HoneydConfiguration::AddNodes(string profileName, string portSetName, strin
 	{
 		currentAddr.s_addr = htonl(sAddr);
 		string macAddress = m_macAddresses.GenerateRandomMAC(macVendor);
-		if(!AddNode(profileName, string(inet_ntoa(currentAddr)), macAddress, interface, GetPortSet(profileName, portSetName)))
+		if(!AddNode(profileName, string(inet_ntoa(currentAddr)), macAddress, interface, portSetIndex))
 		{
 			LOG(ERROR, "Adding new nodes failed during node creation!", "");
 			return false;
@@ -947,43 +939,6 @@ string HoneydConfiguration::GenerateRandomUnusedMAC(string vendor)
 	return mac;
 }
 
-bool HoneydConfiguration::WouldAddProfileCauseNodeDeletions(Profile *profile)
-{
-	if (profile == NULL)
-	{
-		return false;
-	}
-
-	Profile *currentProfile = GetProfile(profile->m_name);
-	if (currentProfile == NULL)
-	{
-		return false;
-	}
-
-	// Find out if any portsets are missing
-	unordered_map<std::string, bool> newPortsetNames;
-	for (uint i = 0; i < profile->m_portSets.size(); i++)
-	{
-		newPortsetNames[profile->m_portSets[i]->m_name] = true;
-	}
-
-	for (uint i = 0; i < currentProfile->m_portSets.size(); i++)
-	{
-		if (newPortsetNames.count(currentProfile->m_portSets[i]->m_name) == 0)
-		{
-			// Port set existed in old profile but not in new profile
-			for(NodeTable::iterator it = m_nodes.begin(); it != m_nodes.end(); it++)
-			{
-				if (it->second.m_portSetName == currentProfile->m_portSets[i]->m_name)
-				{
-					return true;
-				}
-			}
-		}
-	}
-
-	return false;
-}
 
 bool HoneydConfiguration::AddProfile(Profile *profile)
 {
@@ -996,30 +951,6 @@ bool HoneydConfiguration::AddProfile(Profile *profile)
 	Profile *duplicate = GetProfile(profile->m_name);
 	if(duplicate != NULL)
 	{
-
-		// Find out if any portsets are missing and delete their nodes
-		unordered_map<std::string, bool> newPortsetNames;
-		for (uint i = 0; i < profile->m_portSets.size(); i++)
-		{
-			newPortsetNames[profile->m_portSets[i]->m_name] = true;
-		}
-
-		for (uint i = 0; i < duplicate->m_portSets.size(); i++)
-		{
-			if (newPortsetNames.count(duplicate->m_portSets[i]->m_name) == 0)
-			{
-				// Port set existed in old profile but not in new profile
-				for(NodeTable::iterator it = m_nodes.begin(); it != m_nodes.end(); it++)
-				{
-					if (it->second.m_portSetName == duplicate->m_portSets[i]->m_name)
-					{
-						m_nodes.erase(it);
-						return true;
-					}
-				}
-			}
-		}
-
 		//Copy over the contents of this profile, and quit
 		duplicate->Copy(profile);
 
@@ -1111,20 +1042,94 @@ std::vector<PortSet*> HoneydConfiguration::GetPortSets(std::string profileName)
 	return profile->m_portSets;
 }
 
-PortSet* HoneydConfiguration::GetPortSet(string profileName, string portSetName)
+PortSet* HoneydConfiguration::GetPortSet(string profileName, int portSetIndex)
 {
 	vector<PortSet*> PortSets;
 	PortSets = GetPortSets(profileName);
 
-	for (uint i = 0; i < PortSets.size(); i++)
+	if (portSetIndex < 0 || portSetIndex >= (int)PortSets.size())
 	{
-		if (PortSets[i]->m_name == portSetName)
+		return NULL;
+	}
+
+	return PortSets[portSetIndex];
+}
+
+bool HoneydConfiguration::AddPortSet(string profileName)
+{
+	Profile *profile = GetProfile(profileName);
+	if(profile == NULL)
+	{
+		LOG(DEBUG, "Attempt to delete portset of profile that doesn't exist: " + profileName, "");
+		return false;
+	}
+
+	profile->m_portSets.push_back(new PortSet());
+
+	return true;
+}
+
+bool HoneydConfiguration::DeletePortSet(string profileName, int portSetIndex)
+{
+	Profile *profile = GetProfile(profileName);
+	if(profile == NULL)
+	{
+		LOG(DEBUG, "Attempt to delete portset of profile that doesn't exist: " + profileName, "");
+		return false;
+	}
+
+	// If the index doesn't exist
+	if (portSetIndex < 0 || portSetIndex >= (int)profile->m_portSets.size())
+	{
+		LOG(DEBUG, "Attempt to delete invalid portset index of profile " + profileName, "");
+		return false;
+	}
+
+	// Delete any nodes that use this portset
+	NodeTable::iterator it = m_nodes.begin();
+	while (it != m_nodes.end())
+	{
+		if(it->second.m_pfile == profileName && it->second.m_portSetIndex == portSetIndex)
 		{
-			return PortSets[i];
+			// Note: you need to increment it before deleting it,
+			// since it becomes invalidated once erased. it++ increments
+			// it but returns the original iterrator value for .erase();
+			m_nodes.erase(it++);
+		}
+		else
+		{
+			++it;
 		}
 	}
 
-	return NULL;
+	// If the doppelganger uses this portset, change it to default
+	if (m_doppelganger.m_pfile == profile->m_name && m_doppelganger.m_portSetIndex == portSetIndex)
+	{
+		// TODO: What do we do if the profile doesn't have any portsets left? Does the doppelganger even work anymore?
+		m_doppelganger.m_portSetIndex = 0;
+	}
+
+
+	// We have to adjust nodes so they point to the correct portsets that had index changes
+	if (portSetIndex != (int)(profile->m_portSets.size() - 1))
+	{
+		NodeTable::iterator it = m_nodes.begin();
+		while (it != m_nodes.end())
+		{
+			if(it->second.m_portSetIndex > portSetIndex)
+			{
+				// Because all of our indexes shifted with the delete, decrement the index
+				it->second.m_portSetIndex--;
+			}
+
+			++it;
+		}
+	}
+
+	delete profile->m_portSets[portSetIndex];
+	profile->m_portSets.erase(profile->m_portSets.begin() + portSetIndex);
+
+	return true;
 }
 
 bool HoneydConfiguration::DeleteProfile(string profileName)
@@ -1162,7 +1167,7 @@ bool HoneydConfiguration::DeleteProfile(string profileName)
 	if (m_doppelganger.m_pfile == profile->m_name)
 	{
 		m_doppelganger.m_pfile = "default";
-		m_doppelganger.m_portSetName = "default";
+		m_doppelganger.m_portSetIndex = 0;
 	}
 
 	for (uint i = 0; i < profile->m_parent->m_children.size(); i++)
@@ -1505,21 +1510,6 @@ bool HoneydConfiguration::SetDoppelganger(Node doppelganger)
 Node HoneydConfiguration::GetDoppelganger()
 {
 	return m_doppelganger;
-}
-
-bool HoneydConfiguration::RenamePortset(std::string profile, string oldName, string newName)
-{
-	Profile* change = m_profiles.GetProfile(profile);
-	bool retValue = false;
-	for(uint i = 0; i < change->m_portSets.size(); i++)
-	{
-		if(!change->m_portSets[i]->m_name.compare(oldName))
-		{
-			change->m_portSets[i]->m_name = newName;
-			retValue = true;
-		}
-	}
-	return retValue;
 }
 
 Profile* HoneydConfiguration::GetRoot()

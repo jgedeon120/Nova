@@ -18,6 +18,7 @@
 //============================================================================
 
 #include "Profile.h"
+#include "Logger.h"
 #include "HoneydConfiguration.h"
 #include <map>
 #include <sstream>
@@ -75,7 +76,7 @@ Profile::~Profile()
 	}
 }
 
-string Profile::ToString(const std::string &portSetName, const std::string &nodeName)
+string Profile::ToString(int portSetIndex, const std::string &nodeName)
 {
 	stringstream out;
 
@@ -89,25 +90,27 @@ string Profile::ToString(const std::string &portSetName, const std::string &node
 	}
 
 	//If the portset name is empty, just use the first port set in the list
-	if(portSetName.empty())
+	if(portSetIndex == -1)
 	{
 		if(!m_portSets.empty())
 		{
-			out << "set " << nodeName << " default tcp action " << Port::PortBehaviorToString(m_portSets[0]->m_defaultTCPBehavior) << '\n';
-			out << "set " << nodeName << " default udp action " << Port::PortBehaviorToString(m_portSets[0]->m_defaultUDPBehavior) << '\n';
-			out << "set " << nodeName << " default icmp action " << Port::PortBehaviorToString(m_portSets[0]->m_defaultICMPBehavior) << '\n';
+			if (m_portSets.size() > 0)
+			{
+				out << "set " << nodeName << " default tcp action " << Port::PortBehaviorToString(m_portSets[0]->m_defaultTCPBehavior) << '\n';
+				out << "set " << nodeName << " default udp action " << Port::PortBehaviorToString(m_portSets[0]->m_defaultUDPBehavior) << '\n';
+				out << "set " << nodeName << " default icmp action " << Port::PortBehaviorToString(m_portSets[0]->m_defaultICMPBehavior) << '\n';
+			}
 		}
 	}
 	else
 	{
-		//Ports
-		for(uint i = 0; i < m_portSets.size(); i++)
+		if (portSetIndex < 0 || portSetIndex >= (int)m_portSets.size())
 		{
-			//If we get a match for the port set
-			if(!portSetName.compare(m_portSets[i]->m_name))
-			{
-				out << m_portSets[i]->ToString(nodeName);
-			}
+			LOG(ERROR, "Port set index is out of range for this profile", "");
+		}
+		else
+		{
+			out << m_portSets[portSetIndex]->ToString(nodeName);
 		}
 	}
 
@@ -187,38 +190,29 @@ std::string Profile::GetRandomVendor()
 	return "";
 }
 
-PortSet *Profile::GetRandomPortSet()
+int Profile::GetRandomPortSet()
 {
 	if(m_portSets.empty())
 	{
-		if (m_parent != NULL)
-		{
-			return m_parent->GetRandomPortSet();
-		}
-		else
-		{
-			return NULL;
-		}
+		LOG(ERROR, "Profile has no portsets", "");
+		return -1;
 	}
 
 	//Now we pick a random number between 1 and totalOccurrences
 	// Not technically a proper distribution, but we'll live
 	int random = rand() % m_portSets.size();
 
-	return m_portSets[random];
+	return random;
 }
 
-PortSet *Profile::GetPortSet(std::string name)
+PortSet *Profile::GetPortSet(int portSetIndex)
 {
-	for(uint i = 0; i < m_portSets.size(); i++)
+	if (portSetIndex < 0 || portSetIndex >= (int)m_portSets.size())
 	{
-		if(m_portSets[i]->m_name == name)
-		{
-			return m_portSets[i];
-		}
+		return NULL;
 	}
 
-	return NULL;
+	return m_portSets[portSetIndex];
 }
 
 uint Profile::GetVendorCount(std::string vendorName)
