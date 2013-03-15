@@ -1317,7 +1317,7 @@ everyone.now.MarkAllNovaLogEntriesSeen = function(cb) {
     });
 };
 
-// Functions related  to the honeyd log entry seen table in the DB
+// Functions related to the honeyd log entry seen table in the DB
 everyone.now.GetUnseenHoneydLogs = function(cb) {
     NovaCommon.dbqGetUnseenHoneydLogs.all(function(err, results) {
         if (databaseError(err, cb)) {return;}
@@ -1337,6 +1337,34 @@ everyone.now.MarkAllHoneydLogEntriesSeen = function(cb) {
         if (databaseError(err,cb)) {return;}    
         cb && cb(null);
     });
+};
+
+everyone.now.ReadWysiwygTopology = function(cb) {
+  var filename = NovaHomePath + '/config/templates/' + NovaCommon.config.GetCurrentConfig() + 'topology.json';
+  try
+  {
+    var topo = fs.readFileSync(filename);
+    topo = JSON.parse(topo);
+    for(var i in topo)
+    {
+      console.log('topo[' + i + '] == ' + topo[i]);
+    }
+    fs.writeFileSync(filename, '');
+  }
+  catch(err)
+  {
+    console.log('readFileSync failed for file ' + filename + ': ' + err);
+  }
+  
+  cb() && cb(topo);
+};
+
+everyone.now.WriteWysiwygTopology = function(topo, cb) {
+  var filename = NovaHomePath + '/config/templates/' + NovaCommon.config.GetCurrentConfig() + 'topology.json';
+  for(var i in topo)
+  {
+    fs.appendFileSync(filename, (JSON.stringify(topo[i]) + '\n'));
+  }
 };
 }
 

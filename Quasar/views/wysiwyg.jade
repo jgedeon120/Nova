@@ -40,7 +40,7 @@ block headerAdditions
     var $modalSplit = '';
     var clicked = false;
     var selectedProfile = undefined;
-    var nodesToCreate = {};
+    var nodeTopology = {};
     var nodeCount = {};
     var eleCount = 0;
     var drawElements = {};
@@ -237,12 +237,13 @@ block headerAdditions
       profileObject.portset = $('#portSets').val();
       profileObject.vendor = $('#vendors').val();
       profileObject.iface = $('#interfaces').val();
-      profileObject.ipType = $('#allocationType').val();
-      if(profileObject.ipType != 'DHCP')
+      profileObject.ip = $('#allocationType').val();
+      if(profileObject.ip != 'DHCP')
       {
         profileObject.ip = {ip1:$('#ip1').val(), ip2:$('#ip2').val(), ip3:$('#ip3').val(), ip4:$('#ip4').val()};
       }
-      nodesToCreate[eleCount] = profileObject;
+      
+      nodeTopology[eleCount] = profileObject;
     }
     
     function showIpBlock()
@@ -278,19 +279,23 @@ block headerAdditions
         var titleCss = {'font-weight':'bold', 'font-size':'18px'};
         
         $('#hoverName').css(titleCss).html($(source).data('profile'));
+        $('#hoverPortset').html('');
+        $('#hoverVendor').html('');
+        $('#hoverInterface').html('');
+        $('#hoverAddress').html('');
         
-        if(nodesToCreate[source.id] != undefined && !$(source).data('preexisting'))
+        if(nodeTopology[source.id] != undefined && !$(source).data('preexisting'))
         {
-          $('#hoverPortset').html(nodesToCreate[source.id].portset);
-          $('#hoverVendor').html(nodesToCreate[source.id].vendor);
-          $('#hoverInterface').html(nodesToCreate[source.id].iface);
+          $('#hoverPortset').html(nodeTopology[source.id].portset);
+          $('#hoverVendor').html(nodeTopology[source.id].vendor);
+          $('#hoverInterface').html(nodeTopology[source.id].iface);
           
-          if(nodesToCreate[source.id].ipType != 'DHCP')
+          if(nodeTopology[source.id].ip != 'DHCP')
           {
             var address = '';
-            for(var i in nodesToCreate[source.id].ip)
+            for(var i in nodeTopology[source.id].ip)
             {
-              address += nodesToCreate[source.id].ip[i] + '.';
+              address += nodeTopology[source.id].ip[i] + '.';
             }
             address = address.substring(0, address.length - 1);
             $('#hoverAddress').html('IP Range starting at: ' + address);
@@ -321,6 +326,7 @@ block headerAdditions
                 {
                   $('#hoverAddress').html(nodeList[i].ip);
                 }
+                break;
               }
             }
           }
@@ -468,6 +474,19 @@ block headerAdditions
         
         var push = {x:x, y:y, count:nodeCount[i].count};
         drawElements[eleCount] = push;
+        for(var j in nodeList)
+        {
+          if(nodeList[j].mac == nodeCount[i].mac.split(',')[0])
+          {
+            nodeTopology[eleCount] = {};
+            nodeTopology[eleCount].iface = nodeList[j].interface;
+            nodeTopology[eleCount].count = nodeCount[i].count;
+            nodeTopology[eleCount].portset = nodeList[j].portset;
+            nodeTopology[eleCount].vendor = nodeList[j].vendor;
+            nodeTopology[eleCount].ip = nodeList[j].ip;
+            break;
+          }
+        }
         eleCount += 1;
         xEleCount += 1;
       }
@@ -705,7 +724,7 @@ block headerAdditions
           $mergeN.on('click', function(e){
             var profiles = [];
             $('.ui-selected').each(function(){
-              mergeSelected();
+              mergeSelected(source);
             });
           }).show();
           $splitN.hide();
@@ -814,6 +833,7 @@ block headerAdditions
           $('#' + ele.id).data('mac', group1Macs.join());
           var newCount = parseInt($('#' + ele.id + 'text').html()) - parseInt($('#splitRange').val());
           $('#' + ele.id + 'text').html(newCount);
+          nodeTopology[ele.id].count = newCount;
           
           var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
           $(div).data('profile', $('#' + ele.id)
@@ -837,6 +857,19 @@ block headerAdditions
           
           var push = {x:x, y:y, count:parseInt($('#splitRange').val())};
           drawElements[eleCount] = push;
+          for(var j in nodeList)
+          {
+            nodeTopology[eleCount] = {};
+            if(nodeList[j].mac == nodeCount[i].mac.split(',')[0])
+            {
+              nodeTopology[eleCount].iface = nodeList[j].interface;
+              nodeTopology[eleCount].count = nodeCount[i].count;
+              nodeTopology[eleCount].portset = nodeList[j].portset;
+              nodeTopology[eleCount].vendor = nodeList[j].vendor;
+              nodeTopology[eleCount].ip = nodeList[j].ip;
+              break;
+            }
+          }
           eleCount += 1;
           $modalSplit.dialog('close');
         });
@@ -905,10 +938,10 @@ block headerAdditions
           $('#' + ele.id).data('mac', group1Macs.join());
           var newCount = parseInt($('#' + ele.id + 'text').html()) - parseInt($('#splitRange').val());
           $('#' + ele.id + 'text').html(newCount);
+          nodeTopology[ele.id].count = newCount;
           
           var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
-          $(div).data('profile', $('#' + ele.id)
-                .data('profile'))
+          $(div).data('profile', $('#' + ele.id).data('profile'))
                 .data('preexisting', true)
                 .data('mac', group2Macs.join())
                 .css(prepopCss)
@@ -928,6 +961,19 @@ block headerAdditions
           
           var push = {x:x, y:y, count:parseInt($('#splitRange').val())};
           drawElements[eleCount] = push;
+          for(var j in nodeList)
+          {
+            nodeTopology[eleCount] = {};
+            if(nodeList[j].mac == nodeCount[i].mac.split(',')[0])
+            {
+              nodeTopology[eleCount].iface = nodeList[j].interface;
+              nodeTopology[eleCount].count = nodeCount[i].count;
+              nodeTopology[eleCount].portset = nodeList[j].portset;
+              nodeTopology[eleCount].vendor = nodeList[j].vendor;
+              nodeTopology[eleCount].ip = nodeList[j].ip;
+              break;
+            }
+          }
           eleCount += 1;
           $modalSplit.dialog('close');
         });
@@ -935,18 +981,59 @@ block headerAdditions
       }
     }
     
-    function mergeSelected()
+    function mergeSelected(base)
     {
+      var div = theDoc.createElement('div');
+      var baseProfile = $(base).data('profile');
+      var baseMac = $(base).data('mac').split(',')[0];
+      var baseVendor = '';
+      var basePortset = '';
+      var baseIp = '';
       
+      for(var i in nodeList)
+      {
+        if(baseMac == nodeList[i].mac)
+        {
+          baseVendor = nodeList[i].vendor;
+          basePortset = nodeList[i].portset;
+          baseIp = nodeList[i].ip;
+          return;
+        }
+      }
+      
+      var keepGoing = true;
+      $('ui-selected').each(function(){
+        if(!keepGoing)
+        {
+          return;
+        }
+        if($(this).data('profile') != baseProfile)
+        {
+          alert('In order to merge nodes, all nodes to merge must have the same profile');
+          keepGoing = false;
+          return;
+        }
+        // Need to check all base characteristics here, and prevent merge if any non-node
+        // specific characteristics are different
+      });
+      if(keepGoing)
+      {
+        // If there was no problem, merge the nodes, remove the two old ones and put in the
+        // aggregate WYSIWYG node
+      }
+      else
+      {
+        return;
+      }
     }
     
     function deleteSelected()
     {
       var deleteNodes = [];
       $('.ui-selected').each(function(){
-        if(nodesToCreate[$(this).attr('id')] != undefined)
+        if(nodeTopology[$(this).attr('id')] != undefined)
         {
-          delete nodesToCreate[$(this).attr('id')];
+          delete nodeTopology[$(this).attr('id')];
         }
         var splitMac = $(this).data('mac').split(',');
         for(var i in splitMac)
@@ -1193,23 +1280,27 @@ block headerAdditions
             text.style.fontSize = '18px';
             text.id = eleCount + 'text';
             div.appendChild(text);
-
-            var ipType = nodesToCreate[eleCount].ipType;
+            
+            var ipType = '';
             var ip1, ip2, ip3, ip4 = '0';
-            if(nodesToCreate[eleCount].ipType != 'DHCP')
+            if(nodeTopology[eleCount].ip != 'DHCP')
             {
-              ip1 = nodesToCreate[eleCount].ip.ip1;
-              ip2 = nodesToCreate[eleCount].ip.ip2;
-              ip3 = nodesToCreate[eleCount].ip.ip3;
-              ip4 = nodesToCreate[eleCount].ip.ip4;
+              ip1 = nodeTopology[eleCount].ip.ip1;
+              ip2 = nodeTopology[eleCount].ip.ip2;
+              ip3 = nodeTopology[eleCount].ip.ip3;
+              ip4 = nodeTopology[eleCount].ip.ip4;
             }
-            var profile = nodesToCreate[eleCount].selectedProfile;
-            var portset = nodesToCreate[eleCount].portset;
-            var vendor = nodesToCreate[eleCount].vendor;
-            var ethInterface = nodesToCreate[eleCount].iface;
-            var count = nodesToCreate[eleCount].count;  
+            else
+            {
+              ipType = 'DHCP';
+            }
+            var profile = nodeTopology[eleCount].selectedProfile;
+            var portset = nodeTopology[eleCount].portset;
+            var vendor = nodeTopology[eleCount].vendor;
+            var ethInterface = nodeTopology[eleCount].iface;
+            var count = nodeTopology[eleCount].count;
             now.createHoneydNodes(ipType, ip1, ip2, ip3, ip4, profile, portset, vendor, ethInterface, count);
-            nodesToCreate = {};
+            nodeTopology = {};
 
             nodes = [];
             var setMAC = [];
@@ -1279,6 +1370,20 @@ block headerAdditions
     
     $(window).resize(function(){
       handleOffscreenIndicators();
+    });
+    
+    $(window).unload(function(){
+      now.WriteWysiwygTopology(nodeTopology, function(){
+        console.log('WriteWysiwygTopology finished');
+      });
+     for(var i in nodeTopology)
+     {
+       console.log('i == ' + i);
+       for(var j in nodeTopology[i])
+       {
+         console.log('nodeTopology[' + i + '][' + j + '] == ' + nodeTopology[i][j]);
+       }
+     }
     });
     
 block content
