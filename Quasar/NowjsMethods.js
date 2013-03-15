@@ -1349,28 +1349,41 @@ everyone.now.ReadWysiwygTopology = function(cb) {
   var filename = NovaHomePath + '/config/templates/' + NovaCommon.config.GetCurrentConfig() + 'topology.json';
   try
   {
-    var topo = fs.readFileSync(filename);
-    topo = JSON.parse(topo);
+    var topo = fs.readFileSync(filename).split('\n');
+    var ret = [];
     for(var i in topo)
     {
-      console.log('topo[' + i + '] == ' + topo[i]);
+      var node = JSON.parse(topo[i]);
+      ret.push(node);
+      for(var j in node)
+      {
+        console.log('node[' + j + '] == ' + node[j]);
+      }
     }
-    fs.writeFileSync(filename, '');
   }
   catch(err)
   {
-    console.log('readFileSync failed for file ' + filename + ': ' + err);
+    console.log('readFileSync failed for file ' + filename + ', err: ' + err);
   }
   
-  cb() && cb(topo);
+  cb() && cb(ret);
 };
 
 everyone.now.WriteWysiwygTopology = function(topo, cb) {
   var filename = NovaHomePath + '/config/templates/' + NovaCommon.config.GetCurrentConfig() + 'topology.json';
-  for(var i in topo)
+  try
   {
-    fs.appendFileSync(filename, (JSON.stringify(topo[i]) + '\n'));
+    fs.writeFileSync(filename, '');
+    for(var i in topo)
+    {
+      fs.appendFileSync(filename, (JSON.stringify(topo[i]) + '\n'));
+    }
   }
+  catch(err)
+  {
+    console.log('err: ' + err);
+  }
+  cb && cb();
 };
 }
 
