@@ -432,72 +432,85 @@ block headerAdditions
       var yEleCount = 0;
       
       now.ReadWysiwygTopology(function(topo){
-        for(var i in topo)
+        console.log('in ReadWysiwygTopo with topo == ' + topo);
+        console.log('topo.length == ' + topo.length);
+        if(topo != undefined && topo.length > 0)
         {
-          
-        }
-      });
-      
-      for(var i in nodeCount)
-      {
-        var div = theDoc.createElement('div');
-              
-        $(div).click(function(e){
-                canvasElementOnclick(e);
-              })
-              .draggable({tolerance: 'pointer',
-                cursorAt: {top:25,left:15},
-                cursor: 'move',
-                containment:'#nodeCanvas',
-                revert: 'invalid'});
-    
-        var y = (yEleCount * 50);
-        var x = (xEleCount * 50);
-        
-        if(x > $topology.outerWidth())
-        {
-          yEleCount += 1;
-          xEleCount = 0;
-          y = (yEleCount * 50);
-          x = (xEleCount * 50);
-        }
-        
-        var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
-        $(div).data('profile', i).data('preexisting', true)
-              .data('mac', nodeCount[i].mac).css(prepopCss)
-              .attr('class', 'ui-draggable canvasElement');
-        placeBackgroundImage($(div), i);
-        setCanvasElementEventHandlers(div);
-        
-        div.id = eleCount;
-        
-        var text = theDoc.createElement('label');
-        text.innerHTML = nodeCount[i].count;
-        text.style.fontSize = '18px';
-        text.id = eleCount + 'text';
-        div.appendChild(text);
-  
-        $topology.append(div);
-        
-        for(var j in nodeList)
-        {
-          if(nodeList[j].mac == nodeCount[i].mac.split(',')[0])
+          console.log('topo returned an array that was not undefined');
+          for(var i in topo)
           {
-            nodeTopology[eleCount] = {};
-            nodeTopology[eleCount].iface = nodeList[j].interface;
-            nodeTopology[eleCount].count = nodeCount[i].count.toString();
-            nodeTopology[eleCount].portset = nodeList[j].portset.toString();
-            nodeTopology[eleCount].vendor = nodeList[j].vendor;
-            nodeTopology[eleCount].ip = nodeList[j].ip;
-            nodeTopology[eleCount].selectedProfile = i;
-            nodeTopology[eleCount].mac = nodeCount[i].mac;
-            nodeTopology[eleCount].coordinates = {x:x, y:y};
-            break;
+            console.log('topo[' + i + '] == ' + topo[i]);
+            for(var j in topo[i])
+            {
+              console.log('topo[' + i + '][' + j + '] == ' + topo[i][j]);
+            }
           }
         }
-        eleCount += 1;
-        xEleCount += 1;
-      }
+        else
+        {
+          for(var i in nodeCount)
+          {
+            var div = theDoc.createElement('div');
+                  
+            $(div)
+            .click(function(e){
+              canvasElementOnclick(e);
+            })
+            .draggable({tolerance: 'pointer',
+              cursorAt: {top:25,left:15},
+              cursor: 'move',
+              containment:'#nodeCanvas',
+              revert: 'invalid'});
+        
+            var y = (yEleCount * 50);
+            var x = (xEleCount * 50);
+            
+            if(x > $topology.outerWidth())
+            {
+              yEleCount += 1;
+              xEleCount = 0;
+              y = (yEleCount * 50);
+              x = (xEleCount * 50);
+            }
+            
+            var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
+            $(div).data('profile', i).data('preexisting', true)
+                  .data('mac', nodeCount[i].mac).css(prepopCss)
+                  .attr('class', 'ui-draggable canvasElement');
+            placeBackgroundImage($(div), i);
+            setCanvasElementEventHandlers(div);
+            
+            div.id = eleCount;
+            
+            var text = theDoc.createElement('label');
+            text.innerHTML = nodeCount[i].count;
+            text.style.fontSize = '18px';
+            text.id = eleCount + 'text';
+            div.appendChild(text);
+      
+            $topology.append(div);
+            
+            for(var j in nodeList)
+            {
+              if(nodeList[j].mac == nodeCount[i].mac.split(',')[0])
+              {
+                nodeTopology[eleCount] = {};
+                nodeTopology[eleCount].iface = nodeList[j].interface;
+                nodeTopology[eleCount].count = nodeCount[i].count.toString();
+                nodeTopology[eleCount].portset = nodeList[j].portset.toString();
+                nodeTopology[eleCount].vendor = nodeList[j].vendor;
+                nodeTopology[eleCount].ip = nodeList[j].ip;
+                nodeTopology[eleCount].selectedProfile = i;
+                nodeTopology[eleCount].mac = nodeCount[i].mac;
+                nodeTopology[eleCount].coordinates = {x:x, y:y};
+                break;
+              }
+            }
+            eleCount += 1;
+            xEleCount += 1;
+          } 
+        }
+      });
     }
     
     function placeBackgroundImage(ele, profile)
