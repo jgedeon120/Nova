@@ -1351,14 +1351,11 @@ everyone.now.ReadWysiwygTopology = function(cb) {
   try
   {
     var topo = JSON.parse(fs.readFileSync(filename)).split('\n');
-    console.log('topo == ' + topo);
-    console.log('typeof topo == ' + typeof(topo));
-    console.log('topo[0] == ' + topo[0]);
     for(var i in topo)
     {
       if(topo[i] != '' && topo[i] != undefined)
       {
-        var node = topo[i];
+        var node = JSON.parse(topo[i]);
         ret.push(node);
       }
     }
@@ -1383,7 +1380,6 @@ everyone.now.WriteWysiwygTopology = function(topo, cb) {
   {
     write.push(JSON.stringify(topo[i]));
   }
-  console.log('write.join() == ' + write.join('\n'));
   try
   {
     fs.writeFileSync(filename, (JSON.stringify(write.join('\n')) + '\n'));
