@@ -432,13 +432,14 @@ block headerAdditions
       var yEleCount = 0;
       
       now.ReadWysiwygTopology(function(topo){
-        console.log('in ReadWysiwygTopo with topo == ' + topo);
-        console.log('topo.length == ' + topo.length);
         if(topo != undefined && topo.length > 0)
         {
-          console.log('topo returned an array that was not undefined');
           for(var i in topo)
           {
+            // need to take inventory of the MACs contained within the
+            // topo array, compare them to all loaded nodes (via nodelist), 
+            // and render all the nodes not found topo after topo has been 
+            // rendered in full.
             console.log('topo[' + i + '] == ' + topo[i]);
             for(var j in topo[i])
             {
@@ -460,7 +461,8 @@ block headerAdditions
               cursorAt: {top:25,left:15},
               cursor: 'move',
               containment:'#nodeCanvas',
-              revert: 'invalid'});
+              revert: 'invalid',
+              grid: [50, 50]});
         
             var y = (yEleCount * 50);
             var x = (xEleCount * 50);
@@ -557,7 +559,8 @@ block headerAdditions
                           cursorAt: {top:25, left:10},
                           cursor: 'move',
                           containment:'#nodeCanvas',
-                          revert: 'invalid'});
+                          revert: 'invalid',
+                          grid: [50, 50]});
         
         div.setAttribute('class', 'canvasElement ui-draggable');
         div.style.left = x + 'px';
@@ -832,7 +835,8 @@ block headerAdditions
             cursorAt: {top:25,left:15},
             cursor: 'move',
             containment:'#nodeCanvas',
-            revert: 'invalid'});
+            revert: 'invalid',
+            grid: [50, 50]});
         
           var y = parseInt($(ele).css('top'));
           var x = parseInt($(ele).css('left')) + 50;
@@ -937,7 +941,8 @@ block headerAdditions
             cursorAt: {top:25,left:15},
             cursor: 'move',
             containment:'#nodeCanvas',
-            revert: 'invalid'});
+            revert: 'invalid',
+            grid: [50, 50]});
         
           var y = parseInt($(ele).css('top'));
           var x = parseInt($(ele).css('left')) + 50;
@@ -1231,7 +1236,8 @@ block headerAdditions
                                 cursorAt: {top:25,left:15},
                                 cursor: 'move',
                                 containment:'#nodeCanvas',
-                                revert: 'invalid'};
+                                revert: 'invalid',
+                                grid: [50, 50]};
         
         $dragMe.draggable(draggableOptions);
         $dragMe.on('dragstart', function(event, ui){

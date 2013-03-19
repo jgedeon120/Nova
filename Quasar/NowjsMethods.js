@@ -1365,11 +1365,6 @@ everyone.now.ReadWysiwygTopology = function(cb) {
     console.log('err: ' + err);
   }
   
-  for(var i in ret)
-  {
-    console.log('ret[' + i + '] == ' + ret[i]);
-  }
-  
   cb && cb(ret);
 };
 
