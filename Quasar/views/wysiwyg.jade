@@ -432,23 +432,96 @@ block headerAdditions
       var yEleCount = 0;
       
       now.ReadWysiwygTopology(function(topo){
+        var findOtherNodesList = [];
         if(topo != undefined && topo.length > 0)
         {
           for(var i in topo)
           {
-            // need to take inventory of the MACs contained within the
-            // topo array, compare them to all loaded nodes (via nodelist), 
-            // and render all the nodes not found topo after topo has been 
-            // rendered in full.
-            console.log('topo[' + i + '] == ' + topo[i]);
-            for(var j in topo[i])
+            var div = theDoc.createElement('div');
+            
+            findOtherNodesList.push(topo[i].mac);
+            
+            $(div)
+            .click(function(e){
+              canvasElementOnclick(e);
+            })
+            .draggable({tolerance: 'pointer',
+              cursorAt: {top:25,left:15},
+              cursor: 'move',
+              containment:'#nodeCanvas',
+              revert: 'invalid',
+              grid: [50, 50]});
+
+            var y = (yEleCount * 50);
+            var x = (xEleCount * 50);
+            
+            if(x > $topology.outerWidth())
             {
-              console.log('topo[' + i + '][' + j + '] == ' + topo[i][j]);
+              yEleCount += 1;
+              xEleCount = 0;
+              y = (yEleCount * 50);
+              x = (xEleCount * 50);
             }
+            
+            var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
+            $(div).data('profile', topo[i].selectedProfile)
+                  .data('preexisting', true)
+                  .data('mac', topo[i].mac).css(prepopCss)
+                  .attr('class', 'ui-draggable canvasElement');
+            placeBackgroundImage($(div), topo[i].selectedProfile);
+            setCanvasElementEventHandlers(div);
+            
+            div.id = eleCount;
+            
+            var text = theDoc.createElement('label');
+            text.innerHTML = topo[i].count;
+            text.style.fontSize = '18px';
+            text.id = eleCount + 'text';
+            div.appendChild(text);
+      
+            $topology.append(div);
+            
+            var macSplit = topo[i].mac.split(',')[0];
+            
+            for(var j in nodeList)
+            {
+              if(nodeList[j].mac == macSplit)
+              {
+                nodeTopology[eleCount] = {};
+                nodeTopology[eleCount].iface = nodeList[j].interface;
+                nodeTopology[eleCount].count = topo[i].count.toString();
+                nodeTopology[eleCount].portset = nodeList[j].portset.toString();
+                nodeTopology[eleCount].vendor = nodeList[j].vendor;
+                nodeTopology[eleCount].ip = nodeList[j].ip;
+                nodeTopology[eleCount].selectedProfile = topo[i].selectedProfile;
+                nodeTopology[eleCount].mac = topo[i].mac;
+                nodeTopology[eleCount].coordinates = {x:x, y:y};
+                break;
+              }
+            }
+            eleCount += 1;
+            xEleCount += 1;
           }
         }
         else
-        {
+        { 
+          // TODO: This needs to be more robust; profile as key is temporary measure,
+          // really need to use a hash of the mac string or something s.t. different
+          // nodes can be initalized even if they share a common profile (i.e. one has 
+          // a Dell vendor, one has Xerox, etc. but all are WinServer, this needs to be 
+          // shown) 
+          haveMac.push(nodeList[i].mac);
+          if(nodeCount[nodeList[i].pfile] == undefined)
+          {
+            nodeCount[nodeList[i].pfile] = {};
+            nodeCount[nodeList[i].pfile].count = 1;
+            nodeCount[nodeList[i].pfile].mac = nodeList[i].mac;
+          }
+          else
+          {
+            nodeCount[nodeList[i].pfile].count += 1;
+            nodeCount[nodeList[i].pfile].mac += ',' + nodeList[i].mac;
+          }
           for(var i in nodeCount)
           {
             var div = theDoc.createElement('div');
@@ -476,7 +549,8 @@ block headerAdditions
             }
             
             var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
-            $(div).data('profile', i).data('preexisting', true)
+            $(div).data('profile', i)
+                  .data('preexisting', true)
                   .data('mac', nodeCount[i].mac).css(prepopCss)
                   .attr('class', 'ui-draggable canvasElement');
             placeBackgroundImage($(div), i);
@@ -492,9 +566,11 @@ block headerAdditions
       
             $topology.append(div);
             
+            var macSplit = nodeCount[i].mac.split(',')[0];
+            
             for(var j in nodeList)
             {
-              if(nodeList[j].mac == nodeCount[i].mac.split(',')[0])
+              if(nodeList[j].mac == macSplit)
               {
                 nodeTopology[eleCount] = {};
                 nodeTopology[eleCount].iface = nodeList[j].interface;
@@ -510,7 +586,8 @@ block headerAdditions
             }
             eleCount += 1;
             xEleCount += 1;
-          } 
+          }
+          nodeCount = {};
         }
       });
     }
@@ -879,17 +956,18 @@ block headerAdditions
     
           $topology.append(div);
 
+          nodeTopology[eleCount] = {};
+
           for(var j in nodeList)
           {
-            nodeTopology[eleCount] = {};
-            if(nodeList[j].mac == nodeCount[i].mac.split(',')[0])
+            if(nodeList[j].mac == group2Macs[0])
             {
               nodeTopology[eleCount].iface = nodeList[j].interface;
-              nodeTopology[eleCount].count = nodeCount[i].count.toString();
+              nodeTopology[eleCount].count = $('#splitRange').val().toString();
               nodeTopology[eleCount].portset = nodeList[j].portset.toString();
               nodeTopology[eleCount].vendor = nodeList[j].vendor;
               nodeTopology[eleCount].ip = nodeList[j].ip;
-              nodeTopology[eleCount].mac = nodeCount[i].mac;
+              nodeTopology[eleCount].mac = group2Macs.join();
               nodeTopology[eleCount].selectedProfile = $('#' + ele.id).data('profile');
               nodeTopology[eleCount].coordinates = {x:x, y:y};
               break;
@@ -985,17 +1063,18 @@ block headerAdditions
     
           $topology.append(div);
           
+          nodeTopology[eleCount] = {};
+          
           for(var j in nodeList)
           {
-            nodeTopology[eleCount] = {};
-            if(nodeList[j].mac == nodeCount[i].mac.split(',')[0])
+            if(nodeList[j].mac == group2Macs[0])
             {
               nodeTopology[eleCount].iface = nodeList[j].interface;
-              nodeTopology[eleCount].count = nodeCount[i].count.toString();
+              nodeTopology[eleCount].count = $('#splitRange').val().toString();
               nodeTopology[eleCount].portset = nodeList[j].portset.toString();
               nodeTopology[eleCount].vendor = nodeList[j].vendor;
               nodeTopology[eleCount].ip = nodeList[j].ip;
-              nodeTopology[eleCount].mac = nodeCount[i].mac;
+              nodeTopology[eleCount].mac = group2Macs.join();
               nodeTopology[eleCount].selectedProfile = $('#' + ele.id).data('profile');
               nodeTopology[eleCount].coordinates = {x:x, y:y};
               break;
@@ -1340,6 +1419,7 @@ block headerAdditions
             var setMAC = [];
 
             now.GetNodes(function(nodeList){
+              console.log('haveMac.length == ' + haveMac.length);
               nodes = nodeList;
               var add = true;
               for(var i in nodes)
@@ -1347,9 +1427,13 @@ block headerAdditions
                 add = true;
                 for(var j in haveMac)
                 {
+                  console.log('nodes[' + i + '].mac == ' + nodes[i].mac);
+                  console.log('haveMac[' + j + '] == ' + haveMac[j]);
                   if(haveMac[j] == nodes[i].mac)
                   {
+                    console.log('found match, not adding');
                     add = false;
+                    break;
                   }
                 }
                 if(add)
@@ -1359,13 +1443,12 @@ block headerAdditions
                 } 
               }
               $(div).data('mac', setMAC.join());
-              nodeTopology[eleCount].mac = $(div).data('mac');
-            });
-           
-            nodeTopology[eleCount].coordinates = {x:x, y:y};
-            $topology.append(div);
+              nodeTopology[eleCount].mac = setMAC.join();
+              nodeTopology[eleCount].coordinates = {x:x, y:y};
+              $topology.append(div);
 
-            eleCount += 1;
+              eleCount += 1;
+            });
           }
           else if(ui.draggable.attr('class').indexOf('canvasElement') != -1 && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
           {
@@ -1378,7 +1461,7 @@ block headerAdditions
           
         });
   
-        for(var i in nodeList)
+        /*for(var i in nodeList)
         {
           haveMac.push(nodeList[i].mac);
           if(nodeCount[nodeList[i].pfile] == undefined)
@@ -1392,7 +1475,8 @@ block headerAdditions
             nodeCount[nodeList[i].pfile].count += 1;
             nodeCount[nodeList[i].pfile].mac += ',' + nodeList[i].mac;
           }
-        }
+        }*/
+
               
         repopulateProfilesList(function(){
           prepopulateCanvasWithNodes();
