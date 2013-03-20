@@ -504,23 +504,23 @@ block headerAdditions
           }
         }
         else
-        { 
-          // TODO: This needs to be more robust; profile as key is temporary measure,
-          // really need to use a hash of the mac string or something s.t. different
-          // nodes can be initalized even if they share a common profile (i.e. one has 
-          // a Dell vendor, one has Xerox, etc. but all are WinServer, this needs to be 
-          // shown) 
-          haveMac.push(nodeList[i].mac);
-          if(nodeCount[nodeList[i].pfile] == undefined)
+        {
+          for(var i in nodeList)
           {
-            nodeCount[nodeList[i].pfile] = {};
-            nodeCount[nodeList[i].pfile].count = 1;
-            nodeCount[nodeList[i].pfile].mac = nodeList[i].mac;
-          }
-          else
-          {
-            nodeCount[nodeList[i].pfile].count += 1;
-            nodeCount[nodeList[i].pfile].mac += ',' + nodeList[i].mac;
+            haveMac.push(nodeList[i].mac);
+            var key = nodeList[i].pfile + nodeList[i].portset + nodeList[i].interface + nodeList[i].ip;
+            if(nodeCount[key] == undefined)
+            {
+              nodeCount[key] = {};
+              nodeCount[key].count = 1;
+              nodeCount[key].mac = nodeList[i].mac;
+              nodeCount[key].pfile = nodeList[i].pfile;
+            }
+            else
+            {
+              nodeCount[key].count += 1;
+              nodeCount[key].mac += ',' + nodeList[i].mac;
+            }
           }
           for(var i in nodeCount)
           {
@@ -549,11 +549,11 @@ block headerAdditions
             }
             
             var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
-            $(div).data('profile', i)
+            $(div).data('profile', nodeCount[i].pfile)
                   .data('preexisting', true)
                   .data('mac', nodeCount[i].mac).css(prepopCss)
                   .attr('class', 'ui-draggable canvasElement');
-            placeBackgroundImage($(div), i);
+            placeBackgroundImage($(div), nodeCount[i].pfile);
             setCanvasElementEventHandlers(div);
             
             div.id = eleCount;
@@ -578,7 +578,7 @@ block headerAdditions
                 nodeTopology[eleCount].portset = nodeList[j].portset.toString();
                 nodeTopology[eleCount].vendor = nodeList[j].vendor;
                 nodeTopology[eleCount].ip = nodeList[j].ip;
-                nodeTopology[eleCount].selectedProfile = i;
+                nodeTopology[eleCount].selectedProfile = nodeCount[i].pfile;
                 nodeTopology[eleCount].mac = nodeCount[i].mac;
                 nodeTopology[eleCount].coordinates = {x:x, y:y};
                 break;
@@ -1419,7 +1419,6 @@ block headerAdditions
             var setMAC = [];
 
             now.GetNodes(function(nodeList){
-              console.log('haveMac.length == ' + haveMac.length);
               nodes = nodeList;
               var add = true;
               for(var i in nodes)
@@ -1427,8 +1426,6 @@ block headerAdditions
                 add = true;
                 for(var j in haveMac)
                 {
-                  console.log('nodes[' + i + '].mac == ' + nodes[i].mac);
-                  console.log('haveMac[' + j + '] == ' + haveMac[j]);
                   if(haveMac[j] == nodes[i].mac)
                   {
                     console.log('found match, not adding');
@@ -1460,23 +1457,6 @@ block headerAdditions
           }
           
         });
-  
-        /*for(var i in nodeList)
-        {
-          haveMac.push(nodeList[i].mac);
-          if(nodeCount[nodeList[i].pfile] == undefined)
-          {
-            nodeCount[nodeList[i].pfile] = {};
-            nodeCount[nodeList[i].pfile].count = 1;
-            nodeCount[nodeList[i].pfile].mac = nodeList[i].mac;
-          }
-          else
-          {
-            nodeCount[nodeList[i].pfile].count += 1;
-            nodeCount[nodeList[i].pfile].mac += ',' + nodeList[i].mac;
-          }
-        }*/
-
               
         repopulateProfilesList(function(){
           prepopulateCanvasWithNodes();
