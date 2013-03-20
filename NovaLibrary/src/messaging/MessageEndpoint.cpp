@@ -30,6 +30,8 @@
 #include <sys/time.h>
 #include "errno.h"
 
+#define CONSECUTIVETIMEOUTTHRESHOLD 5
+
 namespace Nova
 {
 
@@ -87,7 +89,11 @@ Message *MessageEndpoint::PopMessage(Ticket &ticket, int timeout)
 		if(((ErrorMessage*)ret)->m_errorType == ERROR_TIMEOUT)
 		{
 			m_consecutiveTimeouts++;
-			//TODO: deal with timeouts
+			if(m_consecutiveTimeouts > CONSECUTIVETIMEOUTTHRESHOLD)
+			{
+				delete ret;
+				return new ErrorMessage(ERROR_SOCKET_CLOSED);
+			}
 		}
 	}
 
@@ -162,7 +168,6 @@ bool MessageEndpoint::RegisterCallback(Ticket &outTicket)
 			//Protection for the m_callbackDoWakeup bool
 			Lock condLock(&m_availableCBsMutex);
 
-			//TODO: Unprotected read of byte value m_isShutdown. Probably safe though.
 			while(m_availableCBs.empty() && !m_isShutDown)
 			{
 				pthread_cond_wait(&m_callbackWakeupCondition, &m_availableCBsMutex);
