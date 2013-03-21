@@ -43,6 +43,7 @@ block headerAdditions
     var nodeTopology = {};
     var nodeCount = {};
     var eleCount = 0;
+    var zoom = {width:50, height:50};
     var oldX = 0;
     var oldY = 0;
     var selected = [];
@@ -365,9 +366,9 @@ block headerAdditions
               relX = 0;
             }
             var relY = parseInt(dy) + parseInt($(this).css('top'));
-            if(relY > $topology.outerHeight() - 50)
+            if(relY > $topology.outerHeight() - zoom.height)
             {
-              relY = $topology.outerHeight() - 50;
+              relY = $topology.outerHeight() - zoom.height;
             }
             else if(relY < 0)
             {
@@ -451,15 +452,15 @@ block headerAdditions
 
       if(xEleCount != undefined && yEleCount != undefined)
       {
-        y = (yEleCount * 50);
-        x = (xEleCount * 50);
+        y = (yEleCount * zoom.height);
+        x = (xEleCount * zoom.width);
         
         if(x > $topology.outerWidth())
         {
           yEleCount += 1;
           xEleCount = 0;
-          y = (yEleCount * 50);
-          x = (xEleCount * 50);
+          y = (yEleCount * zoom.width);
+          x = (xEleCount * zoom.width);
         }
       }
       
@@ -467,6 +468,7 @@ block headerAdditions
       $(div).data('profile', nodeObj.selectedProfile)
             .data('preexisting', true)
             .css(prepopCss)
+            .css(zoom)
             .attr('class', 'ui-draggable canvasElement');
       if(nodeObj.mac != undefined && type == 'prepop')
       {
@@ -723,7 +725,7 @@ block headerAdditions
             $('#' + this.id + 'osir').css(pos);
           }
         }
-        else if(parseInt($(this).css('left')) + 50 <= 0)
+        else if(parseInt($(this).css('left')) + zoom.width <= 0)
         {
           if(theDoc.getElementById(this.id + 'osil') == undefined)
           {
@@ -740,7 +742,7 @@ block headerAdditions
             $('#' + this.id + 'osil').css(pos);
           }
         }
-        else if(parseInt($(this).css('top')) < -50)
+        else if(parseInt($(this).css('top')) < -zoom.width)
         {
           if(theDoc.getElementById(this.id + 'osit') == undefined)
           {
@@ -782,7 +784,7 @@ block headerAdditions
         {
           $('#' + this.id + 'osib').remove();
         }
-        if(parseInt($(this).css('left')) < width - 50)
+        if(parseInt($(this).css('left')) < width - zoom.width)
         {
           $('#' + this.id + 'osir').remove();
         }
@@ -895,12 +897,12 @@ block headerAdditions
           deleteSelected();
         });
         
-        var cmCss = {left: (parseInt(left) + 25),
-                     top: (parseInt(top) + 25)};
+        var cmCss = {left: (parseInt(left) + (zoom.width / 2)),
+                     top: (parseInt(top) + (zoom.width / 2))};
                      
         $contextMenu.css(cmCss).fadeIn(200, function(){
         });
-        cmCss.left += 25;
+        cmCss.left += (zoom.width / 2);
         $modalSplit.css(cmCss);
       }
     }
@@ -1211,7 +1213,7 @@ block headerAdditions
             {
               var width = parseInt($(this).outerWidth()) + parseInt(delta) - 2;
               var height = parseInt($(this).outerHeight()) + parseInt(delta) - 2;
-              var zoom = {width:width, height:height};
+              zoom = {width:width, height:height};
               $(this).css(zoom);
             }
           });
