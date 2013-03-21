@@ -447,8 +447,7 @@ block headerAdditions
         cursorAt: {top:25,left:15},
         cursor: 'move',
         containment:'#nodeCanvas',
-        revert: 'invalid',
-        grid: [50, 50]});
+        revert: 'invalid'});
 
       if(xEleCount != undefined && yEleCount != undefined)
       {
@@ -577,7 +576,6 @@ block headerAdditions
           if(nodes[j].mac == testMac)
           {
             nodeTopology[eleCount] = {};
-            console.log('match found');
             nodeTopology[eleCount].iface = nodes[j].interface;
             nodeTopology[eleCount].count = splitData.splCount;
             nodeTopology[eleCount].portset = nodes[j].portset.toString();
@@ -800,6 +798,7 @@ block headerAdditions
       $(ele)
         .on('dragstop', function(e){
           handleCanvasEleHover(e);
+          $('.ui-selected').css('border', '').removeClass('ui-selected');
           $(this).on('mouseenter', function(e){
             e.stopImmediatePropagation();
             handleCanvasEleHover(e);
@@ -819,7 +818,6 @@ block headerAdditions
         })
         .on('drag', function(e, ui){
           e.stopImmediatePropagation();
-          $(this).css('border', '').removeClass('ui-selected');
           handleCanvasEleHover(e, ui);
           $(this).off('mouseleave');
           $(this).off('mouseenter');
@@ -1276,8 +1274,7 @@ block headerAdditions
                                 cursorAt: {top:25,left:15},
                                 cursor: 'move',
                                 containment:'#nodeCanvas',
-                                revert: 'invalid',
-                                grid: [50, 50]};
+                                revert: 'invalid'};
         
         $dragMe.draggable(draggableOptions);
         $dragMe.on('dragstart', function(event, ui){
