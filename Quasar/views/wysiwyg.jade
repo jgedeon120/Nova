@@ -426,7 +426,7 @@ block headerAdditions
       }
     }
     
-    function addNodeToCanvas(nodeObj, left, top, xEleCount, yEleCount)
+    function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitData)
     {
       var div = theDoc.createElement('div');
       
@@ -467,8 +467,16 @@ block headerAdditions
       var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
       $(div).data('profile', nodeObj.selectedProfile)
             .data('preexisting', true)
-            .data('mac', nodeObj.mac).css(prepopCss)
+            .css(prepopCss)
             .attr('class', 'ui-draggable canvasElement');
+      if(nodeObj.mac != undefined && type == 'prepop')
+      {
+        $(div).data('mac', nodeObj.mac);
+      }
+      else if(type == 'split')
+      {
+        $(div).data('mac', splitData.splNodeMacs);
+      }
       placeBackgroundImage($(div), nodeObj.selectedProfile);
       setCanvasElementEventHandlers(div);
       
@@ -479,28 +487,115 @@ block headerAdditions
       text.style.fontSize = '18px';
       text.id = eleCount + 'text';
       div.appendChild(text);
-
-      $topology.append(div);
       
-      var macSplit = nodeObj.mac.split(',')[0];
-      
-      for(var j in nodeList)
+      if(type == 'drop')
       {
-        if(nodeList[j].mac == macSplit)
+        var ipType = '';
+        var ip1, ip2, ip3, ip4 = '0';
+        if(nodeTopology[eleCount].ip != 'DHCP')
         {
-          nodeTopology[eleCount] = {};
-          nodeTopology[eleCount].iface = nodeList[j].interface;
-          nodeTopology[eleCount].count = nodeObj.count.toString();
-          nodeTopology[eleCount].portset = nodeList[j].portset.toString();
-          nodeTopology[eleCount].vendor = nodeList[j].vendor;
-          nodeTopology[eleCount].ip = nodeList[j].ip;
-          nodeTopology[eleCount].selectedProfile = nodeObj.selectedProfile;
-          nodeTopology[eleCount].mac = nodeObj.mac;
-          nodeTopology[eleCount].coordinates = {x:x, y:y};
-          break;
+          ip1 = nodeTopology[eleCount].ip.ip1;
+          ip2 = nodeTopology[eleCount].ip.ip2;
+          ip3 = nodeTopology[eleCount].ip.ip3;
+          ip4 = nodeTopology[eleCount].ip.ip4;
         }
+        else
+        {
+          ipType = 'DHCP';
+        }
+        var profile = nodeTopology[eleCount].selectedProfile;
+        var portset = nodeTopology[eleCount].portset.toString();
+        var vendor = nodeTopology[eleCount].vendor;
+        var ethInterface = nodeTopology[eleCount].iface;
+        var count = nodeTopology[eleCount].count.toString();
+        now.createHoneydNodes(ipType, ip1, ip2, ip3, ip4, profile, portset, vendor, ethInterface, count);
+        
+        nodes = [];
+        var setMAC = [];
+
+        now.GetNodes(function(nodesList){
+          nodes = nodesList;
+          var add = true;
+          for(var i in nodes)
+          {
+            add = true;
+            for(var j in haveMac)
+            {
+              if(haveMac[j] == nodes[i].mac)
+              {
+                add = false;
+                break;
+              }
+            }
+            if(add)
+            {
+              haveMac.push(nodes[i].mac);
+              setMAC.push(nodes[i].mac);
+            } 
+          }
+          $(div).data('mac', setMAC.join());
+          nodeTopology[eleCount].mac = setMAC.join();
+          nodeTopology[eleCount].coordinates = {x:x, y:y};
+          $topology.append(div);
+
+          eleCount += 1;
+        });
       }
-      eleCount += 1;
+      else if(type == 'prepop')
+      {
+        var macSplit = nodeObj.mac.split(',')[0];
+      
+        for(var j in nodeList)
+        {
+          if(nodeList[j].mac == macSplit)
+          {
+            nodeTopology[eleCount] = {};
+            nodeTopology[eleCount].iface = nodeList[j].interface;
+            nodeTopology[eleCount].count = nodeObj.count.toString();
+            nodeTopology[eleCount].portset = nodeList[j].portset.toString();
+            nodeTopology[eleCount].vendor = nodeList[j].vendor;
+            nodeTopology[eleCount].ip = nodeList[j].ip;
+            nodeTopology[eleCount].selectedProfile = nodeObj.selectedProfile;
+            nodeTopology[eleCount].mac = nodeObj.mac;
+            nodeTopology[eleCount].coordinates = {x:x, y:y};
+            break;
+          }
+        }
+        
+        $topology.append(div);
+        eleCount += 1;
+      }
+      else if(type == 'split')
+      {
+        $(splitData.src).data('mac', splitData.srcNodeMacs);
+        $('#' + splitData.src.id + 'text').html(splitData.srcCount);
+        nodeTopology[splitData.src.id].count = splitData.srcCount;
+        
+        var testMac = splitData.splNodeMacs.split(',')[0];
+        for(var j in nodes)
+        {
+          if(nodes[j].mac == testMac)
+          {
+            nodeTopology[eleCount] = {};
+            console.log('match found');
+            nodeTopology[eleCount].iface = nodes[j].interface;
+            nodeTopology[eleCount].count = splitData.splCount;
+            nodeTopology[eleCount].portset = nodes[j].portset.toString();
+            nodeTopology[eleCount].vendor = nodes[j].vendor;
+            nodeTopology[eleCount].ip = nodes[j].ip;
+            nodeTopology[eleCount].selectedProfile = nodeObj.selectedProfile;
+            nodeTopology[eleCount].mac = splitData.splNodeMacs;
+            nodeTopology[eleCount].coordinates = {x:x, y:y};
+            break;
+          }
+        }
+        $topology.append(div);
+        eleCount += 1;
+      }
+      else
+      {
+        return undefined;
+      }
       if(xEleCount != undefined)
       {
         xEleCount += 1;
@@ -523,7 +618,7 @@ block headerAdditions
           {
             findOtherNodesList.push(topo[i].mac);
             
-            eleCountUpdate = addNodeToCanvas(topo[i], undefined, undefined, xEleCount, yEleCount);
+            eleCountUpdate = addNodeToCanvas(topo[i], 'prepop', undefined, undefined, xEleCount, yEleCount);
             if(eleCountUpdate != undefined)
             {
               xEleCount = eleCountUpdate.xCount;
@@ -556,7 +651,7 @@ block headerAdditions
           }
           for(var i in nodeCount)
           {
-            eleCountUpdate = addNodeToCanvas(nodeCount[i], undefined, undefined, xEleCount, yEleCount);
+            eleCountUpdate = addNodeToCanvas(nodeCount[i], 'prepop', undefined, undefined, xEleCount, yEleCount);
             if(eleCountUpdate != undefined)
             {
               xEleCount = eleCountUpdate.xCount;
@@ -852,27 +947,17 @@ block headerAdditions
         $('#rangeDiv').append(container);
         
         $('#splitAccept').on('click', function(){
-          eleCount++;
           var y = parseInt($(ele).css('top'));
           var x = parseInt($(ele).css('left')) + 50;
-          
-          var div = theDoc.createElement('div');
-          
-          $(div)
-          .click(function(e){
-            canvasElementOnclick(e);
-          })
-          .draggable({tolerance: 'pointer',
-            cursorAt: {top:25,left:15},
-            cursor: 'move',
-            containment:'#nodeCanvas',
-            revert: 'invalid',
-            grid: [50, 50]});
-          
+          var splitData = {};
           var splitEnd = parseInt($('#splitRange').val());
           var getSplitMacs = $(ele).data('mac').split(',');
           var group1Macs = [];
           var group2Macs = [];
+          var nodeObj = {};
+          nodeObj.selectedProfile = $(ele).data('profile');
+          
+          splitData.src = ele;
           
           for(var i = 0; i < splitEnd; i++)
           {
@@ -883,48 +968,15 @@ block headerAdditions
             group2Macs.push(getSplitMacs[i]);
           }
           
-          $('#' + ele.id).data('mac', group1Macs.join());
+          splitData.srcNodeMacs = group1Macs.join();
+          splitData.splNodeMacs = group2Macs.join();
           var newCount = parseInt($('#' + ele.id + 'text').html()) - parseInt($('#splitRange').val());
-          $('#' + ele.id + 'text').html(newCount);
-          nodeTopology[ele.id].count = newCount.toString();
+          splitData.splCount = newCount.toString();
+          splitData.srcCount = $('#splitRange').val();
+          nodeObj.count = splitData.splCount;
           
-          var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
-          $(div).data('profile', $('#' + ele.id).data('profile'))
-                .data('preexisting', true)
-                .data('mac', group2Macs.join())
-                .css(prepopCss)
-                .attr('class', 'ui-draggable canvasElement');
-          placeBackgroundImage($(div), $(div).data('profile'));
-          setCanvasElementEventHandlers(div);
+          addNodeToCanvas(nodeObj, 'split', x, y, undefined, undefined, splitData);
           
-          div.id = eleCount;
-          
-          var text = theDoc.createElement('label');
-          text.innerHTML = parseInt($('#splitRange').val());
-          text.style.fontSize = '18px';
-          text.id = eleCount + 'text';
-          div.appendChild(text);
-    
-          $topology.append(div);
-
-          nodeTopology[eleCount] = {};
-
-          for(var j in nodeList)
-          {
-            if(nodeList[j].mac == group2Macs[0])
-            {
-              nodeTopology[eleCount].iface = nodeList[j].interface;
-              nodeTopology[eleCount].count = $('#splitRange').val().toString();
-              nodeTopology[eleCount].portset = nodeList[j].portset.toString();
-              nodeTopology[eleCount].vendor = nodeList[j].vendor;
-              nodeTopology[eleCount].ip = nodeList[j].ip;
-              nodeTopology[eleCount].mac = group2Macs.join();
-              nodeTopology[eleCount].selectedProfile = $('#' + ele.id).data('profile');
-              nodeTopology[eleCount].coordinates = {x:x, y:y};
-              break;
-            }
-          }
-          eleCount += 1;
           $modalSplit.dialog('close');
         });
         $modalSplit.dialog('open');
@@ -959,27 +1011,18 @@ block headerAdditions
         $('#rangeDiv').append(container);
         
         $('#splitAccept').on('click', function(){
-          eleCount++;
-          var div = theDoc.createElement('div');
-          
-          $(div)
-          .click(function(e){
-            canvasElementOnclick(e);
-          })
-          .draggable({tolerance: 'pointer',
-            cursorAt: {top:25,left:15},
-            cursor: 'move',
-            containment:'#nodeCanvas',
-            revert: 'invalid',
-            grid: [50, 50]});
-        
           var y = parseInt($(ele).css('top'));
           var x = parseInt($(ele).css('left')) + 50;
-          
+          var splitData = {};
           var splitEnd = parseInt($('#splitRange').val());
           var getSplitMacs = $(ele).data('mac').split(',');
           var group1Macs = [];
           var group2Macs = [];
+          var nodeObj = {};
+          nodeObj.selectedProfile = $(ele).data('profile');
+          nodeObj.count = $('#splitRange').val();
+          
+          splitData.src = ele;
           
           for(var i = 0; i < splitEnd; i++)
           {
@@ -990,48 +1033,15 @@ block headerAdditions
             group2Macs.push(getSplitMacs[i]);
           }
           
-          $('#' + ele.id).data('mac', group1Macs.join());
+          splitData.srcNodeMacs = group1Macs.join();
+          splitData.splNodeMacs = group2Macs.join();
           var newCount = parseInt($('#' + ele.id + 'text').html()) - parseInt($('#splitRange').val());
-          $('#' + ele.id + 'text').html(newCount);
-          nodeTopology[ele.id].count = newCount.toString();
+          console.log('newCount == ' + newCount);
+          splitData.srcCount = newCount.toString();
+          splitData.splCount = $('#splitRange').val();
           
-          var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
-          $(div).data('profile', $('#' + ele.id).data('profile'))
-                .data('preexisting', true)
-                .data('mac', group2Macs.join())
-                .css(prepopCss)
-                .attr('class', 'ui-draggable canvasElement');
-          placeBackgroundImage($(div), $(div).data('profile'));
-          setCanvasElementEventHandlers(div);
+          addNodeToCanvas(nodeObj, 'split', x, y, undefined, undefined, splitData);
           
-          div.id = eleCount;
-          
-          var text = theDoc.createElement('label');
-          text.innerHTML = parseInt($('#splitRange').val());
-          text.style.fontSize = '18px';
-          text.id = eleCount + 'text';
-          div.appendChild(text);
-    
-          $topology.append(div);
-          
-          nodeTopology[eleCount] = {};
-          
-          for(var j in nodeList)
-          {
-            if(nodeList[j].mac == group2Macs[0])
-            {
-              nodeTopology[eleCount].iface = nodeList[j].interface;
-              nodeTopology[eleCount].count = $('#splitRange').val().toString();
-              nodeTopology[eleCount].portset = nodeList[j].portset.toString();
-              nodeTopology[eleCount].vendor = nodeList[j].vendor;
-              nodeTopology[eleCount].ip = nodeList[j].ip;
-              nodeTopology[eleCount].mac = group2Macs.join();
-              nodeTopology[eleCount].selectedProfile = $('#' + ele.id).data('profile');
-              nodeTopology[eleCount].coordinates = {x:x, y:y};
-              break;
-            }
-          }
-          eleCount += 1;
           $modalSplit.dialog('close');
         });
         $modalSplit.dialog('open');
@@ -1311,91 +1321,15 @@ block headerAdditions
           
           if(ui.draggable.attr('class').indexOf('canvasElement') == -1 && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
           {
-            var title = selectedProfile;
+            var nodeObj = {};
+            nodeObj.selectedProfile = selectedProfile;
+            nodeObj.count = $('#nodeNumber').val();
             
             clearProfileSelected();
             
             var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
             var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
-            var div = theDoc.createElement('div');
-            
-            $(div).click(function(e){
-                    canvasElementOnclick(e);
-                  })
-                  .draggable({tolerance: 'pointer',
-                    cursorAt: {top:25,left:15},
-                    cursor: 'move',
-                    containment:'#nodeCanvas',
-                    revert: 'invalid'});
-            
-            div.setAttribute('class', 'canvasElement ui-draggable');
-            $(div).removeClass('ui-draggable-dragging');
-            
-            var dropCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
-            $(div).data('profile', title).data('preexisting', false).css(dropCss);
-            div.setAttribute('onmouseenter', 'handleCanvasEleHover(event)');
-            div.setAttribute('onmouseleave', 'handleCanvasEleHover(event)');
-            div.id = eleCount;
-            placeBackgroundImage($(div), title);
-            setCanvasElementEventHandlers(div);
-            
-            var text = theDoc.createElement('label');
-            text.innerHTML = $('#nodeNumber').val();
-            text.style.fontSize = '18px';
-            text.id = eleCount + 'text';
-            div.appendChild(text);
-            
-            var ipType = '';
-            var ip1, ip2, ip3, ip4 = '0';
-            if(nodeTopology[eleCount].ip != 'DHCP')
-            {
-              ip1 = nodeTopology[eleCount].ip.ip1;
-              ip2 = nodeTopology[eleCount].ip.ip2;
-              ip3 = nodeTopology[eleCount].ip.ip3;
-              ip4 = nodeTopology[eleCount].ip.ip4;
-            }
-            else
-            {
-              ipType = 'DHCP';
-            }
-            var profile = nodeTopology[eleCount].selectedProfile;
-            var portset = nodeTopology[eleCount].portset.toString();
-            var vendor = nodeTopology[eleCount].vendor;
-            var ethInterface = nodeTopology[eleCount].iface;
-            var count = nodeTopology[eleCount].count.toString();
-            now.createHoneydNodes(ipType, ip1, ip2, ip3, ip4, profile, portset, vendor, ethInterface, count);
-
-            nodes = [];
-            var setMAC = [];
-
-            now.GetNodes(function(nodeList){
-              nodes = nodeList;
-              var add = true;
-              for(var i in nodes)
-              {
-                add = true;
-                for(var j in haveMac)
-                {
-                  if(haveMac[j] == nodes[i].mac)
-                  {
-                    console.log('found match, not adding');
-                    add = false;
-                    break;
-                  }
-                }
-                if(add)
-                {
-                  haveMac.push(nodes[i].mac);
-                  setMAC.push(nodes[i].mac);
-                } 
-              }
-              $(div).data('mac', setMAC.join());
-              nodeTopology[eleCount].mac = setMAC.join();
-              nodeTopology[eleCount].coordinates = {x:x, y:y};
-              $topology.append(div);
-
-              eleCount += 1;
-            });
+            addNodeToCanvas(nodeObj, 'drop', x, y);
           }
           else if(ui.draggable.attr('class').indexOf('canvasElement') != -1 && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
           {
@@ -1419,7 +1353,7 @@ block headerAdditions
       handleOffscreenIndicators();
     });
     
-    $(window).unload(function(){
+    window.addEventListener('unload', function(){
       now.WriteWysiwygTopology(nodeTopology, function(){
         console.log('WriteWysiwygTopology finished');
       });
