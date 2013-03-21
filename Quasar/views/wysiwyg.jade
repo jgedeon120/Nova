@@ -72,8 +72,7 @@ block headerAdditions
       {
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
-        $('#name').html(source.innerHTML);
-        now.GetProfile(source.innerHTML, function(profile){
+        now.GetProfile($('#name').html(source.innerHTML).html(), function(profile){
           var $vendors = $('#vendors');
           var $portSets = $('#portSets');
           var $interfaces = $('#interfaces');
@@ -104,8 +103,7 @@ block headerAdditions
           var pointerCss = {top:($(source).position().top + $(source).height()),
                             left:($(source).position().left + $(source).outerWidth() + 20)};
                             
-          $profileInfo.css(pointerCss).fadeIn(200, function(){
-          });
+          $profileInfo.css(pointerCss).fadeIn(200);
         });
       }
     }
@@ -116,8 +114,7 @@ block headerAdditions
       {
         if(e == undefined)
         {
-          $profileInfo.fadeOut(200, function(){
-          });
+          $profileInfo.fadeOut(200);
           return;
         }
         var evt = (e ? e : window.event);
@@ -128,8 +125,7 @@ block headerAdditions
         }
         else
         {
-          $profileInfo.fadeOut(200, function(){
-          });
+          $profileInfo.fadeOut(200);
         }
       }
     }
@@ -147,8 +143,7 @@ block headerAdditions
         $(source).css('background-color', '');
         selectedProfile = undefined;
         clicked = false
-        $profileInfo.fadeOut(200, function(){
-        });
+        $profileInfo.fadeOut(200);
         return;
       }
       var evt = (e ? e : window.event);
@@ -268,6 +263,8 @@ block headerAdditions
       $sameHeightDivs.css({height: maxHeight + 'px'});
     }
     
+    var fadeEleIn = true;
+    
     function handleCanvasEleHover(e, ui)
     {
       if(e.type == 'mouseenter')
@@ -332,20 +329,31 @@ block headerAdditions
           }
         }
         
-        $hoverInfo.css(hoverInfoCss).fadeIn(200, function(){
-        });
+        if(fadeEleIn)
+        {
+          $hoverInfo.css(hoverInfoCss).fadeIn(200, function(){
+            fadeEleIn = false;
+          });
+        }
+        else
+        {
+          setTimeout(function(){$hoverInfo.css(hoverInfoCss).fadeIn(200, function(){
+            fadeEleIn = false;
+          });}, 200);
+        }
       }
       else if(e.type == 'mouseleave')
       {
         $hoverInfo.fadeOut(200, function(){
+          fadeEleIn = true;
         });
       }
       else if(e.type == 'drag')
       {
         $hoverInfo.fadeOut(150, function(){
+          fadeEleIn = true;
         });
-        $contextMenu.fadeOut(150, function(){
-        });
+        $contextMenu.fadeOut(150);
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
         var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
@@ -387,8 +395,7 @@ block headerAdditions
         var source = evt.target || evt.srcElement;
         var hoverInfoCss = {top:($(source).position().top),
                             left:($(source).position().left + $(source).outerWidth()) + 10};
-        $hoverInfo.css(hoverInfoCss).fadeIn(200, function(){
-        });
+        $hoverInfo.css(hoverInfoCss).fadeIn(200);
       }
     }
     
@@ -841,8 +848,7 @@ block headerAdditions
     
     function toggleContextMenu(e)
     {
-      $hoverInfo.fadeOut(200, function(){
-      });
+      $hoverInfo.fadeOut(200);
       
       var evt = (e ? e : window.event);
       var source = evt.target || evt.srcElement;
@@ -898,10 +904,9 @@ block headerAdditions
         });
         
         var cmCss = {left: (parseInt(left) + (zoom.width / 2)),
-                     top: (parseInt(top) + (zoom.width / 2))};
+                     top: (parseInt(top) + (zoom.height / 2))};
                      
-        $contextMenu.css(cmCss).fadeIn(200, function(){
-        });
+        $contextMenu.css(cmCss).fadeIn(200);
         cmCss.left += (zoom.width / 2);
         $modalSplit.css(cmCss);
       }
@@ -948,7 +953,7 @@ block headerAdditions
         
         $('#splitAccept').on('click', function(){
           var y = parseInt($(ele).css('top'));
-          var x = parseInt($(ele).css('left')) + 50;
+          var x = parseInt($(ele).css('left')) + zoom.width;
           var splitData = {};
           var splitEnd = parseInt($('#splitRange').val());
           var getSplitMacs = $(ele).data('mac').split(',');
@@ -1012,7 +1017,7 @@ block headerAdditions
         
         $('#splitAccept').on('click', function(){
           var y = parseInt($(ele).css('top'));
-          var x = parseInt($(ele).css('left')) + 50;
+          var x = parseInt($(ele).css('left')) + zoom.width;
           var splitData = {};
           var splitEnd = parseInt($('#splitRange').val());
           var getSplitMacs = $(ele).data('mac').split(',');
@@ -1036,7 +1041,6 @@ block headerAdditions
           splitData.srcNodeMacs = group1Macs.join();
           splitData.splNodeMacs = group2Macs.join();
           var newCount = parseInt($('#' + ele.id + 'text').html()) - parseInt($('#splitRange').val());
-          console.log('newCount == ' + newCount);
           splitData.srcCount = newCount.toString();
           splitData.splCount = $('#splitRange').val();
           
@@ -1155,12 +1159,6 @@ block headerAdditions
         modal: true,
         show: 200,
         hide: 200
-      })
-      .on('dialogdrag', function(e, ui){
-        
-      })
-      .on('dialogdragstop', function(e, ui){
-        $modalSplit.hide();
       })
       
       $(document).keydown(function(e){
