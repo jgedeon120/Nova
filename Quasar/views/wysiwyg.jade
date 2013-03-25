@@ -561,8 +561,6 @@ block headerAdditions
       }
       else if(type == 'split')
       {
-        console.log('eleCount == ' + eleCount);
-        console.log('sd.src.id == ' + splitData.src.id);
         $(splitData.src).data('mac', splitData.srcNodeMacs);
         $('#' + splitData.src.id + 'text').html(splitData.srcCount);
         nodeTopology[splitData.src.id].count = splitData.srcCount;
@@ -868,6 +866,7 @@ block headerAdditions
             $('.ui-selected').each(function(){
               mergeSelected(source);
             });
+            $mergeN.off('click');
           }).show();
           $splitN.hide();
         }
@@ -878,6 +877,7 @@ block headerAdditions
           {
             $splitN.on('click', function(e){
               splitSelected(source);
+              $splitN.off('click');
             }).show();
             $delN.removeClass('single');
           }
@@ -890,6 +890,7 @@ block headerAdditions
         
         $delN.on('click', function(e){
           deleteSelected();
+          $delN.off('click');
         });
         
         var cmCss = {left: (parseInt(left) + (zoom.width / 2)),
@@ -904,7 +905,6 @@ block headerAdditions
     function splitSelected(ele)
     {
       $('#rangeDiv').empty();
-      console.log('ele.id == ' + ele.id);
       var text = theDoc.createElement('p');
       var slider = theDoc.createElement('input');
       slider.id = 'splitRange';
@@ -964,15 +964,12 @@ block headerAdditions
           splitData.splNodeMacs = group2Macs.join();
           splitData.splCount = newCount.toString();
           splitData.srcCount = splitEnd.toString();
-          for(var i in splitData)
-          {
-            console.log('splitData[' + i + '] == ' + splitData[i]);
-          }
           nodeObj.count = splitData.splCount;
           
           addNodeToCanvas(nodeObj, 'split', x, y, undefined, undefined, splitData);
           
           $modalSplit.dialog('close');
+          $('#splitAccept').off('click');
         });
         $modalSplit.dialog('open');
       }
@@ -1036,6 +1033,7 @@ block headerAdditions
           addNodeToCanvas(nodeObj, 'split', x, y, undefined, undefined, splitData);
           
           $modalSplit.dialog('close');
+          $('#splitAccept').off('click');
         });
         $modalSplit.dialog('open');
       }
