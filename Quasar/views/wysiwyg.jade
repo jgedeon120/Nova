@@ -31,7 +31,6 @@ block headerAdditions
     var currentConfig = '#{current}';
     var theDoc = document;
     var haveMac = [];
-    var profilesArray = new Array();
     var $topology = '';
     var $dragMe = '';
     var $hoverInfo = '';
@@ -185,7 +184,6 @@ block headerAdditions
               profile.name = profileObj[i].name;
               profile.parent = profileObj[i].parent;
               profile.children = [];
-              profilesArray[profile.name] = profile;
               var append = theDoc.createElement('tr');
               var td0 = theDoc.createElement('td');
               td0.innerHTML = profile.name;
@@ -202,16 +200,6 @@ block headerAdditions
           }
           profHook.find('td').last().toggleClass('last');
           
-          for(var i in profilesArray)
-          {
-            for(var j in profilesArray)
-            {
-              if(profilesArray[j].parent == profilesArray[i].name)
-              {
-                profilesArray[i].children.push(profilesArray[j].name);
-              }
-            }
-          }
           cb && cb()
         });
       }
@@ -220,10 +208,9 @@ block headerAdditions
     function saveSelectedParameters()
     {
       clicked = false;
-      $dragMe.draggable('enable');
       var dragMeCss = {border:'2px solid black',
                        opacity:'1'};
-      $dragMe.css(dragMeCss);
+      $dragMe.draggable('enable').css(dragMeCss);
       hideProfileInfo();
       var profileObject = {};
       profileObject.selectedProfile = selectedProfile;
@@ -235,7 +222,10 @@ block headerAdditions
       profileObject.ip = $('#allocationType').val();
       if(profileObject.ip != 'DHCP')
       {
-        profileObject.ip = {ip1:$('#ip1').val(), ip2:$('#ip2').val(), ip3:$('#ip3').val(), ip4:$('#ip4').val()};
+        profileObject.ip = {ip1:$('#ip1').val(), 
+                            ip2:$('#ip2').val(), 
+                            ip3:$('#ip3').val(), 
+                            ip4:$('#ip4').val()};
       }
       
       nodeTopology[eleCount] = profileObject;
@@ -679,8 +669,8 @@ block headerAdditions
       var append = ' no-repeat center, #E4F2FF';
       if(profile == undefined)
       {
-        ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append);
-        ele.find('label').css('color', 'white');
+        ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append)
+        .find('label').css('color', 'white');
         return;
       }
       now.GetProfile(profile, function(pfile){
@@ -695,8 +685,8 @@ block headerAdditions
         }
         else if(pers.indexOf('Linux') != -1)
         {
-          ele.css('background', 'url("images/wysiwyg/linux_75.png")' + append);
-          ele.find('label').css('color', 'white');
+          ele.css('background', 'url("images/wysiwyg/linux_75.png")' + append)
+          .find('label').css('color', 'white');
         }
         else if(pers.indexOf('Mac OS X') != -1)
         {
@@ -704,8 +694,8 @@ block headerAdditions
         }
         else
         {
-          ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append);
-          ele.find('label').css('color', 'white');
+          ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append)
+          .find('label').css('color', 'white');
         }
       });
     }
@@ -928,7 +918,8 @@ block headerAdditions
         $(slider).attr('value', Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
         var counter = theDoc.createElement('label');
         counter.id = 'updateMe';
-        counter.innerHTML = Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2) + ', ' + (parseInt($('#' + ele.id + 'text').html()) - Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
+        var delta = (parseInt($('#' + ele.id + 'text').html()) - Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
+        counter.innerHTML = Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2) + ', ' + delta;
         var container = theDoc.createElement('div');
         var bottom = theDoc.createElement('label');
         bottom.id = 'bottom';
@@ -953,13 +944,14 @@ block headerAdditions
         
         $('#splitAccept').on('click', function(){
           var y = parseInt($(ele).css('top'));
-          var x = parseInt($(ele).css('left')) + zoom.width;
-          var splitData = {};
+          var x = parseInt($(ele).css('left')) + parseInt(zoom.width);
           var splitEnd = parseInt($('#splitRange').val());
           var getSplitMacs = $(ele).data('mac').split(',');
+          var splitData = {};
           var group1Macs = [];
           var group2Macs = [];
           var nodeObj = {};
+          var newCount = parseInt($('#' + ele.id + 'text').html()) - splitEnd;
           nodeObj.selectedProfile = $(ele).data('profile');
           
           splitData.src = ele;
@@ -975,9 +967,8 @@ block headerAdditions
           
           splitData.srcNodeMacs = group1Macs.join();
           splitData.splNodeMacs = group2Macs.join();
-          var newCount = parseInt($('#' + ele.id + 'text').html()) - parseInt($('#splitRange').val());
           splitData.splCount = newCount.toString();
-          splitData.srcCount = $('#splitRange').val();
+          splitData.srcCount = splitEnd.toString();
           nodeObj.count = splitData.splCount;
           
           addNodeToCanvas(nodeObj, 'split', x, y, undefined, undefined, splitData);
@@ -994,7 +985,8 @@ block headerAdditions
         $(slider).attr('value', Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
         var counter = theDoc.createElement('label');
         counter.id = 'updateMe';
-        counter.innerHTML = Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2) + ', ' + (parseInt($('#' + ele.id + 'text').html()) - Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
+        var delta = (parseInt($('#' + ele.id + 'text').html()) - Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
+        counter.innerHTML = Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2) + ', ' + delta;
         var container = theDoc.createElement('div');
         $(container).append(bottom);
         $(container).append(slider);
@@ -1017,15 +1009,15 @@ block headerAdditions
         
         $('#splitAccept').on('click', function(){
           var y = parseInt($(ele).css('top'));
-          var x = parseInt($(ele).css('left')) + zoom.width;
+          var x = parseInt($(ele).css('left')) + parseInt(zoom.width);
           var splitData = {};
-          var splitEnd = parseInt($('#splitRange').val());
-          var getSplitMacs = $(ele).data('mac').split(',');
           var group1Macs = [];
           var group2Macs = [];
           var nodeObj = {};
+          var splitEnd = parseInt($('#splitRange').val());
+          var getSplitMacs = $(ele).data('mac').split(',');
+          var newCount = parseInt($('#' + ele.id + 'text').html()) - splitEnd;
           nodeObj.selectedProfile = $(ele).data('profile');
-          nodeObj.count = $('#splitRange').val();
           
           splitData.src = ele;
           
@@ -1040,9 +1032,9 @@ block headerAdditions
           
           splitData.srcNodeMacs = group1Macs.join();
           splitData.splNodeMacs = group2Macs.join();
-          var newCount = parseInt($('#' + ele.id + 'text').html()) - parseInt($('#splitRange').val());
           splitData.srcCount = newCount.toString();
-          splitData.splCount = $('#splitRange').val();
+          splitData.splCount = splitEnd.toString();
+          nodeObj.count = splitData.splCount;
           
           addNodeToCanvas(nodeObj, 'split', x, y, undefined, undefined, splitData);
           
@@ -1056,20 +1048,20 @@ block headerAdditions
     {
       var div = theDoc.createElement('div');
       var baseProfile = $(base).data('profile');
-      var baseMac = $(base).data('mac').split(',')[0];
+      var baseMac = $(base).data('mac');
       var baseVendor = '';
       var basePortset = '';
       var baseIp = '';
       var baseInterface = '';
       
-      for(var i in nodeList)
+      for(var i in nodeTopology)
       {
-        if(baseMac == nodeList[i].mac)
+        if(baseMac == nodeTopology[i].mac)
         {
-          baseVendor = nodeList[i].vendor;
-          basePortset = nodeList[i].portset;
-          baseIp = nodeList[i].ip;
-          baseInterface = nodeList[i].iface;
+          baseVendor = nodeTopology[i].vendor;
+          basePortset = nodeTopology[i].portset;
+          baseIp = nodeTopology[i].ip;
+          baseInterface = nodeTopology[i].iface;
           break;
         }
       }
@@ -1097,6 +1089,7 @@ block headerAdditions
         console.log('Would be merging');
         // If there was no problem, merge the nodes, remove the two old ones and put in the
         // aggregate WYSIWYG node
+        // Make sure to update nodeTopology here as well.
       }
       else
       {
@@ -1201,7 +1194,8 @@ block headerAdditions
         .mousewheel(function(e, delta){
           $('.canvasElement').each(function(){
             var d = parseInt(delta);
-            var bWidth = isNaN(parseInt($(this).css('border-width'))) ? 0 : parseInt($(this).css('border-width'));
+            var bWidth = isNaN(parseInt($(this).css('border-width'))) ? 0 
+              : parseInt($(this).css('border-width'));
             if(((parseInt($(this).outerWidth()) <= parseInt(25 + bWidth)) && d < 0)
             || ((parseInt($(this).outerWidth()) >= parseInt(75 + bWidth)) && d > 0))
             {
@@ -1252,11 +1246,9 @@ block headerAdditions
         .mousemove(function(e){
           if(topoDrag)
           {
-            var relX = (e.clientX - oldX);
-            var relY = (e.clientY - oldY);
             $('.canvasElement').each(function(){
-              var newPos = {left:parseInt($(this).css('left')) + parseInt(relX),
-                            top:parseInt($(this).css('top')) + parseInt(relY)};
+              var newPos = {left:parseInt($(this).css('left')) + parseInt(e.clientX - oldX),
+                            top:parseInt($(this).css('top')) + parseInt(e.clientY - oldY)};
               $(this).css(newPos);
             });
             handleOffscreenIndicators();
@@ -1276,68 +1268,66 @@ block headerAdditions
                                 containment:'#nodeCanvas',
                                 revert: 'invalid'};
         
-        $dragMe.draggable(draggableOptions);
-        $dragMe.on('dragstart', function(event, ui){
-          var evt = (event ? event : window.event);
-          var source = evt.target || evt.srcElement;
-          source.style.opacity = '0.4';
-        });
-        
-        $dragMe.on('dragstop', function(event, ui){
-          var evt = (event ? event : window.event);
-          var source = evt.target || evt.srcElement;
-          var dragMeCss = {border:'2px dashed black',
-                           opacity:'0.4'};
-          $dragMe.css(dragMeCss);
-        });
-        
-        $dragMe.draggable('disable');
+        $dragMe.draggable(draggableOptions)
+          .on('dragstart', function(event, ui){
+            var evt = (event ? event : window.event);
+            var source = evt.target || evt.srcElement;
+            source.style.opacity = '0.4';
+          })
+          .on('dragstop', function(event, ui){
+            var evt = (event ? event : window.event);
+            var source = evt.target || evt.srcElement;
+            var dragMeCss = {border:'2px dashed black',
+                             opacity:'0.4'};
+            $dragMe.css(dragMeCss);
+          })
+          .draggable('disable');
+          
         var dragMeCss = {border:'2px dashed black',
                          opacity:'0.4'};
         $dragMe.css(dragMeCss);
         
         var droppableOptions = {accept:'.ui-draggable'};
         
-        $topology.droppable(droppableOptions);
-        $topology.on('dropover', function(event, ui){
-          $topology.addClass('over');
-        });
-        
-        $topology.on('dropout', function(event, ui){
-          $topology.removeClass('over');
-        });
-        
-        $topology.on('drop', function(event, ui){
-          noclick = true;
-          $topology.removeClass('over');
-          $dragMe.draggable('disable');
-          placeBackgroundImage($dragMe);
-          var dragMeCss = {border:'2px dashed black',
-                           opacity:'0.4'};
-          $dragMe.css(dragMeCss);
-          
-          if(ui.draggable.attr('class').indexOf('canvasElement') == -1 && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
-          {
-            var nodeObj = {};
-            nodeObj.selectedProfile = selectedProfile;
-            nodeObj.count = $('#nodeNumber').val();
+        $topology.droppable(droppableOptions)
+          .on('dropover', function(event, ui){
+            $topology.addClass('over');
+          })
+          .on('dropout', function(event, ui){
+            $topology.removeClass('over');
+          })
+          .on('drop', function(event, ui){
+            noclick = true;
+            $topology.removeClass('over');
+            $dragMe.draggable('disable');
+            placeBackgroundImage($dragMe);
+            var dragMeCss = {border:'2px dashed black',
+                             opacity:'0.4'};
+            $dragMe.css(dragMeCss);
             
-            clearProfileSelected();
-            
-            var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
-            var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
-            addNodeToCanvas(nodeObj, 'drop', x, y);
-          }
-          else if(ui.draggable.attr('class').indexOf('canvasElement') != -1 && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
-          {
-            var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
-            var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
-            var index = ui.draggable.attr('id');
-            
-            nodeTopology[index].coordinates = {x:x, y:y};
-          }
-          
-        });
+            if(ui.draggable.attr('class').indexOf('canvasElement') == -1 
+            && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
+            {
+              var nodeObj = {};
+              nodeObj.selectedProfile = selectedProfile;
+              nodeObj.count = $('#nodeNumber').val();
+              
+              clearProfileSelected();
+              
+              var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
+              var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
+              addNodeToCanvas(nodeObj, 'drop', x, y);
+            }
+            else if(ui.draggable.attr('class').indexOf('canvasElement') != -1 
+            && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
+            {
+              var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
+              var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
+              var index = ui.draggable.attr('id');
+              
+              nodeTopology[index].coordinates = {x:x, y:y};
+            }
+          });
               
         repopulateProfilesList(function(){
           prepopulateCanvasWithNodes();
