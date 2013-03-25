@@ -208,6 +208,7 @@
 
 #dragBar table td:hover {
   border-right: 2px solid #E4F2FF;
+  background-color: #F1CC91;
 }
 
 .first {

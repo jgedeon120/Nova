@@ -863,9 +863,7 @@ block headerAdditions
           $delN.removeClass('single');
           $mergeN.on('click', function(e){
             var profiles = [];
-            $('.ui-selected').each(function(){
-              mergeSelected(source);
-            });
+            mergeSelected(source);
             $mergeN.off('click');
           }).show();
           $splitN.hide();
@@ -1061,16 +1059,23 @@ block headerAdditions
         }
       }
       
+      console.log('baseProfile == ' + baseProfile);
+      console.log('baseMac == ' + baseMac);
+      console.log('baseVendor == ' + baseVendor);
+      console.log('basePortset == ' + basePortset);
+      console.log('baseIp == ' + baseIp)
+      console.log('baseInterface == ' + baseInterface);
+      
       var keepGoing = true;
       var id = '';
-      $('ui-selected').each(function(){
+      $('.ui-selected').each(function(){
         id = $(this).attr('id');
         console.log('id == ' + id);
         if(!keepGoing)
         {
           return;
         }
-        if($(this).data('profile') != baseProfile || nodeTopology[id].vendor != baseVendor
+        if(nodeTopology[id].selectedProfile != baseProfile || nodeTopology[id].vendor != baseVendor
            || nodeTopology[id].portset != basePortset || nodeTopology[id].ip != baseIp
            || nodeTopology[id].iface != baseInterface)
         {
@@ -1108,6 +1113,9 @@ block headerAdditions
         }
         $(this).remove();
       });
+      
+      $contextMenu.fadeOut(200);
+      $hoverInfo.fadeOut(200);
       
       now.deleteNodes(deleteNodes);
     }
