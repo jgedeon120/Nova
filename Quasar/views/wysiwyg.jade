@@ -72,13 +72,9 @@ block headerAdditions
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
         now.GetProfile($('#name').html(source.innerHTML).html(), function(profile){
-          var $vendors = $('#vendors');
-          var $portSets = $('#portSets');
-          var $interfaces = $('#interfaces');
-          
-          $vendors.empty();
-          $portSets.empty();
-          $interfaces.empty();
+          var $vendors = $('#vendors').empty();
+          var $portSets = $('#portSets').empty();
+          var $interfaces = $('#interfaces').empty();
           
           for(var i in profile.ethernet)
           {
@@ -265,17 +261,17 @@ block headerAdditions
                             left:(($(source).position().left + $(source).outerWidth()) + 10)};
         var titleCss = {'font-weight':'bold', 'font-size':'18px'};
         
-        $('#hoverName').css(titleCss).html($(source).data('profile'));
-        $('#hoverPortset').html('');
-        $('#hoverVendor').html('');
-        $('#hoverInterface').html('');
-        $('#hoverAddress').html('');
+        var $hName = $('#hoverName').css(titleCss).html($(source).data('profile'));
+        var $hPortset = $('#hoverPortset').html('');
+        var $hVendor = $('#hoverVendor').html('');
+        var $hIface = $('#hoverInterface').html('');
+        var $hAddress = $('#hoverAddress').html('');
         
         if(nodeTopology[source.id] != undefined && !$(source).data('preexisting'))
         {
-          $('#hoverPortset').html(nodeTopology[source.id].portset);
-          $('#hoverVendor').html(nodeTopology[source.id].vendor);
-          $('#hoverInterface').html(nodeTopology[source.id].iface);
+          $hPortset.html(nodeTopology[source.id].portset);
+          $hVendor.html(nodeTopology[source.id].vendor);
+          $hIface.html(nodeTopology[source.id].iface);
           
           if(nodeTopology[source.id].ip != 'DHCP')
           {
@@ -285,11 +281,11 @@ block headerAdditions
               address += nodeTopology[source.id].ip[i] + '.';
             }
             address = address.substring(0, address.length - 1);
-            $('#hoverAddress').html('IP Range starting at: ' + address);
+            $hAddress.html('IP Range starting at: ' + address);
           }
           else
           {
-            $('#hoverAddress').html('DHCP');
+            $hAddress.html('DHCP');
           }
         }
         else
@@ -302,16 +298,16 @@ block headerAdditions
             {
               if(nodeList[i].mac == mac)
               {
-                $('#hoverInterface').html(nodeList[i].interface);
-                $('#hoverPortset').html(nodeList[i].portset);
-                $('#hoverVendor').html(nodeList[i].vendor);
+                $hPortset.html(nodeList[i].portset);
+                $hVendor.html(nodeList[i].vendor);
+                $hIface.html(nodeList[i].interface);
                 if(nodeList[i].ip != 'DHCP')
                 {
-                  $('#hoverAddress').html('IP Range starting at: ' + nodeList[i].ip);
+                  $hAddress.html('IP Range starting at: ' + nodeList[i].ip);
                 }
                 else
                 {
-                  $('#hoverAddress').html(nodeList[i].ip);
+                  $hAddress.html(nodeList[i].ip);
                 }
                 break;
               }
@@ -343,12 +339,12 @@ block headerAdditions
         $hoverInfo.fadeOut(150, function(){
           fadeEleIn = true;
         });
-        $contextMenu.fadeOut(150);
+        $contextMenu.fadeOut(100);
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
-        var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
+        var x = ui.helper.offset().left - $topology.offset().left;
         var dx = x - oldX;
-        var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
+        var y = ui.helper.offset().top - $topology.offset().top;
         var dy = y - oldY;
         
         if($(source).attr('class') != undefined && $(source).attr('class').indexOf('ui-selected') != -1)
@@ -536,7 +532,7 @@ block headerAdditions
           nodeTopology[eleCount].coordinates = {x:x, y:y};
           $topology.append(div);
 
-          eleCount += 1;
+          eleCount++;
         });
       }
       else if(type == 'prepop')
@@ -559,12 +555,14 @@ block headerAdditions
             break;
           }
         }
-        
         $topology.append(div);
-        eleCount += 1;
+        
+        eleCount++;
       }
       else if(type == 'split')
       {
+        console.log('eleCount == ' + eleCount);
+        console.log('sd.src.id == ' + splitData.src.id);
         $(splitData.src).data('mac', splitData.srcNodeMacs);
         $('#' + splitData.src.id + 'text').html(splitData.srcCount);
         nodeTopology[splitData.src.id].count = splitData.srcCount;
@@ -587,7 +585,8 @@ block headerAdditions
           }
         }
         $topology.append(div);
-        eleCount += 1;
+        
+        eleCount++;
       }
       else
       {
@@ -595,7 +594,7 @@ block headerAdditions
       }
       if(xEleCount != undefined)
       {
-        xEleCount += 1;
+        xEleCount++;
         return {xCount:xEleCount, yCount:yEleCount};
       }
       return undefined;
@@ -642,7 +641,7 @@ block headerAdditions
             }
             else
             {
-              nodeCount[key].count += 1;
+              nodeCount[key].count++;
               nodeCount[key].mac += ',' + nodeList[i].mac;
             }
           }
@@ -710,9 +709,9 @@ block headerAdditions
           if(theDoc.getElementById(this.id + 'osir') == undefined)
           {
             var div = theDoc.createElement('div');
+            var pos = {left:width, top:$(this).css('top')};
             div.className = 'offscreenIndicatorRight';
             div.id = this.id + 'osir';
-            var pos = {left:width, top:$(this).css('top')};
             $(div).css(pos);
             $topology.append(div);
           }
@@ -727,9 +726,9 @@ block headerAdditions
           if(theDoc.getElementById(this.id + 'osil') == undefined)
           {
             var div = theDoc.createElement('div');
+            var pos = {left:-20, top:$(this).css('top')};
             div.className = 'offscreenIndicatorLeft';
             div.id = this.id + 'osil';
-            var pos = {left:-20, top:$(this).css('top')};
             $(div).css(pos);
             $topology.append(div);
           }
@@ -744,9 +743,9 @@ block headerAdditions
           if(theDoc.getElementById(this.id + 'osit') == undefined)
           {
             var div = theDoc.createElement('div');
+            var pos = {left:$(this).css('left'), top:0};s
             div.className = 'offscreenIndicatorTop';
             div.id = this.id + 'osit';
-            var pos = {left:$(this).css('left'), top:0};
             $(div).css(pos);
             $topology.append(div);
           }
@@ -761,9 +760,9 @@ block headerAdditions
           if(theDoc.getElementById(this.id + 'osib') == undefined)
           {
             var div = theDoc.createElement('div');
+            var pos = {left:$(this).css('left'), top:height - 45};
             div.className = 'offscreenIndicatorBottom';
             div.id = this.id + 'osib';
-            var pos = {left:$(this).css('left'), top:height - 45};
             $(div).css(pos);
             $topology.append(div);
           }
@@ -905,21 +904,21 @@ block headerAdditions
     function splitSelected(ele)
     {
       $('#rangeDiv').empty();
+      console.log('ele.id == ' + ele.id);
       var text = theDoc.createElement('p');
       var slider = theDoc.createElement('input');
       slider.id = 'splitRange';
       slider.setAttribute('type', 'range');
       if(slider.type == 'range')
       {
+        var max = (parseInt($('#' + ele.id + 'text').html()) - 1);
+        var start = Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2);
         $(text).html('Use the slider to split the nodes into two groups:');
-        $(slider).attr('step', 1);
-        $(slider).attr('min', 1);
-        $(slider).attr('max', (parseInt($('#' + ele.id + 'text').html()) - 1));
-        $(slider).attr('value', Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
+        $(slider).attr('step', 1).attr('min', 1).attr('max', max).attr('value', start);
         var counter = theDoc.createElement('label');
         counter.id = 'updateMe';
         var delta = (parseInt($('#' + ele.id + 'text').html()) - Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
-        counter.innerHTML = Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2) + ', ' + delta;
+        counter.innerHTML = start + ', ' + delta;
         var container = theDoc.createElement('div');
         var bottom = theDoc.createElement('label');
         bottom.id = 'bottom';
@@ -927,10 +926,8 @@ block headerAdditions
         top.id = 'top';
         $(bottom).html('1');
         $(top).html($('#' + ele.id + 'text').html());
-        $(container).append(bottom);
-        $(container).append(slider);
-        $(container).append(top);
-        
+        $(container).append(bottom, slider, top);
+
         function updateCounter(id)
         {
           $('#updateMe').html($('#splitRange').val() + ', ' + ($('#' + id + 'text').html() - $('#splitRange').val()));
@@ -938,9 +935,7 @@ block headerAdditions
         
         $(slider).on('change', function(){updateCounter(ele.id)});
         
-        $('#rangeDiv').append(text);
-        $('#rangeDiv').append(counter);
-        $('#rangeDiv').append(container);
+        $('#rangeDiv').append(text, counter, container);
         
         $('#splitAccept').on('click', function(){
           var y = parseInt($(ele).css('top'));
@@ -969,6 +964,10 @@ block headerAdditions
           splitData.splNodeMacs = group2Macs.join();
           splitData.splCount = newCount.toString();
           splitData.srcCount = splitEnd.toString();
+          for(var i in splitData)
+          {
+            console.log('splitData[' + i + '] == ' + splitData[i]);
+          }
           nodeObj.count = splitData.splCount;
           
           addNodeToCanvas(nodeObj, 'split', x, y, undefined, undefined, splitData);
@@ -980,17 +979,17 @@ block headerAdditions
       else
       {
         $(text).html('Use the input box to split the nodes into two groups:');
+        var max = (parseInt($('#' + ele.id + 'text').html()) - 1);
+        var start = Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2);
         $(slider).attr('min', 1);
-        $(slider).attr('max', (parseInt($('#' + ele.id + 'text').html()) - 1));
-        $(slider).attr('value', Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
+        $(slider).attr('max', max);
+        $(slider).attr('value', start);
         var counter = theDoc.createElement('label');
         counter.id = 'updateMe';
         var delta = (parseInt($('#' + ele.id + 'text').html()) - Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
-        counter.innerHTML = Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2) + ', ' + delta;
+        counter.innerHTML = start + ', ' + delta;
         var container = theDoc.createElement('div');
-        $(container).append(bottom);
-        $(container).append(slider);
-        $(container).append(top);
+        $(container).append(bottom, slider, top);
         
         function updateCounter(id)
         {
@@ -1003,9 +1002,7 @@ block headerAdditions
         
         $(slider).on('change', function(){updateCounter(ele.id)});
         
-        $('#rangeDiv').append(text);
-        $('#rangeDiv').append(counter);
-        $('#rangeDiv').append(container);
+        $('#rangeDiv').append(text, counter, container);
         
         $('#splitAccept').on('click', function(){
           var y = parseInt($(ele).css('top'));
