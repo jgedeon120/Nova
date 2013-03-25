@@ -459,13 +459,13 @@ block headerAdditions
       
       var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
       $(div).data('profile', nodeObj.selectedProfile)
-            .data('preexisting', true)
             .css(prepopCss)
             .css(zoom)
             .attr('class', 'ui-draggable canvasElement');
       if(nodeObj.mac != undefined && type == 'prepop')
       {
-        $(div).data('mac', nodeObj.mac);
+        $(div).data('mac', nodeObj.mac)
+              .data('preexisting', true);
       }
       else if(type == 'split')
       {
@@ -1083,7 +1083,7 @@ block headerAdditions
       {
         console.log('Would be merging');
         // If there was no problem, merge the nodes, remove the two old ones and put in the
-        // aggregate WYSIWYG node
+        // aggregate WYSIWYG node.
         // Make sure to update nodeTopology here as well.
       }
       else
