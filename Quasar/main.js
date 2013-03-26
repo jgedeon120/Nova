@@ -1603,6 +1603,12 @@ app.get("/editClassifier", function (req, res)
     }); 
 });
 
+app.get("/hostnames", function (req, res) {
+	res.render('hostnames.jade', {
+		locals: {}
+	});
+});
+
 app.get("/interfaceAliases", function (req, res)
 {
     ReloadInterfaceAliasFile();
