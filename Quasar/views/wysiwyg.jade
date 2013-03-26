@@ -612,16 +612,7 @@ block headerAdditions
           {
             findOtherNodesList.push(topo[i].mac);
             
-            eleCountUpdate = addNodeToCanvas(topo[i], 'prepop', undefined, undefined, xEleCount, yEleCount);
-            if(eleCountUpdate != undefined)
-            {
-              xEleCount = eleCountUpdate.xCount;
-              yEleCount = eleCountUpdate.yCount;
-            }
-            else
-            {
-              eleCountUpdate = {};
-            }
+            addNodeToCanvas(topo[i], 'prepop', topo[i].coordinates.x, topo[i].coordinates.y);
           }
         }
         else
@@ -1059,16 +1050,10 @@ block headerAdditions
         }
       }
       
-      console.log('baseProfile == ' + baseProfile);
-      console.log('baseMac == ' + baseMac);
-      console.log('baseVendor == ' + baseVendor);
-      console.log('basePortset == ' + basePortset);
-      console.log('baseIp == ' + baseIp)
-      console.log('baseInterface == ' + baseInterface);
-      
       var keepGoing = true;
       var id = '';
-      $('.ui-selected').each(function(){
+      var $list = $('.ui-selected');
+      $list.each(function(){
         id = $(this).attr('id');
         console.log('id == ' + id);
         if(!keepGoing)
@@ -1086,14 +1071,23 @@ block headerAdditions
       });
       if(keepGoing)
       {
-        console.log('Would be merging');
-        // If there was no problem, merge the nodes, remove the two old ones and put in the
+        // If there was no problem, merge the nodes, remove the old ones and put in the
         // aggregate WYSIWYG node.
         // Make sure to update nodeTopology here as well.
+        $list.each(function(){
+          id = $(this).attr('id');
+          if(id != base.id)
+          {
+            nodeTopology[base.id].mac += ',' + nodeTopology[id].mac;
+            nodeTopology[base.id].count = parseInt(nodeTopology[base.id].count) + parseInt(nodeTopology[id].count);
+            delete nodeTopology[id];
+            $(this).fadeOut(200, function(){$(this).remove();});
+          }
+        });
+        $('#' + base.id + 'text').html(nodeTopology[base.id].count);
       }
       else
       {
-        console.log('keepGoing was false, not merging');
         return;
       }
     }
@@ -1337,12 +1331,30 @@ block headerAdditions
         });
       });
       setTimeout(function(){adjustColumns();}, 1000);
+      // TODO: Make setInterval interval value configurable
+      setInterval(function(){
+        now.WriteWysiwygTopology(nodeTopology, function(){
+          console.log('WriteWysiwygTopology finished');
+        });
+      }, (1000 * 60 * 5));
     });
     
     $(window).resize(function(){
       handleOffscreenIndicators();
     });
-    
+    $(window).keydown(function(event){
+      if(!(event.shiftKey && event.ctrlKey && event.keyCode == 83) && !(event.which == 19))
+      {
+        event.stopPropagation();
+      }
+      else
+      {
+        now.WriteWysiwygTopology(nodeTopology, function(){
+          console.log('WriteWysiwygTopology finished');
+        });
+        event.stopPropagation();
+      }
+    });
     window.addEventListener('unload', function(){
       now.WriteWysiwygTopology(nodeTopology, function(){
         console.log('WriteWysiwygTopology finished');
