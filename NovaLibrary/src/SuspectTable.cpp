@@ -37,8 +37,6 @@ extern ClassificationEngine *engine;
 
 namespace Nova
 {
-
-// Default Constructor for SuspectTable
 SuspectTable::SuspectTable()
 {
 	m_keys.clear();
@@ -51,7 +49,6 @@ SuspectTable::SuspectTable()
 	m_emptySuspect.SetClassification(EMPTY_SUSPECT_CLASSIFICATION);
 }
 
-// Default destructor for SuspectTable
 SuspectTable::~SuspectTable()
 {
 	//Deletes the suspects pointed to by the table
@@ -693,8 +690,8 @@ uint32_t SuspectTable::ReadContents(ifstream *in, time_t expirationTime)
 					SetNeedsClassificationUpdate(key);
 				}
 			}
-			delete newSuspect;
 		}
+
 		delete[] tableBuffer;
 	}
 	ret = (uint32_t)in->tellg() - cur;
