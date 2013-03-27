@@ -16,8 +16,6 @@
 // Description : Manages connections out to Novad, initializes and closes them
 //============================================================================
 
-#include "messaging/messages/ControlMessage.h"
-#include "messaging/messages/ErrorMessage.h"
 #include "messaging/MessageManager.h"
 #include "Commands.h"
 #include "NovaUtil.h"
@@ -35,8 +33,10 @@
 
 using namespace std;
 using namespace Nova;
+
 //Socket communication variables
 int IPCSocketFD = -1;
+bool isConnected = false;
 
 static struct event_base *libeventBase = NULL;
 static struct bufferevent *bufferevent = NULL;
@@ -53,7 +53,6 @@ void *EventDispatcherThread(void *arg)
 	{
 		stringstream ss;
 		ss << ret;
-		//LOG(DEBUG, "Message loop ended. Error code: " + ss.str(), "");
 	}
 	else
 	{
@@ -66,7 +65,7 @@ void *EventDispatcherThread(void *arg)
 
 bool ConnectToNovad()
 {
-	if(IsNovadUp(false))
+	if(IsNovadUp())
 	{
 		return true;
 	}
@@ -79,6 +78,10 @@ bool ConnectToNovad()
 		evthread_use_pthreads();
 		libeventBase = event_base_new();
 		pthread_mutex_init(&bufferevent_mutex, NULL);
+
+		pthread_t messageWorker;
+		pthread_create(&messageWorker, NULL, Nova::ClientMessageWorker, NULL);
+		pthread_detach(messageWorker);
 	}
 
 	//Builds the key path
@@ -103,7 +106,11 @@ bool ConnectToNovad()
 			return false;
 		}
 
-		bufferevent_setcb(bufferevent, MessageManager::MessageDispatcher, NULL, MessageManager::ErrorDispatcher, NULL);
+		//Get a new session index and assign it to the bufferevent
+		uint32_t *sessionIndex = new uint32_t;
+		*sessionIndex = MessageManager::Instance().GetNextSessionIndex();
+
+		bufferevent_setcb(bufferevent, MessageManager::MessageDispatcher, NULL, MessageManager::ErrorDispatcher, sessionIndex);
 
 		if(bufferevent_enable(bufferevent, EV_READ) == -1)
 		{
@@ -134,51 +141,11 @@ bool ConnectToNovad()
 			bufferevent = NULL;
 			return false;
 		}
-
-		MessageManager::Instance().DeleteEndpoint(IPCSocketFD);
-		MessageManager::Instance().StartSocket(IPCSocketFD, bufferevent);
 	}
+
 	pthread_create(&eventDispatchThread, NULL, EventDispatcherThread, NULL);
 
-	//Test if the connection is up
-	Ticket ticket = MessageManager::Instance().StartConversation(IPCSocketFD);
-
-	RequestMessage connectRequest(REQUEST_PING);
-	if(!MessageManager::Instance().WriteMessage(ticket, &connectRequest))
-	{
-		return false;
-	}
-
-	Message *reply = MessageManager::Instance().ReadMessage(ticket);
-	if(reply->m_messageType == ERROR_MESSAGE && ((ErrorMessage*)reply)->m_errorType == ERROR_TIMEOUT)
-	{
-		LOG(DEBUG, "Timeout error when waiting for message reply", "");
-		delete reply;
-		return false;
-	}
-
-	if(reply->m_messageType != REQUEST_MESSAGE)
-	{
-		stringstream s;
-		s << "Expected message type of REQUEST_MESSAGE but got " << reply->m_messageType;
-		LOG(DEBUG, s.str(), "");
-
-		reply->DeleteContents();
-		delete reply;
-		return false;
-	}
-	RequestMessage *connectionReply = (RequestMessage*)reply;
-	if(connectionReply->m_contents.m_requesttype() != REQUEST_PONG)
-	{
-		stringstream s;
-		s << "Expected control type of CONTROL_CONNECT_REPLY but got " <<connectionReply->m_contents.m_requesttype();
-		LOG(DEBUG, s.str(), "");
-
-		reply->DeleteContents();
-		delete reply;
-		return false;
-	}
-	delete connectionReply;
+	isConnected = true;
 
 	return true;
 }
@@ -203,30 +170,14 @@ bool DisconnectFromNovad()
 		Lock buffereventLock(&bufferevent_mutex);
 		if(bufferevent != NULL)
 		{
-			//bufferevent_free(bufferevent);
 			shutdown(IPCSocketFD, 2);
 			bufferevent = NULL;
 		}
 	}
 
-	MessageManager::Instance().DeleteEndpoint(IPCSocketFD);
-
 	IPCSocketFD = -1;
+	isConnected = false;
 	return true;
-}
-
-bool TryWaitConnectToNovad(int timeout_ms)
-{
-	if(ConnectToNovad())
-	{
-		return true;
-	}
-	else
-	{
-		//usleep takes in microsecond argument. Convert to milliseconds
-		usleep(timeout_ms *1000);
-		return ConnectToNovad();
-	}
 }
 
 }

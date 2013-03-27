@@ -36,12 +36,12 @@ void NovaNode::InitNovaCallbackProcessing()
 
 void NovaNode::CheckInitNova()
 {
-	if( Nova::IsNovadUp() )
+	if(Nova::IsNovadUp())
 	{
 		return;
 	}
 
-	if( ! Nova::TryWaitConnectToNovad(3000) )
+	if(!Nova::TryWaitConnectToNovad(3000))
 	{
 		LOG(WARNING, "Could not connect to Novad. It is likely down.","");
 		return;
@@ -54,46 +54,44 @@ void NovaNode::CheckInitNova()
 
 void NovaNode::NovaCallbackHandling(eio_req*)
 {
-	using namespace Nova;
-	CallbackChange cb;
-
 	LOG(DEBUG, "Initializing Novad callback processing","");
-
-	CallbackHandler callbackHandler;
-
 	m_callbackRunning = true;
-	do
+
+	while(true)
 	{
-		Suspect *s;
-		cb = callbackHandler.ProcessCallbackMessage();
-		switch( cb.m_type )
+		Message *message = MessageManager::Instance().DequeueMessage();
+		switch(message->m_contents.m_type())
 		{
-		case CALLBACK_NEW_SUSPECT:
-			HandleNewSuspect(cb.m_suspect);
-			break;
-
-		case CALLBACK_ERROR:
-			HandleCallbackError();
-			break;
-
-		case CALLBACK_ALL_SUSPECTS_CLEARED:
-			HandleAllSuspectsCleared();
-			break;
-
-		case CALLBACK_SUSPECT_CLEARED:
-			s = new Suspect();
-			s->SetIdentifier(cb.m_suspectIP);
-			LOG(DEBUG, "Got a clear callback request for a suspect on interface " + cb.m_suspectIP.m_ifname(), "");
-			HandleSuspectCleared(s);
-			break;
-
-		default:
-			break;
+			case UPDATE_SUSPECT:
+			{
+				HandleNewSuspect(cb.m_suspect);
+				break;
+			}
+			case UPDATE_ALL_SUSPECTS_CLEARED:
+			{
+				HandleAllSuspectsCleared();
+				break;
+			}
+			case UPDATE_SUSPECT_CLEARED:
+			{
+				Suspect *suspect = new Suspect();
+				suspect->SetIdentifier(cb.m_suspectIP);
+				LOG(DEBUG, "Got a clear callback request for a suspect on interface " + cb.m_suspectIP.m_ifname(), "");
+				HandleSuspectCleared(suspect);
+				break;
+			}
+			case REQUEST_PONG:
+			{
+				//TODO: Hm...
+				break;
+			}
+			default:
+			{
+				HandleCallbackError();
+				break;
+			}
 		}
 	}
-	while(cb.m_type != CALLBACK_HUNG_UP);         
-	LOG(DEBUG, "Novad hung up, closing callback processing","");
-	m_callbackRunning = false;
 }
 
 int NovaNode::AfterNovaCallbackHandling(eio_req*)

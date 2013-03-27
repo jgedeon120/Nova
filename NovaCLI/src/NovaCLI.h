@@ -19,7 +19,6 @@
 #ifndef NOVACLI_H_
 #define NOVACLI_H_
 
-#include "messaging/messages/RequestMessage.h"
 #include "protobuf/marshalled_classes.pb.h"
 
 // Name of the CLI executable
