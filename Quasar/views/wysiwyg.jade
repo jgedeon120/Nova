@@ -73,35 +73,42 @@ block headerAdditions
       {
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
-        now.GetProfile($('#name').html(source.innerHTML).html(), function(profile){
-          var $vendors = $('#vendors').empty();
-          var $portSets = $('#portSets').empty();
-          var $interfaces = $('#interfaces').empty();
-          
-          for(var i in profile.ethernet)
-          {
-            var option = theDoc.createElement('option');
-            option.innerHTML = profile.ethernet[i].vendor;
-            $vendors.append(option);
-          }
-          for(var i in profile.portSets)
-          {
-            var option = theDoc.createElement('option');
-            option.innerHTML = profile.portSets[i].setName;
-            $portSets.append(option);
-          }
-          for(var i in interfaces)
-          {
-            var option = theDoc.createElement('option');
-            option.innerHTML = interfaces[i];
-            $interfaces.append(option);
-          }
-          
-          var pointerCss = {top:($(source).position().top + $(source).height()),
-                            left:($(source).position().left + $(source).outerWidth() + 20)};
-                            
-          $profileInfo.css(pointerCss).fadeIn(200);
-        });
+        if(typeof now.GetProfile == 'function')
+        {
+          now.GetProfile($('#name').html(source.innerHTML).html(), function(profile){
+            var $vendors = $('#vendors').empty();
+            var $portSets = $('#portSets').empty();
+            var $interfaces = $('#interfaces').empty();
+            
+            for(var i in profile.ethernet)
+            {
+              var option = theDoc.createElement('option');
+              option.innerHTML = profile.ethernet[i].vendor;
+              $vendors.append(option);
+            }
+            for(var i in profile.portSets)
+            {
+              var option = theDoc.createElement('option');
+              option.innerHTML = profile.portSets[i].setName;
+              $portSets.append(option);
+            }
+            for(var i in interfaces)
+            {
+              var option = theDoc.createElement('option');
+              option.innerHTML = interfaces[i];
+              $interfaces.append(option);
+            }
+            
+            var pointerCss = {top:($(source).position().top + $(source).height()),
+                              left:($(source).position().left + $(source).outerWidth() + 20)};
+                              
+            $profileInfo.css(pointerCss).fadeIn(200);
+          });
+        }
+        else
+        {
+          console.log('Could not get profile data: No connection to server.');
+        }
       }
     }
     
@@ -518,38 +525,45 @@ block headerAdditions
         var vendor = nodeTopology[eleCount].vendor;
         var ethInterface = nodeTopology[eleCount].iface;
         var count = nodeTopology[eleCount].count.toString();
-        now.createHoneydNodes(ipType, ip1, ip2, ip3, ip4, profile, portset, vendor, ethInterface, count);
-        
-        nodes = [];
-        var setMAC = [];
-
-        now.GetNodes(function(nodesList){
-          nodes = nodesList;
-          var add = true;
-          for(var i in nodes)
-          {
-            add = true;
-            for(var j in haveMac)
+        if(typeof now.createHoneydNodes == 'function' && typeof now.GetNodes == 'function')
+        {
+          now.createHoneydNodes(ipType, ip1, ip2, ip3, ip4, profile, portset, vendor, ethInterface, count);
+                  
+          nodes = [];
+          var setMAC = [];
+  
+          now.GetNodes(function(nodesList){
+            nodes = nodesList;
+            var add = true;
+            for(var i in nodes)
             {
-              if(haveMac[j] == nodes[i].mac)
+              add = true;
+              for(var j in haveMac)
               {
-                add = false;
-                break;
+                if(haveMac[j] == nodes[i].mac)
+                {
+                  add = false;
+                  break;
+                }
               }
+              if(add)
+              {
+                haveMac.push(nodes[i].mac);
+                setMAC.push(nodes[i].mac);
+              } 
             }
-            if(add)
-            {
-              haveMac.push(nodes[i].mac);
-              setMAC.push(nodes[i].mac);
-            } 
-          }
-          $(div).data('mac', setMAC.join());
-          nodeTopology[eleCount].mac = setMAC.join();
-          nodeTopology[eleCount].coordinates = {x:x, y:y};
-          $topology.append(div);
-
-          eleCount++;
-        });
+            $(div).data('mac', setMAC.join());
+            nodeTopology[eleCount].mac = setMAC.join();
+            nodeTopology[eleCount].coordinates = {x:x, y:y};
+            $topology.append(div);
+  
+            eleCount++;
+          });
+        }
+        else
+        {
+          alerts('Could not create honeyd nodes: No connection to server');
+        }
       }
       else if(type == 'prepop')
       {
@@ -620,52 +634,59 @@ block headerAdditions
       var yEleCount = 0;
       var eleCountUpdate = {};
       
-      now.ReadWysiwygTopology(function(topo){
-        var findOtherNodesList = [];
-        if(topo != undefined && topo.length > 0)
-        {
-          for(var i in topo)
+      if(typeof now.ReadWysiwygTopology == 'function')
+      {
+        now.ReadWysiwygTopology(function(topo){
+          var findOtherNodesList = [];
+          if(topo != undefined && topo.length > 0)
           {
-            findOtherNodesList.push(topo[i].mac);
-            
-            addNodeToCanvas(topo[i], 'prepop', topo[i].coordinates.x, topo[i].coordinates.y);
-          }
-        }
-        else
-        {
-          for(var i in nodeList)
-          {
-            haveMac.push(nodeList[i].mac);
-            var key = nodeList[i].pfile + nodeList[i].portset + nodeList[i].interface + nodeList[i].ip;
-            if(nodeCount[key] == undefined)
+            for(var i in topo)
             {
-              nodeCount[key] = {};
-              nodeCount[key].count = 1;
-              nodeCount[key].mac = nodeList[i].mac;
-              nodeCount[key].selectedProfile = nodeList[i].pfile;
-            }
-            else
-            {
-              nodeCount[key].count++;
-              nodeCount[key].mac += ',' + nodeList[i].mac;
+              findOtherNodesList.push(topo[i].mac);
+              
+              addNodeToCanvas(topo[i], 'prepop', topo[i].coordinates.x, topo[i].coordinates.y);
             }
           }
-          for(var i in nodeCount)
+          else
           {
-            eleCountUpdate = addNodeToCanvas(nodeCount[i], 'prepop', undefined, undefined, xEleCount, yEleCount);
-            if(eleCountUpdate != undefined)
+            for(var i in nodeList)
             {
-              xEleCount = eleCountUpdate.xCount;
-              yEleCount = eleCountUpdate.yCount;
+              haveMac.push(nodeList[i].mac);
+              var key = nodeList[i].pfile + nodeList[i].portset + nodeList[i].interface + nodeList[i].ip;
+              if(nodeCount[key] == undefined)
+              {
+                nodeCount[key] = {};
+                nodeCount[key].count = 1;
+                nodeCount[key].mac = nodeList[i].mac;
+                nodeCount[key].selectedProfile = nodeList[i].pfile;
+              }
+              else
+              {
+                nodeCount[key].count++;
+                nodeCount[key].mac += ',' + nodeList[i].mac;
+              }
             }
-            else
+            for(var i in nodeCount)
             {
-              eleCountUpdate = {};
+              eleCountUpdate = addNodeToCanvas(nodeCount[i], 'prepop', undefined, undefined, xEleCount, yEleCount);
+              if(eleCountUpdate != undefined)
+              {
+                xEleCount = eleCountUpdate.xCount;
+                yEleCount = eleCountUpdate.yCount;
+              }
+              else
+              {
+                eleCountUpdate = {};
+              }
             }
+            nodeCount = {};
           }
-          nodeCount = {};
-        }
-      });
+        });
+      }
+      else
+      {
+        console.log('Could not read saved topology file: No connection to server');
+      }
     }
     
     function placeBackgroundImage(ele, profile)
@@ -677,31 +698,39 @@ block headerAdditions
         .find('label').css('color', 'white');
         return;
       }
-      now.GetProfile(profile, function(pfile){
-        var pers = pfile.personality;
-        if(pers.indexOf('Windows') != -1)
-        {
-          ele.css('background', 'url("images/wysiwyg/win_75.png")' + append);
-        }
-        else if(pers.indexOf('OpenBSD') != -1)
-        {
-          ele.css('background', 'url("images/wysiwyg/openbsd_75.png")' + append);
-        }
-        else if(pers.indexOf('Linux') != -1)
-        {
-          ele.css('background', 'url("images/wysiwyg/linux_75.png")' + append)
-          .find('label').css('color', 'white');
-        }
-        else if(pers.indexOf('Mac OS X') != -1)
-        {
-          ele.css('background', 'url("images/wysiwyg/macosx_75.png")' + append);
-        }
-        else
-        {
-          ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append)
-          .find('label').css('color', 'white');
-        }
-      });
+      if(typeof now.GetProfile == 'function')
+      {
+        now.GetProfile(profile, function(pfile){
+          var pers = pfile.personality;
+          if(pers.indexOf('Windows') != -1)
+          {
+            ele.css('background', 'url("images/wysiwyg/win_75.png")' + append);
+          }
+          else if(pers.indexOf('OpenBSD') != -1)
+          {
+            ele.css('background', 'url("images/wysiwyg/openbsd_75.png")' + append);
+          }
+          else if(pers.indexOf('Linux') != -1)
+          {
+            ele.css('background', 'url("images/wysiwyg/linux_75.png")' + append)
+            .find('label').css('color', 'white');
+          }
+          else if(pers.indexOf('Mac OS X') != -1)
+          {
+            ele.css('background', 'url("images/wysiwyg/macosx_75.png")' + append);
+          }
+          else
+          {
+            ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append)
+            .find('label').css('color', 'white');
+          }
+        });
+      }
+      else
+      {
+        ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append)
+        .find('label').css('color', 'white');
+      }
     }
     
     function handleOffscreenIndicators()
@@ -1141,30 +1170,37 @@ block headerAdditions
         now.createHoneydNodes(ipType, ip.ip1, ip.ip2, ip.ip2, ip.ip3, profile, portset, vendor, ethInterface, count);
         nodes = [];
         var setMAC = [];
-
-        now.GetNodes(function(nodesList){
-          nodes = nodesList;
-          var add = true;
-          for(var i in nodes)
-          {
-            add = true;
-            for(var j in haveMac)
+        
+        if(typeof now.GetNodes == 'function')
+        {
+          now.GetNodes(function(nodesList){
+            nodes = nodesList;
+            var add = true;
+            for(var i in nodes)
             {
-              if(haveMac[j] == nodes[i].mac)
+              add = true;
+              for(var j in haveMac)
               {
-                add = false;
-                break;
+                if(haveMac[j] == nodes[i].mac)
+                {
+                  add = false;
+                  break;
+                }
               }
+              if(add)
+              {
+                haveMac.push(nodes[i].mac);
+                setMAC.push(nodes[i].mac);
+              } 
             }
-            if(add)
-            {
-              haveMac.push(nodes[i].mac);
-              setMAC.push(nodes[i].mac);
-            } 
-          }
-          nodeTopology[hoverNode].mac += ',' + setMAC.join();
-          $('#' + hoverNode).data('mac', nodeTopology[hoverNode].mac);
-        });
+            nodeTopology[hoverNode].mac += ',' + setMAC.join();
+            $('#' + hoverNode).data('mac', nodeTopology[hoverNode].mac);
+          });
+        }
+        else
+        {
+          alert('Could not update node count: No connection to server');
+        }
       }
       else if(delta < 0)
       {
@@ -1458,9 +1494,16 @@ block headerAdditions
       setTimeout(function(){adjustColumns();}, 1000);
       // TODO: Make setInterval interval value configurable
       setInterval(function(){
-        now.WriteWysiwygTopology(nodeTopology, function(){
-          console.log('WriteWysiwygTopology finished');
-        });
+        if(typeof now.WriteWysiwygTopology == 'function')
+        {
+          now.WriteWysiwygTopology(nodeTopology, function(){
+            console.log('WriteWysiwygTopology finished');
+          });
+        }
+        else
+        {
+          console.log('Could not write topology out to file: No connection to server!');
+        }
       }, (1000 * 60 * 5));
     });
     
@@ -1474,16 +1517,30 @@ block headerAdditions
       }
       else
       {
-        now.WriteWysiwygTopology(nodeTopology, function(){
-          console.log('WriteWysiwygTopology finished');
-        });
+        if(typeof now.WriteWysiwygTopology == 'function')
+        {
+          now.WriteWysiwygTopology(nodeTopology, function(){
+            console.log('WriteWysiwygTopology finished');
+          });
+        }
+        else
+        {
+          console.log('Could not write topology out to file: No connection to server!');
+        }
         event.stopPropagation();
       }
     });
-    window.addEventListener('unload', function(){
-      now.WriteWysiwygTopology(nodeTopology, function(){
-        console.log('WriteWysiwygTopology finished');
-      });
+    window.addEventListener('beforeunload', function(){
+        if(typeof now.WriteWysiwygTopology == 'function')
+        {
+          now.WriteWysiwygTopology(nodeTopology, function(){
+            console.log('WriteWysiwygTopology finished');
+          });
+        }
+        else
+        {
+          return 'No connection to server, cannot save topology to file.';
+        }
     });
     
 block content
