@@ -223,13 +223,8 @@ var everyone = nowjs.initialize(app);
 var NowjsMethods = require('./NowjsMethods.js');
 var initEveryone = new NowjsMethods(everyone);
 
-
-
-
 // Testing some log watching stuff
 var logLines = new Array();
-
-
 
 function LiveFileReader(filePath, cb) {
     this.processedLines = new Array();
@@ -334,7 +329,7 @@ var initLogWatch = function ()
     var novadLogFileReader = new LiveFileReader(novadLogPath, function(err, line, lineNum) {
         if (err)
         {
-            console.log("CAllback got error" + err);
+            console.log("Callback got error" + err);
             return;
         }
 
@@ -359,7 +354,7 @@ var initLogWatch = function ()
     var novadLogFileReader = new LiveFileReader(honeydLogPath, function(err, line, lineNum) {
         if (err)
         {
-            console.log("CAllback got error" + err);
+            console.log("Callback got error" + err);
             return;
         }
         

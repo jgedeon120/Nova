@@ -1417,6 +1417,7 @@ everyone.now.DeleteHostname = function(hostname, cb) {
         cb && cb(null);
 	});
 }
+}
 
 module.exports = NowjsMethods;
 
