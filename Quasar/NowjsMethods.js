@@ -104,7 +104,7 @@ everyone.now.deleteScriptOptionValue = function (script, key, value, cb) {
 everyone.now.createHoneydNodes = function(ipType, ip1, ip2, ip3, ip4, profile, portSet, vendor, ethinterface, count, cb)
 {
     var ipAddress;
-    if(ipType.toUpperCase() == "DHCP")
+    if(ipType == "DHCP")
     {
         ipAddress = "DHCP";
     }
@@ -375,7 +375,7 @@ everyone.now.deleteNodes = function (nodeNames, cb)
     nodeName = nodeNames[i];
     if(nodeName != null && !NovaCommon.honeydConfig.DeleteNode(nodeName))
     {
-      cb && cb(false, "Failed to delete node " + nodeName);
+      cb(false, "Failed to delete node " + nodeName);
       return;
     }
 
@@ -383,11 +383,11 @@ everyone.now.deleteNodes = function (nodeNames, cb)
 
   if(!NovaCommon.honeydConfig.SaveAll())
   {
-    cb && cb(false, "Failed to save XML templates");
+    cb(false, "Failed to save XML templates");
     return;
   }
 
-  cb && cb(true, "");
+  cb(true, "");
 };
 
 everyone.now.deleteProfiles = function (profileNames, cb)
@@ -1092,6 +1092,7 @@ everyone.now.GetProfile = function (profileName, cb)
 {
     var profile = NovaCommon.honeydConfig.GetProfile(profileName);
 
+    
     if(profile == null)
     {
         cb(null);
@@ -1129,6 +1130,7 @@ everyone.now.GetProfile = function (profileName, cb)
     }
 
     profile.ethernet = ethVendorList;
+
 
     cb(profile);
 };
@@ -1324,7 +1326,7 @@ everyone.now.MarkAllNovaLogEntriesSeen = function(cb) {
     });
 };
 
-// Functions related to the honeyd log entry seen table in the DB
+// Functions related  to the honeyd log entry seen table in the DB
 everyone.now.GetUnseenHoneydLogs = function(cb) {
     NovaCommon.dbqGetUnseenHoneydLogs.all(function(err, results) {
         if (databaseError(err, cb)) {return;}
@@ -1386,6 +1388,34 @@ everyone.now.WriteWysiwygTopology = function(topo, cb) {
     console.log('err: ' + err);
   }
 };
+
+// Hostname related database calls
+everyone.now.GetHostnames = function(cb) {
+	NovaCommon.dbqGetHostnames.all(function(err, results) {
+        if (databaseError(err, cb)) {return;}
+        cb && cb(null, results);
+    });	
+};
+
+everyone.now.InsertHostname = function(hostname, cb) {
+	NovaCommon.dbqInsertHostname.run(hostname, function(err) {
+        if (databaseError(err, cb)) {return;}
+        cb && cb(null);
+	});
+};
+
+everyone.now.ClearHostnameAllocations = function(cb) {
+	NovaCommon.dbqClearHostnameAllocations.run(function(err) {
+        if (databaseError(err, cb)) {return;}
+        cb && cb(null);
+	});
+};
+
+everyone.now.DeleteHostname = function(hostname, cb) {
+	NovaCommon.dbqDeleteHostname.run(hostname, function(err) {
+        if (databaseError(err, cb)) {return;}
+        cb && cb(null);
+	});
 }
 
 module.exports = NowjsMethods;
