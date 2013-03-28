@@ -39,6 +39,7 @@ block headerAdditions
     var $modalSplit = '';
     var clicked = false;
     var selectedProfile = undefined;
+    var hoverNode = undefined;
     var nodeTopology = {};
     var nodeCount = {};
     var eleCount = 0;
@@ -48,6 +49,7 @@ block headerAdditions
     var selected = [];
     var topoDrag = false;
     var noclick = false;
+    var hoverhold = false;
     
     function setUpSelects()
     {
@@ -257,8 +259,8 @@ block headerAdditions
       {
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
-        var hoverInfoCss = {top:($(source).position().top),
-                            left:(($(source).position().left + $(source).outerWidth()) + 10)};
+        var hoverInfoCss = {top:($(source).position().top + $topology.position().top),
+                            left:(($(source).position().left + $topology.position().left + $(source).outerWidth()) + 10)};
         var titleCss = {'font-weight':'bold', 'font-size':'18px'};
         
         var $hName = $('#hoverName').css(titleCss).html($(source).data('profile'));
@@ -267,18 +269,21 @@ block headerAdditions
         var $hIface = $('#hoverInterface').html('');
         var $hAddress = $('#hoverAddress').html('');
         
-        if(nodeTopology[source.id] != undefined && !$(source).data('preexisting'))
+        var id = source.id.toString();
+        
+        if(nodeTopology[id] != undefined)
         {
-          $hPortset.html(nodeTopology[source.id].portset);
-          $hVendor.html(nodeTopology[source.id].vendor);
-          $hIface.html(nodeTopology[source.id].iface);
+          $hPortset.html(nodeTopology[id].portset);
+          $hVendor.html(nodeTopology[id].vendor);
+          $hIface.html(nodeTopology[id].iface);
+          $('#changeCount').val(nodeTopology[id].count);
           
-          if(nodeTopology[source.id].ip != 'DHCP')
+          if(nodeTopology[id].ip != 'DHCP')
           {
             var address = '';
-            for(var i in nodeTopology[source.id].ip)
+            for(var i in nodeTopology[id].ip)
             {
-              address += nodeTopology[source.id].ip[i] + '.';
+              address += nodeTopology[id].ip[i] + '.';
             }
             address = address.substring(0, address.length - 1);
             $hAddress.html('IP Range starting at: ' + address);
@@ -301,6 +306,7 @@ block headerAdditions
                 $hPortset.html(nodeList[i].portset);
                 $hVendor.html(nodeList[i].vendor);
                 $hIface.html(nodeList[i].interface);
+                $('#changeCount').val(nodeList[i].count);
                 if(nodeList[i].ip != 'DHCP')
                 {
                   $hAddress.html('IP Range starting at: ' + nodeList[i].ip);
@@ -330,9 +336,12 @@ block headerAdditions
       }
       else if(e.type == 'mouseleave')
       {
-        $hoverInfo.fadeOut(200, function(){
-          fadeEleIn = true;
-        });
+        if(!hoverhold)
+        {
+          $hoverInfo.fadeOut(200, function(){
+            fadeEleIn = true;
+          });
+        }
       }
       else if(e.type == 'drag')
       {
@@ -379,8 +388,8 @@ block headerAdditions
       {
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
-        var hoverInfoCss = {top:($(source).position().top),
-                            left:($(source).position().left + $(source).outerWidth()) + 10};
+        var hoverInfoCss = {top:($(source).position().top + $topology.position().top),
+                            left:(($(source).position().left + $topology.position().left + $(source).outerWidth()) + 10)};
         $hoverInfo.css(hoverInfoCss).fadeIn(200);
       }
     }
@@ -407,11 +416,18 @@ block headerAdditions
               delete selected[i];
             }
           }
+          hoverNode = undefined;
+          hoverhold = false;
         }
         else
         {
           $(source).css('border', '1px ridge red').addClass('ui-selected');
           selected.push(source);
+          var hoverInfoCss = {top:($(source).position().top + $topology.position().top),
+                              left:(($(source).position().left + $topology.position().left + $(source).outerWidth()) + 10)};
+          $hoverInfo.css(hoverInfoCss).fadeIn(200);
+          hoverNode = source.id;
+          hoverhold = true;
         }
       }
       else
@@ -732,7 +748,7 @@ block headerAdditions
           if(theDoc.getElementById(this.id + 'osit') == undefined)
           {
             var div = theDoc.createElement('div');
-            var pos = {left:$(this).css('left'), top:0};s
+            var pos = {left:$(this).css('left'), top:0};
             div.className = 'offscreenIndicatorTop';
             div.id = this.id + 'osit';
             $(div).css(pos);
@@ -1055,7 +1071,6 @@ block headerAdditions
       var $list = $('.ui-selected');
       $list.each(function(){
         id = $(this).attr('id');
-        console.log('id == ' + id);
         if(!keepGoing)
         {
           return;
@@ -1071,9 +1086,6 @@ block headerAdditions
       });
       if(keepGoing)
       {
-        // If there was no problem, merge the nodes, remove the old ones and put in the
-        // aggregate WYSIWYG node.
-        // Make sure to update nodeTopology here as well.
         $list.each(function(){
           id = $(this).attr('id');
           if(id != base.id)
@@ -1090,6 +1102,110 @@ block headerAdditions
       {
         return;
       }
+    }
+    
+    function updateCount()
+    {
+      var $change = $('#' + hoverNode + 'text');
+      var oldValue = $change.html();
+      var newValue = $('#changeCount').val();
+      if(parseInt(newValue) < 0)
+      {
+        alert('Cannot change a node amount to a negative value!');
+        $('#' + hoverNode).removeClass('ui-selected');
+        $hoverInfo.fadeOut(200);
+        return;
+      }
+      var delta = newValue - oldValue;
+      if(delta > 0)
+      {
+        nodeTopology[hoverNode].count = newValue;
+        $change.html(newValue);
+        var ip = [];
+        var ipType= '';
+        if(nodeTopology[hoverNode].ip == 'DHCP')
+        {
+          ip = [];
+          ipType = 'DHCP';
+        }
+        else
+        {
+          ip = nodeTopology[hoverNode].ip;
+          ipType = '';
+        }
+        var profile = nodeTopology[hoverNode].selectedProfile;
+        var portset = nodeTopology[hoverNode].portset;
+        var vendor = nodeTopology[hoverNode].vendor;
+        var ethInterface = nodeTopology[hoverNode].iface;
+        var count = delta;
+        now.createHoneydNodes(ipType, ip.ip1, ip.ip2, ip.ip2, ip.ip3, profile, portset, vendor, ethInterface, count);
+        nodes = [];
+        var setMAC = [];
+
+        now.GetNodes(function(nodesList){
+          nodes = nodesList;
+          var add = true;
+          for(var i in nodes)
+          {
+            add = true;
+            for(var j in haveMac)
+            {
+              if(haveMac[j] == nodes[i].mac)
+              {
+                add = false;
+                break;
+              }
+            }
+            if(add)
+            {
+              haveMac.push(nodes[i].mac);
+              setMAC.push(nodes[i].mac);
+            } 
+          }
+          nodeTopology[hoverNode].mac += ',' + setMAC.join();
+          $('#' + hoverNode).data('mac', nodeTopology[hoverNode].mac);
+        });
+      }
+      else if(delta < 0)
+      {
+        var macsToRemove = [];
+        if(newValue <= 0)
+        {
+          macsToRemove = nodeTopology[hoverNode].mac.split(',');
+          now.deleteNodes(macsToRemove);
+          delete nodeTopology[hoverNode];
+          $('#' + hoverNode).remove();
+        }
+        else
+        {
+          nodeTopology[hoverNode].count = newValue;
+          $change.html(newValue);
+          macsToRemove = [];
+          var macsInNode = nodeTopology[hoverNode].mac.split(',').reverse();
+          var newMacAssignment = [];
+          delta = Math.abs(delta);
+          for(var i = 0; i < delta; i++)
+          {
+            macsToRemove.push(macsInNode[i]);
+            delete macsInNode[i];
+          }
+          
+          macsInNode = macsInNode.reverse();
+          for(var i in macsInNode)
+          {
+            if(macsInNode[i] != undefined)
+            {
+              newMacAssignment.push(macsInNode[i]);
+            }
+          }
+          nodeTopology[hoverNode].mac = newMacAssignment.join(',');
+          
+          now.deleteNodes(macsToRemove);
+        }
+      }
+      hoverhold = false;
+      $('#' + hoverNode).removeClass('ui-selected').css('border', '');
+      $hoverInfo.fadeOut(200);
     }
     
     function deleteSelected()
@@ -1118,8 +1234,7 @@ block headerAdditions
     {
       for(var i in selected)
       {
-        $(selected[i]).removeClass('ui-selected');
-        $(selected[i]).css('border', '');
+        $(selected[i]).removeClass('ui-selected').css('border', '');
       }
       $('.canvasElement').on('mouseenter', function(e){
         e.stopImmediatePropagation();
@@ -1208,6 +1323,8 @@ block headerAdditions
           });
         })
         .mousedown(function(e){
+          var evt = (e ? e : window.event);
+          var source = evt.target || evt.srcElement;
           if(e.which == 2)
           {
             topoDrag = true;
@@ -1215,6 +1332,14 @@ block headerAdditions
             oldX = e.clientX;
             oldY = e.clientY;
             $topology.off('mouseenter');
+          }
+          else if(e.which == 1 && !$hoverInfo.is(':hidden') && $(source).attr('class') != undefined 
+                  && $(source).attr('class').indexOf('canvasElement') == -1)
+          {
+            $hoverInfo.fadeOut(200);
+            $('.ui-selected').each(function(){
+              $(this).removeClass('ui-selected').css('border', '');
+            });
           }
           return false;
         })
@@ -1417,20 +1542,25 @@ block content
           div#deleteNodes Delete Selected
           div#mergeNodes Merge Selected
           div#splitNodes Split Selected
-        div#hoverInfo
-          div#pres
-            label#hoverName
-            br
-            br
-            label Port Set: 
-            div#hoverPortset
-            br
-            label Ethernet Vendor: 
-            div#hoverVendor
-            br
-            label Ethernet Interface: 
-            div#hoverInterface
-            br
-            label Ip Address Allocation Type: 
-            div#hoverAddress
+      div#hoverInfo
+        div#pres
+          label#hoverName
+          br
+          br
+          label Port Set: 
+          div#hoverPortset
+          br
+          label Ethernet Vendor: 
+          div#hoverVendor
+          br
+          label Ethernet Interface: 
+          div#hoverInterface
+          br
+          label Ip Address Allocation Type: 
+          div#hoverAddress
+          br
+          label New Amount Value:
+          input#changeCount(type='number', min='0', step='1')
+          br
+          button#updateCount(onclick='updateCount()') Update Node Amount
             

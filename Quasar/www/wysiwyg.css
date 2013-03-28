@@ -430,6 +430,18 @@
   z-index: 2006;
 }
 
+.offscreenIndicatorCorner {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  width: 20px;
+  height: 20px;
+  z-index: 2006;
+  position: absolute;
+}
+
 #hoverInfo label {
   margin-right: 10px;
   font-weight: bold;
