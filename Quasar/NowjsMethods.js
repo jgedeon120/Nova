@@ -375,7 +375,7 @@ everyone.now.deleteNodes = function (nodeNames, cb)
     nodeName = nodeNames[i];
     if(nodeName != null && !NovaCommon.honeydConfig.DeleteNode(nodeName))
     {
-      cb(false, "Failed to delete node " + nodeName);
+      cb && cb(false, "Failed to delete node " + nodeName);
       return;
     }
 
@@ -383,11 +383,11 @@ everyone.now.deleteNodes = function (nodeNames, cb)
 
   if(!NovaCommon.honeydConfig.SaveAll())
   {
-    cb(false, "Failed to save XML templates");
+    cb && cb(false, "Failed to save XML templates");
     return;
   }
 
-  cb(true, "");
+  cb && cb(true, "");
 };
 
 everyone.now.deleteProfiles = function (profileNames, cb)
@@ -1416,7 +1416,8 @@ everyone.now.DeleteHostname = function(hostname, cb) {
         if (databaseError(err, cb)) {return;}
         cb && cb(null);
 	});
-}
+};
+
 }
 
 module.exports = NowjsMethods;

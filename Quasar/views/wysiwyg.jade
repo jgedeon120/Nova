@@ -118,7 +118,7 @@ block headerAdditions
       {
         if(e == undefined)
         {
-          $profileInfo.fadeOut(200);
+          $profileInfo.fadeOut(100);
           return;
         }
         var evt = (e ? e : window.event);
@@ -129,7 +129,7 @@ block headerAdditions
         }
         else
         {
-          $profileInfo.fadeOut(200);
+          $profileInfo.fadeOut(100);
         }
       }
     }
@@ -138,16 +138,16 @@ block headerAdditions
     {
       var evt = (e ? e : window.event);
       var source = evt.target || evt.srcElement;
-      if(clicked && source.innerHTML != selectedProfile)
+      if(clicked && (source.innerHTML != selectedProfile))
       {
         return;
       }
-      else if(clicked && source.innerHTML == selectedProfile)
+      else if(clicked && (source.innerHTML == selectedProfile))
       {
         $(source).css('background-color', '');
         selectedProfile = undefined;
         clicked = false
-        $profileInfo.fadeOut(200);
+        $profileInfo.fadeOut(100);
         return;
       }
       var evt = (e ? e : window.event);
@@ -267,7 +267,7 @@ block headerAdditions
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
         var hoverInfoCss = {top:($(source).position().top + $topology.position().top),
-                            left:(($(source).position().left + $topology.position().left + $(source).outerWidth()) + 10)};
+                            left:(($(source).position().left + $topology.position().left + $(source).outerWidth()))};
         var titleCss = {'font-weight':'bold', 'font-size':'18px'};
         
         var $hName = $('#hoverName').css(titleCss).html($(source).data('profile'));
@@ -396,7 +396,7 @@ block headerAdditions
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
         var hoverInfoCss = {top:($(source).position().top + $topology.position().top),
-                            left:(($(source).position().left + $topology.position().left + $(source).outerWidth()) + 10)};
+                            left:(($(source).position().left + $topology.position().left + $(source).outerWidth()))};
         $hoverInfo.css(hoverInfoCss).fadeIn(200);
       }
     }
@@ -441,6 +441,14 @@ block headerAdditions
       {
         noclick = false;
       }
+    }
+    
+    function deleteCanvasEleClick(e, source)
+    {
+      e.stopImmediatePropagation();
+      delete nodeTopology[source];
+      $('#' + source).remove();
+      $hoverInfo.fadeOut(100);
     }
     
     function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitData)
@@ -502,8 +510,20 @@ block headerAdditions
       var text = theDoc.createElement('label');
       text.innerHTML = nodeObj.count;
       text.style.fontSize = '18px';
+      text.style.float = 'left';
+      text.style.borderRight = '1px solid black';
+      text.style.backgroundColor = '#F1CC91';
       text.id = eleCount + 'text';
       div.appendChild(text);
+      
+      var deleteMe = theDoc.createElement('label');
+      deleteMe.innerHTML = 'X';
+      deleteMe.style.fontSize = '18px';
+      deleteMe.style.float = 'right';
+      deleteMe.style.borderLeft = '1px solid black';
+      deleteMe.style.backgroundColor = 'red';
+      deleteMe.setAttribute('onclick', 'deleteCanvasEleClick(event, ' + eleCount + ')');
+      div.appendChild(deleteMe);
       
       if(type == 'drop')
       {
@@ -694,8 +714,7 @@ block headerAdditions
       var append = ' no-repeat center, #E4F2FF';
       if(profile == undefined)
       {
-        ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append)
-        .find('label').css('color', 'white');
+        ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append);
         return;
       }
       if(typeof now.GetProfile == 'function')
@@ -712,8 +731,7 @@ block headerAdditions
           }
           else if(pers.indexOf('Linux') != -1)
           {
-            ele.css('background', 'url("images/wysiwyg/linux_75.png")' + append)
-            .find('label').css('color', 'white');
+            ele.css('background', 'url("images/wysiwyg/linux_75.png")' + append);
           }
           else if(pers.indexOf('Mac OS X') != -1)
           {
@@ -721,15 +739,13 @@ block headerAdditions
           }
           else
           {
-            ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append)
-            .find('label').css('color', 'white');
+            ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append);
           }
         });
       }
       else
       {
-        ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append)
-        .find('label').css('color', 'white');
+        ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append);
       }
     }
     
@@ -864,14 +880,14 @@ block headerAdditions
         })
         .on('contextmenu', function(e){
           e.preventDefault();
-          $hoverInfo.fadeOut(200);
+          $hoverInfo.fadeOut(100);
           toggleContextMenu(e);
         });
     }
     
     function toggleContextMenu(e)
     {
-      $hoverInfo.fadeOut(200);
+      $hoverInfo.fadeOut(100);
       
       var evt = (e ? e : window.event);
       var source = evt.target || evt.srcElement;
@@ -1142,7 +1158,7 @@ block headerAdditions
       {
         alert('Cannot change a node amount to a negative value!');
         $('#' + hoverNode).removeClass('ui-selected');
-        $hoverInfo.fadeOut(200);
+        $hoverInfo.fadeOut(100);
         return;
       }
       var delta = newValue - oldValue;
@@ -1241,7 +1257,7 @@ block headerAdditions
       }
       hoverhold = false;
       $('#' + hoverNode).removeClass('ui-selected').css('border', '');
-      $hoverInfo.fadeOut(200);
+      $hoverInfo.fadeOut(100);
     }
     
     function deleteSelected()
@@ -1260,8 +1276,8 @@ block headerAdditions
         $(this).remove();
       });
       
-      $contextMenu.fadeOut(200);
-      $hoverInfo.fadeOut(200);
+      $contextMenu.fadeOut(100);
+      $hoverInfo.fadeOut(100);
       
       now.deleteNodes(deleteNodes);
     }
@@ -1276,7 +1292,7 @@ block headerAdditions
         e.stopImmediatePropagation();
         handleCanvasEleHover(e);
       });
-      $contextMenu.fadeOut(200);
+      $contextMenu.fadeOut(100);
       selected = [];
     }
     
@@ -1370,9 +1386,9 @@ block headerAdditions
             $topology.off('mouseenter');
           }
           else if(e.which == 1 && !$hoverInfo.is(':hidden') && $(source).attr('class') != undefined 
-                  && $(source).attr('class').indexOf('canvasElement') == -1)
+          && $(source).attr('class').indexOf('canvasElement') == -1)
           {
-            $hoverInfo.fadeOut(200);
+            $hoverInfo.fadeOut(100);
             $('.ui-selected').each(function(){
               $(this).removeClass('ui-selected').css('border', '');
             });
@@ -1531,16 +1547,21 @@ block headerAdditions
       }
     });
     window.addEventListener('beforeunload', function(){
-        if(typeof now.WriteWysiwygTopology == 'function')
-        {
-          now.WriteWysiwygTopology(nodeTopology, function(){
-            console.log('WriteWysiwygTopology finished');
-          });
-        }
-        else
-        {
-          return 'No connection to server, cannot save topology to file.';
-        }
+      // TODO: This event is triggered twice for some reason
+      // when the user selects the option to reload the page,
+      // provided the else statement is hit. Doesn't have any
+      // real effect on the topology saving, but it is a bad
+      // UX element.
+      if(typeof now.WriteWysiwygTopology == 'function')
+      {
+        now.WriteWysiwygTopology(nodeTopology, function(){
+          console.log('WriteWysiwygTopology finished');
+        });
+      }
+      else
+      {
+        return 'No connection to server, cannot save topology to file.';
+      }
     });
     
 block content
