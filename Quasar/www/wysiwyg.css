@@ -450,15 +450,119 @@
   position: absolute;
 }
 
-.offscreenIndicatorCornerTL:before {
+.offscreenIndicatorCornerTL:after {
+  -webkit-transform-origin: 0 50% 0;
+  -ms-transform-origin: 0 50% 0;
+  -moz-transform-origin: 0 50% 0;
+  -o-transform-origin: 0 50% 0; 
+  -webkit-transform: rotate(45deg);
+  -moz-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  -o-transform: rotate(45deg);
   content: "";
   position: absolute;
   left: 100%;
   width: 0;
   height: 0;
-  border-left: 20px solid transparent;
-  border-right: 20px solid transparent;
-  border-top: 40px solid #000;
+  border-right: 40px solid #000;
+  border-top: 20px solid transparent;
+  border-bottom: 20px solid transparent;
+  z-index: 2006;
+}
+
+.offscreenIndicatorCornerBL {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  width: 20px;
+  height: 20px;
+  z-index: 2006;
+  position: absolute;
+}
+
+.offscreenIndicatorCornerBL:after {
+  -webkit-transform-origin: 0 50% 0;
+  -ms-transform-origin: 0 50% 0;
+  -moz-transform-origin: 0 50% 0;
+  -o-transform-origin: 0 50% 0; 
+  -webkit-transform: rotate(-45deg);
+  -moz-transform: rotate(-45deg);
+  -ms-transform: rotate(-45deg);
+  -o-transform: rotate(-45deg);
+  content: "";
+  position: absolute;
+  left: 100%;
+  width: 0;
+  height: 0;
+  border-right: 40px solid #000;
+  border-top: 20px solid transparent;
+  border-bottom: 20px solid transparent;
+  z-index: 2006;
+}
+
+.offscreenIndicatorCornerTR {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  width: 20px;
+  height: 20px;
+  z-index: 2006;
+  position: absolute;
+}
+
+.offscreenIndicatorCornerTR:before {
+  -webkit-transform-origin: 0 50% 0;
+  -ms-transform-origin: 0 50% 0;
+  -moz-transform-origin: 0 50% 0;
+  -o-transform-origin: 0 50% 0; 
+  -webkit-transform: rotate(-45deg);
+  -moz-transform: rotate(-45deg);
+  -ms-transform: rotate(-45deg);
+  -o-transform: rotate(-45deg);
+  content: "";
+  position: absolute;
+  left: 100%;
+  width: 0;
+  height: 0;
+  border-left: 40px solid #000;
+  border-top: 20px solid transparent;
+  border-bottom: 20px solid transparent;
+  z-index: 2006;
+}
+
+.offscreenIndicatorCornerBR {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  width: 20px;
+  height: 20px;
+  z-index: 2006;
+  position: absolute;
+}
+
+.offscreenIndicatorCornerBR:before {
+  -webkit-transform-origin: 100% 50% 0;
+  -ms-transform-origin: 100% 50% 0;
+  -moz-transform-origin: 100% 50% 0;
+  -o-transform-origin: 100% 50% 0; 
+  -webkit-transform: rotate(45deg);
+  -moz-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  -o-transform: rotate(45deg);
+  content: "";
+  position: absolute;
+  left: 100%;
+  width: 0;
+  height: 0;
+  border-left: 40px solid #000;
+  border-top: 20px solid transparent;
+  border-bottom: 20px solid transparent;
   z-index: 2006;
 }
 
