@@ -100,7 +100,7 @@ block headerAdditions
             }
             
             var pointerCss = {top:($(source).position().top + $(source).height()),
-                              left:($(source).position().left + $(source).outerWidth() + 20)};
+                              left:($(source).position().left + $(source).outerWidth())};
                               
             $profileInfo.css(pointerCss).fadeIn(200);
           });
@@ -344,7 +344,8 @@ block headerAdditions
       }
       else if(e.type == 'mouseleave')
       {
-        if(!hoverhold)
+        var newHoverEle = e.toElement || e.relatedTarget;
+        if(!hoverhold && newHoverEle.id != 'hoverInfo')
         {
           $hoverInfo.fadeOut(200, function(){
             fadeEleIn = true;
@@ -432,7 +433,7 @@ block headerAdditions
           $(source).css('border', '1px ridge red').addClass('ui-selected');
           selected.push(source);
           var hoverInfoCss = {top:($(source).position().top + $topology.position().top),
-                              left:(($(source).position().left + $topology.position().left + $(source).outerWidth()) + 10)};
+                              left:(($(source).position().left + $topology.position().left + $(source).outerWidth()))};
           $hoverInfo.css(hoverInfoCss).fadeIn(200);
           hoverNode = source.id;
           hoverhold = true;
@@ -1329,6 +1330,15 @@ block headerAdditions
       $hoverInfo.fadeOut(100);
     }
     
+    function hoverFade(e)
+    {
+      var newTarget = e.toElement || e.relatedTarget;
+      if(!hoverhold && newTarget.id == 'nodeCanvas')
+      {
+        $hoverInfo.fadeOut(100);
+      }
+    }
+    
     function deleteSelected()
     {
       var deleteNodes = [];
@@ -1689,7 +1699,7 @@ block content
           div#deleteNodes Delete Selected
           div#mergeNodes Merge Selected
           div#splitNodes Split Selected
-      div#hoverInfo
+      div#hoverInfo(onmouseout='hoverFade(event)')
         div#pres
           label#hoverName
           br
