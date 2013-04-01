@@ -1483,6 +1483,10 @@ block headerAdditions
               e.stopImmediatePropagation();
               handleCanvasEleHover(e);
             });
+            $('.canvasElement').each(function(){
+              nodeTopology[$(this).attr('id')].coordinates.x = parseInt($(this).css('left'));
+              nodeTopology[$(this).attr('id')].coordinates.y = parseInt($(this).css('top'));
+            });
           }
         })
         .mouseout(function(e){
