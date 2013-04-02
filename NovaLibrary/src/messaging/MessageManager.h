@@ -72,7 +72,12 @@ public:
 
 	//When a socket closes, remove the session index from the current list
 	void RemoveSessionIndex(uint32_t index);
+	//When a new socket is created, add the session index to the list
+	void AddSessionIndex(uint32_t index, struct bufferevent *bev);
 
+	//Map of session indices to bufferevents
+	pthread_mutex_t m_bevMapMutex;
+	std::map<uint32_t, struct bufferevent*> m_bevMap;
 private:
 
 	static MessageManager *m_instance;
@@ -88,9 +93,6 @@ private:
 
 	pthread_cond_t m_popWakeupCondition;
 
-	//Map of session indices to bufferevents
-	pthread_mutex_t m_bevMapMutex;
-	std::map<uint32_t, struct bufferevent*> m_bevMap;
 };
 
 }

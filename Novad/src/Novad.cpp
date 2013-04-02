@@ -823,7 +823,7 @@ void UpdateAndClassify(SuspectID_pb key)
 			LOG(ERROR, "Unable to insert hostile suspect event into database. " + string(e.what()), "");
 		}
 
-		if (Config::Inst()->GetClearAfterHostile())
+		if(Config::Inst()->GetClearAfterHostile())
 		{
 			stringstream ss;
 			ss << "Main suspect Erase returned: " << suspects.Erase(key);

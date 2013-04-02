@@ -82,9 +82,12 @@ void HandleClearAllRequest(Message *incoming)
 				"Got a CONTROL_CLEAR_ALL_REQUEST, cleared all suspects.");
 
 		Message updateMessage(UPDATE_ALL_SUSPECTS_CLEARED);
+		if(incoming->m_contents.has_m_messageid())
+		{
+			updateMessage.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
+		}
 		MessageManager::Instance().WriteMessage(&updateMessage, 0);
 	}
-
 }
 
 void HandleClearSuspectRequest(Message *incoming)
@@ -100,6 +103,17 @@ void HandleClearSuspectRequest(Message *incoming)
 	if(!result)
 	{
 		LOG(DEBUG, "Failed to Erase suspect from the unsaved suspect table.", "");
+		// Send failure notice
+		Message updateMessage;
+		updateMessage.m_contents.set_m_type(UPDATE_SUSPECT_CLEARED);
+		updateMessage.m_contents.set_m_success(false);
+		if(incoming->m_contents.has_m_messageid())
+		{
+			updateMessage.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
+		}
+		updateMessage.m_contents.mutable_m_suspectid()->CopyFrom(incoming->m_contents.m_suspectid());
+		MessageManager::Instance().WriteMessage(&updateMessage, incoming->m_contents.m_sessionindex());
+		return;
 	}
 
 	struct in_addr suspectAddress;
@@ -112,6 +126,11 @@ void HandleClearSuspectRequest(Message *incoming)
 	//Notify the other clients about the cleared suspect
 	Message updateMessage;
 	updateMessage.m_contents.set_m_type(UPDATE_SUSPECT_CLEARED);
+	updateMessage.m_contents.set_m_success(true);
+	if(incoming->m_contents.has_m_messageid())
+	{
+		updateMessage.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
+	}
 	updateMessage.m_contents.mutable_m_suspectid()->CopyFrom(incoming->m_contents.m_suspectid());
 	MessageManager::Instance().WriteMessage(&updateMessage, 0);
 }
@@ -151,9 +170,14 @@ void HandleStopCaptureRequest(Message *incoming)
 
 void HandleRequestSuspectList(Message *incoming)
 {
+	LOG(DEBUG, "xxxDEBUGxxx Got a list request, sending reply", "");
 	Message reply;
 	reply.m_contents.set_m_type(REQUEST_SUSPECTLIST_REPLY);
 	reply.m_contents.set_m_listtype(incoming->m_contents.m_listtype());
+	if(incoming->m_contents.has_m_messageid())
+	{
+		reply.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
+	}
 
 	switch(incoming->m_contents.m_listtype())
 	{
@@ -208,6 +232,11 @@ void HandleRequestSuspect(Message *incoming)
 {
 	Message reply;
 	reply.m_contents.set_m_type(REQUEST_SUSPECT_REPLY);
+	if(incoming->m_contents.has_m_messageid())
+	{
+		reply.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
+	}
+
 	Suspect tempSuspect;
 	if(reply.m_contents.m_featuremode() == NO_FEATURE_DATA)
 	{
@@ -226,6 +255,11 @@ void HandleRequestAllSuspects(Message *incoming)
 {
 	Message reply;
 	reply.m_contents.set_m_type(REQUEST_ALL_SUSPECTS_REPLY);
+	if(incoming->m_contents.has_m_messageid())
+	{
+		reply.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
+	}
+
 	vector<SuspectID_pb> keys;
 
 	switch(incoming->m_contents.m_listtype())
@@ -272,6 +306,10 @@ void HandleRequestUptime(Message *incoming)
 {
 	Message reply;
 	reply.m_contents.set_m_type(REQUEST_UPTIME_REPLY);
+	if(incoming->m_contents.has_m_messageid())
+	{
+		reply.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
+	}
 	reply.m_contents.set_m_starttime(startTime);
 	MessageManager::Instance().WriteMessage(&reply, incoming->m_contents.m_sessionindex());
 }
@@ -279,6 +317,10 @@ void HandleRequestUptime(Message *incoming)
 void HandlePing(Message *incoming)
 {
 	Message pong;
+	if(incoming->m_contents.has_m_messageid())
+	{
+		pong.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
+	}
 	pong.m_contents.set_m_type(REQUEST_PONG);
 	MessageManager::Instance().WriteMessage(&pong, incoming->m_contents.m_sessionindex());
 }

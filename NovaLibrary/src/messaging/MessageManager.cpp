@@ -79,34 +79,77 @@ bool MessageManager::WriteMessage(Message *message, uint32_t sessionIndex)
 		return false;
 	}
 
-	Lock lock(&m_bevMapMutex);
-	if(m_bevMap.count(sessionIndex) == 0)
+	if(sessionIndex != 0)
 	{
-		return false;
-	}
-	struct bufferevent *bev = m_bevMap[sessionIndex];
+		Lock lock(&m_bevMapMutex);
+		if(m_bevMap.count(sessionIndex) == 0)
+		{
+			return false;
+		}
+		struct bufferevent *bev = m_bevMap[sessionIndex];
 
-	uint32_t length = message->GetLength();
-	char *buffer = new char(length + sizeof(uint32_t));
+		uint32_t length = message->GetLength();
+		char *buffer = new char[length + sizeof(uint32_t)];
 
-	memcpy(buffer, &length, sizeof(length));
+		memcpy(buffer, &length, sizeof(length));
 
-	if(!message->Serialize(buffer + sizeof(uint32_t), length))
-	{
-		delete buffer;
-		return false;
-	}
-	bufferevent_lock(bev);
-	if(bufferevent_write(bev, buffer, length) == -1)
-	{
-		delete buffer;
+		if(!message->Serialize(buffer + sizeof(uint32_t), length))
+		{
+			delete[] buffer;
+			return false;
+		}
+		bufferevent_lock(bev);
+		if(bufferevent_write(bev, buffer, length + sizeof(uint32_t)) == -1)
+		{
+			delete[] buffer;
+			bufferevent_unlock(bev);
+			return false;
+		}
+
+		delete[] buffer;
 		bufferevent_unlock(bev);
-		return false;
+		return true;
 	}
+	else
+	{
+		Lock lock(&m_bevMapMutex);
+		if(m_bevMap.empty())
+		{
+			return false;
+		}
+		map<uint32_t, struct bufferevent*>::iterator it;
+		for(it = m_bevMap.begin(); it != m_bevMap.end(); it++)
+		{
+			struct bufferevent *bev = it->second;
 
-	delete buffer;
-	bufferevent_unlock(bev);
-	return true;
+			if(bev == NULL)
+			{
+				continue;
+			}
+
+			uint32_t length = message->GetLength();
+			char *buffer = new char[length + sizeof(uint32_t)];
+
+			memcpy(buffer, &length, sizeof(length));
+
+			if(!message->Serialize(buffer + sizeof(uint32_t), length))
+			{
+				delete[] buffer;
+				continue;
+			}
+			bufferevent_lock(bev);
+			if(bufferevent_write(bev, buffer, length + sizeof(uint32_t)) == -1)
+			{
+				delete[] buffer;
+				bufferevent_unlock(bev);
+				continue;
+			}
+
+			delete[] buffer;
+			bufferevent_unlock(bev);
+		}
+		return true;
+	}
 }
 
 void MessageManager::MessageDispatcher(struct bufferevent *bev, void *ctx)
@@ -146,9 +189,8 @@ void MessageManager::MessageDispatcher(struct bufferevent *bev, void *ctx)
 
 		//Remove the length from the buffer
 		evbuffer_drain(input, sizeof(length));
-		length -= sizeof(length);
 
-		char *buffer = (char*)evbuffer_pullup(input, length);
+		char *buffer = (char*)evbuffer_pullup(input, length - sizeof(length));
 		if(buffer == NULL)
 		{
 			// This should never happen. If it does, probably because length is an absurd value (or we're out of memory)
@@ -158,7 +200,7 @@ void MessageManager::MessageDispatcher(struct bufferevent *bev, void *ctx)
 		}
 
 		Message *message = new Message();
-		if(!message->Deserialize(buffer, length))
+		if(message->Deserialize(buffer, length) == true)
 		{
 			uint32_t *index = (uint32_t*)ctx;
 			message->m_contents.set_m_sessionindex(*index);
@@ -180,15 +222,19 @@ void MessageManager::ErrorDispatcher(struct bufferevent *bev, short error, void 
 {
 	if(error & BEV_EVENT_CONNECTED)
 	{
-		LOG(DEBUG, "New connection established", "");
 		return;
 	}
 
 	//If the socket has closed, clean up the bufferevent
 	if(error & (BEV_EVENT_EOF | BEV_EVENT_ERROR))
 	{
+		LOG(DEBUG, "Connection has terminated", "");
 		uint32_t *index = (uint32_t*)ctx;
 		MessageManager::Instance().RemoveSessionIndex(*index);
+
+		Message *shutdown = new Message();
+		shutdown->m_contents.set_m_type(CONNECTION_SHUTDOWN);
+		MessageManager::Instance().EnqueueMessage(shutdown);
 		delete index;
 	}
 }
@@ -217,6 +263,7 @@ void MessageManager::DoAccept(evutil_socket_t listener, short event, void *arg)
 		//Get a new session index and assign it to the bufferevent
 		uint32_t *sessionIndex = new uint32_t;
 		*sessionIndex = MessageManager::Instance().GetNextSessionIndex();
+		MessageManager::Instance().AddSessionIndex(*sessionIndex, bev);
 
 		bufferevent_setcb(bev, MessageDispatcher, NULL, ErrorDispatcher, sessionIndex);
 		bufferevent_setwatermark(bev, EV_READ, 0, 0);
@@ -243,6 +290,16 @@ void MessageManager::RemoveSessionIndex(uint32_t index)
 		bufferevent_free(bev);
 		m_bevMap.erase(index);
 	}
+}
+
+void MessageManager::AddSessionIndex(uint32_t index, struct bufferevent *bev)
+{
+	Lock lock(&m_bevMapMutex);
+	if(m_bevMap.count(index) > 0)
+	{
+		LOG(WARNING, "An old bufferevent is stuck, this shouldn't be. Clobbering it.", "");
+	}
+	m_bevMap[index] = bev;
 }
 
 }

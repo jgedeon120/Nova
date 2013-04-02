@@ -36,52 +36,79 @@ bool IsNovadUp()
 	return isConnected;
 }
 
-void Ping()
+void Ping(int32_t messageID)
 {
 	Message ping;
 	ping.m_contents.set_m_type(REQUEST_PING);
-	MessageManager::Instance().WriteMessage(&ping, ping.m_contents.m_sessionindex());
+	if(messageID != -1)
+	{
+		ping.m_contents.set_m_messageid(messageID);
+	}
+	MessageManager::Instance().WriteMessage(&ping, 0);
 }
 
-void RequestStartTime()
+void RequestStartTime(int32_t messageID)
 {
 	Message getUptime;
 	getUptime.m_contents.set_m_type(REQUEST_UPTIME);
-	MessageManager::Instance().WriteMessage(&getUptime, getUptime.m_contents.m_sessionindex());
+	if(messageID != -1)
+	{
+		getUptime.m_contents.set_m_messageid(messageID);
+	}
+	MessageManager::Instance().WriteMessage(&getUptime, 0);
 }
 
-void RequestSuspectList(enum SuspectListType listType)
+void RequestSuspectList(enum SuspectListType listType, int32_t messageID)
 {
 	Message request;
 	request.m_contents.set_m_type(REQUEST_SUSPECTLIST);
 	request.m_contents.set_m_listtype(listType);
-	MessageManager::Instance().WriteMessage(&request, request.m_contents.m_sessionindex());
+	if(messageID != -1)
+	{
+		request.m_contents.set_m_messageid(messageID);
+	}
+	if(!MessageManager::Instance().WriteMessage(&request, 0))
+	{
+		LOG(DEBUG, "xxxDEBUGxxx WRITE LIST FAILED", "");
+	}
 }
 
-void RequestSuspect(SuspectID_pb address)
+void RequestSuspect(SuspectID_pb address, int32_t messageID)
 {
 	Message request;
 	request.m_contents.set_m_type(REQUEST_SUSPECT);
 	*request.m_contents.mutable_m_suspectid() = address;
 	request.m_contents.set_m_featuremode(NO_FEATURE_DATA);
-	MessageManager::Instance().WriteMessage(&request, request.m_contents.m_sessionindex());
+	if(messageID != -1)
+	{
+		request.m_contents.set_m_messageid(messageID);
+	}
+	MessageManager::Instance().WriteMessage(&request, 0);
 }
 
-void RequestSuspectWithData(SuspectID_pb address)
+void RequestSuspectWithData(SuspectID_pb address, int32_t messageID)
 {
 	Message request;
 	request.m_contents.set_m_type(REQUEST_SUSPECT);
 	*request.m_contents.mutable_m_suspectid() = address;
 	request.m_contents.set_m_featuremode(MAIN_FEATURE_DATA);
-	MessageManager::Instance().WriteMessage(&request, request.m_contents.m_sessionindex());
+	if(messageID != -1)
+	{
+		request.m_contents.set_m_messageid(messageID);
+	}
+	MessageManager::Instance().WriteMessage(&request, 0);
 }
 
-void RequestSuspects(enum SuspectListType listType)
+void RequestSuspects(enum SuspectListType listType, int32_t messageID)
 {
 	Message request;
 	request.m_contents.set_m_type(REQUEST_ALL_SUSPECTS);
 	request.m_contents.set_m_listtype(listType);
-	MessageManager::Instance().WriteMessage(&request, request.m_contents.m_sessionindex());
+	if(messageID != -1)
+	{
+		request.m_contents.set_m_messageid(messageID);
+	}
+	MessageManager::Instance().WriteMessage(&request, 0);
 }
 
 }

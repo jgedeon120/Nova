@@ -141,6 +141,9 @@ bool ConnectToNovad()
 			bufferevent = NULL;
 			return false;
 		}
+
+		MessageManager::Instance().AddSessionIndex(*sessionIndex, bufferevent);
+		LOG(DEBUG, "New connection established", "");
 	}
 
 	pthread_create(&eventDispatchThread, NULL, EventDispatcherThread, NULL);
@@ -150,7 +153,7 @@ bool ConnectToNovad()
 	return true;
 }
 
-bool DisconnectFromNovad()
+void DisconnectFromNovad()
 {
 	//Close out any possibly remaining socket artifacts
 	if(libeventBase != NULL)
@@ -177,7 +180,6 @@ bool DisconnectFromNovad()
 
 	IPCSocketFD = -1;
 	isConnected = false;
-	return true;
 }
 
 }

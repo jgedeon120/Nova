@@ -33,6 +33,8 @@ pthread_mutex_t messageQueueMutex;
 queue<Message*> messageQueue;
 pthread_cond_t popWakeupCondition;
 
+extern bool isConnected;
+
 namespace Nova
 {
 
@@ -68,11 +70,15 @@ bool StartNovad(bool blocking)
 	}
 }
 
-void StopNovad()
+void StopNovad(int32_t messageID)
 {
 	Message killRequest;
 	killRequest.m_contents.set_m_type(CONTROL_EXIT_REQUEST);
-	MessageManager::Instance().WriteMessage(&killRequest, killRequest.m_contents.m_sessionindex());
+	if(messageID != -1)
+	{
+		killRequest.m_contents.set_m_messageid(messageID);
+	}
+	MessageManager::Instance().WriteMessage(&killRequest, 0);
 
 	DisconnectFromNovad();
 }
@@ -89,61 +95,73 @@ bool HardStopNovad()
 	return false;
 }
 
-void SaveAllSuspects(std::string file)
+void SaveAllSuspects(std::string file, int32_t messageID)
 {
 	Message saveRequest;
 	saveRequest.m_contents.set_m_type(CONTROL_SAVE_SUSPECTS_REQUEST);
 	saveRequest.m_contents.set_m_filepath(file.c_str());
-
-	MessageManager::Instance().WriteMessage(&saveRequest, saveRequest.m_contents.m_sessionindex());
+	if(messageID != -1)
+	{
+		saveRequest.m_contents.set_m_messageid(messageID);
+	}
+	MessageManager::Instance().WriteMessage(&saveRequest, 0);
 }
 
-void ClearAllSuspects()
+void ClearAllSuspects(int32_t messageID)
 {
 	Message clearRequest;
 	clearRequest.m_contents.set_m_type(CONTROL_CLEAR_ALL_REQUEST);
-	MessageManager::Instance().WriteMessage(&clearRequest, clearRequest.m_contents.m_sessionindex());
+	if(messageID != -1)
+	{
+		clearRequest.m_contents.set_m_messageid(messageID);
+	}
+	MessageManager::Instance().WriteMessage(&clearRequest, 0);
 }
 
-void ClearSuspect(SuspectID_pb suspectId)
+void ClearSuspect(SuspectID_pb suspectId, int32_t messageID)
 {
 	Message clearRequest;
 	clearRequest.m_contents.set_m_type(CONTROL_CLEAR_SUSPECT_REQUEST);
-
 	*clearRequest.m_contents.mutable_m_suspectid() = suspectId;
-	MessageManager::Instance().WriteMessage(&clearRequest, clearRequest.m_contents.m_sessionindex());
+	if(messageID != -1)
+	{
+		clearRequest.m_contents.set_m_messageid(messageID);
+	}
+	MessageManager::Instance().WriteMessage(&clearRequest, 0);
 }
 
-void ReclassifyAllSuspects()
+void ReclassifyAllSuspects(int32_t messageID)
 {
 	Message request;
 	request.m_contents.set_m_type(CONTROL_RECLASSIFY_ALL_REQUEST);
-	MessageManager::Instance().WriteMessage(&request, request.m_contents.m_sessionindex());
+	if(messageID != -1)
+	{
+		request.m_contents.set_m_messageid(messageID);
+	}
+	MessageManager::Instance().WriteMessage(&request, 0);
 }
 
-void StartPacketCapture()
+void StartPacketCapture(int32_t messageID)
 {
 	Message request;
 	request.m_contents.set_m_type(CONTROL_START_CAPTURE);
-	MessageManager::Instance().WriteMessage(&request, request.m_contents.m_sessionindex());
+	if(messageID != -1)
+	{
+		request.m_contents.set_m_messageid(messageID);
+	}
+	MessageManager::Instance().WriteMessage(&request, 0);
 }
 
-void StopPacketCapture()
+void StopPacketCapture(int32_t messageID)
 {
 	Message request;
 	request.m_contents.set_m_type(CONTROL_STOP_CAPTURE);
-	MessageManager::Instance().WriteMessage(&request, request.m_contents.m_sessionindex());
+	if(messageID != -1)
+	{
+		request.m_contents.set_m_messageid(messageID);
+	}
+	MessageManager::Instance().WriteMessage(&request, 0);
 }
-
-//bool WaitForMessage(enum MessageType type, uint msMaxWait)
-//{
-//	Lock lock(&m_queueMutex);
-//
-//	while(m_queue.empty())
-//	{
-//		pthread_cond_wait(&m_popWakeupCondition, &m_queueMutex);
-//	}
-//}
 
 void *ClientMessageWorker(void *arg)
 {
@@ -160,6 +178,10 @@ void *ClientMessageWorker(void *arg)
 			{
 				break;
 			}
+			case REQUEST_ALL_SUSPECTS_REPLY:
+			{
+				break;
+			}
 			case UPDATE_ALL_SUSPECTS_CLEARED:
 			{
 				break;
@@ -170,6 +192,12 @@ void *ClientMessageWorker(void *arg)
 			}
 			case REQUEST_PONG:
 			{
+				isConnected = true;
+				break;
+			}
+			case CONNECTION_SHUTDOWN:
+			{
+				isConnected = false;
 				break;
 			}
 			default:

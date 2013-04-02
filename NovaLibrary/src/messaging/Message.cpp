@@ -48,6 +48,7 @@ void Message::DeleteContents()
 	{
 		delete m_suspects[i];
 	}
+	m_suspects.clear();
 }
 
 uint32_t Message::GetLength()
@@ -66,6 +67,11 @@ bool Message::Serialize(char *buffer, uint32_t length)
 {
 	uint32_t protobufLength = m_contents.ByteSize();
 
+	if(protobufLength > length)
+	{
+		return false;
+	}
+
 	//Copy in the length of the protobuf section
 	memcpy(buffer, &protobufLength, sizeof(protobufLength));
 	buffer += sizeof(protobufLength);
@@ -77,6 +83,7 @@ bool Message::Serialize(char *buffer, uint32_t length)
 	}
 	buffer += protobufLength;
 
+	uint32_t runningLength = protobufLength + sizeof(protobufLength);
 	//Serialize in any Suspects
 	for(uint i = 0; i < m_suspects.size(); i++)
 	{
@@ -87,6 +94,11 @@ bool Message::Serialize(char *buffer, uint32_t length)
 			return false;
 		}
 		buffer += suspectLength;
+		runningLength += suspectLength;
+		if(runningLength > length)
+		{
+			return false;
+		}
 	}
 
 	return true;
@@ -97,14 +109,16 @@ bool Message::Deserialize(char *buffer, uint32_t length)
 	uint32_t protobufLength;
 	memcpy(&protobufLength, buffer, sizeof(protobufLength));
 	buffer += sizeof(protobufLength);
+	length -= sizeof(protobufLength);
 
 	if(!m_contents.ParseFromArray(buffer, protobufLength))
 	{
 		return false;
 	}
+	buffer += protobufLength;
 
 	uint32_t bytesToGo = length - protobufLength;
-	while(bytesToGo)
+	while(bytesToGo > 0)
 	{
 		Suspect *suspect = new Suspect();
 		try

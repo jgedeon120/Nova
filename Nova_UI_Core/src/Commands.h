@@ -38,7 +38,7 @@ namespace Nova
 bool StartNovad(bool blocking = false);
 
 //Asks the novad process to exit nicely
-void StopNovad();
+void StopNovad(int32_t messageID = -1);
 
 //Kills the Novad process in event of a deadlock
 //  returns - True upon killing of Novad process, false on error
@@ -46,10 +46,12 @@ bool HardStopNovad();
 
 //Queries Novad to see if it is currently up or down
 //	the result is eventually stored such that IsNovadUp() can retrieve it
-void Ping();
+void Ping(int32_t messageID = -1);
 
-
+//Checks if novad is currently up and running
+//	this is a local check and does not produce any new messages
 bool IsNovadUp();
+
 
 //************************************************************************
 //**						Connection Operations						**
@@ -62,12 +64,8 @@ bool IsNovadUp();
 bool ConnectToNovad();
 
 //Disconnects from Novad over IPC. (opposite of ConnectToNovad) Sends no messages
-//	NOTE: Cannot be called in the same scope as a Ticket! Disconnecting from a socket
-//		requires that we write lock it, while a Ticket has a read lock. Trying to do
-//		both will cause a deadlock.
 //	NOTE: Safely does nothing if already disconnected
-// returns - (Vacuously returns true for the sake of nodejs wrapping)
-bool DisconnectFromNovad();
+void DisconnectFromNovad();
 
 
 //************************************************************************
@@ -76,49 +74,44 @@ bool DisconnectFromNovad();
 
 // Requests a list of suspect addresses currently classified
 //	 listType: Type of list to get (all, just hostile, just benign)
-void RequestSuspectList(enum SuspectListType listType);
+void RequestSuspectList(enum SuspectListType listType, int32_t messageID = -1);
 
 // Gets a suspect from the daemon
 // address: IP address of the suspect
-void RequestSuspect(SuspectID_pb address);
+void RequestSuspect(SuspectID_pb address, int32_t messageID = -1);
 
 // Same as GetSuspect but returns all the featureset data
 // address: IP address of the suspect
-void RequestSuspectWithData(SuspectID_pb address);
+void RequestSuspectWithData(SuspectID_pb address, int32_t messageID = -1);
 
 //Request multiple suspects, filtered by listType (all, just hostile, just benign)
-void RequestSuspects(enum SuspectListType listType);
+void RequestSuspects(enum SuspectListType listType, int32_t messageID = -1);
 
 //Asks Novad to save the suspect list to persistent storage
 //	returns - true if saved correctly, false on error
-void SaveAllSuspects(std::string file);
+void SaveAllSuspects(std::string file, int32_t messageID = -1);
 
 //Asks Novad to forget all data on all suspects that it has
-void ClearAllSuspects();
+void ClearAllSuspects(int32_t messageID = -1);
 
 //Asks Novad to forget data on the specified suspect
 //	suspectAddress - The IP address (unique identifier) of the suspect to forget
-void ClearSuspect(SuspectID_pb suspectAddress);
+void ClearSuspect(SuspectID_pb suspectAddress, int32_t messageID = -1);
 
 //Asks Novad to reclassify all suspects
-void ReclassifyAllSuspects();
+void ReclassifyAllSuspects(int32_t messageID = -1);
 
 // Asks novad for it's uptime.
-void RequestStartTime();
+void RequestStartTime(int32_t messageID = -1);
 
 // Command nova to start or stop live packet capture
-void StartPacketCapture();
-void StopPacketCapture();
+void StartPacketCapture(int32_t messageID = -1);
+void StopPacketCapture(int32_t messageID = -1);
 
 
 //************************************************************************
 //**						Event Operations							**
 //************************************************************************
-
-//In case you really really want to block until a particular message was handled,
-//	this function will do just that for you
-//	returns true if message was received and handled, false if timeout
-bool WaitForMessage(enum MessageType type, uint msMaxWait);
 
 //Grabs a message off of the message queue
 // Returns - A pointer to a valid Message object. Never NULL. Caller is responsible for life cycle of this message

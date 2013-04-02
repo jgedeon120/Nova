@@ -20,6 +20,8 @@
 #include "SuspectTable.h"
 #include "Suspect.h"
 #include "Config.h"
+#include "messaging/MessageManager.h"
+
 
 using namespace node;
 using namespace v8;
@@ -41,7 +43,7 @@ void NovaNode::CheckInitNova()
 		return;
 	}
 
-	if(!Nova::TryWaitConnectToNovad(3000))
+	if(!Nova::ConnectToNovad())
 	{
 		LOG(WARNING, "Could not connect to Novad. It is likely down.","");
 		return;
@@ -59,12 +61,23 @@ void NovaNode::NovaCallbackHandling(eio_req*)
 
 	while(true)
 	{
-		Message *message = MessageManager::Instance().DequeueMessage();
+		Nova::Message *message = MessageManager::Instance().DequeueMessage();
 		switch(message->m_contents.m_type())
 		{
 			case UPDATE_SUSPECT:
 			{
-				HandleNewSuspect(cb.m_suspect);
+				if(!message->m_suspects.empty())
+				{
+					HandleNewSuspect(message->m_suspects[0]);
+				}
+				break;
+			}
+			case REQUEST_ALL_SUSPECTS_REPLY:
+			{
+				for(uint i = 0; i < message->m_suspects.size(); i++)
+				{
+					HandleNewSuspect(message->m_suspects[i]);
+				}
 				break;
 			}
 			case UPDATE_ALL_SUSPECTS_CLEARED:
@@ -75,14 +88,13 @@ void NovaNode::NovaCallbackHandling(eio_req*)
 			case UPDATE_SUSPECT_CLEARED:
 			{
 				Suspect *suspect = new Suspect();
-				suspect->SetIdentifier(cb.m_suspectIP);
-				LOG(DEBUG, "Got a clear callback request for a suspect on interface " + cb.m_suspectIP.m_ifname(), "");
+				suspect->SetIdentifier(message->m_contents.m_suspectid());
+				LOG(DEBUG, "Got a clear suspect response for a suspect on interface " + message->m_contents.m_suspectid().m_ifname(), "");
 				HandleSuspectCleared(suspect);
 				break;
 			}
 			case REQUEST_PONG:
 			{
-				//TODO: Hm...
 				break;
 			}
 			default:
@@ -91,6 +103,7 @@ void NovaNode::NovaCallbackHandling(eio_req*)
 				break;
 			}
 		}
+		delete message;
 	}
 }
 
@@ -198,6 +211,24 @@ void NovaNode::HandleCallbackError()
 	LOG(ERROR, "Novad provided CALLBACK_ERROR, will continue and move on","");
 }
 
+bool StopNovadWrapper()
+{
+	StopNovad();
+	return true;
+}
+
+bool ReclassifyAllSuspectsWrapper()
+{
+	ReclassifyAllSuspects();
+	return true;
+}
+
+bool DisconnectFromNovadWrapper()
+{
+	DisconnectFromNovad();
+	return true;
+}
+
 void NovaNode::Init(Handle<Object> target)
 {
 	HandleScope scope;
@@ -221,38 +252,37 @@ void NovaNode::Init(Handle<Object> target)
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "registerOnSuspectCleared", registerOnSuspectCleared );
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "CheckConnection", CheckConnection );
 
-	NODE_SET_PROTOTYPE_METHOD(s_ct, "CloseNovadConnection", (InvokeMethod<bool, Nova::DisconnectFromNovad>) );
+	NODE_SET_PROTOTYPE_METHOD(s_ct, "CloseNovadConnection", (InvokeMethod<bool, DisconnectFromNovadWrapper>) );
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "ConnectToNovad", (InvokeMethod<bool, Nova::ConnectToNovad>) );
 
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "StartNovad", (InvokeMethod<bool, bool, Nova::StartNovad>) );
-	NODE_SET_PROTOTYPE_METHOD(s_ct, "StopNovad", (InvokeMethod<bool, Nova::StopNovad>) );
+	NODE_SET_PROTOTYPE_METHOD(s_ct, "StopNovad", (InvokeMethod<bool, StopNovadWrapper>) );
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "HardStopNovad", (InvokeMethod<bool, Nova::HardStopNovad>) );
 
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "StartHaystack", (InvokeMethod<bool, bool, Nova::StartHaystack>) );
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "StopHaystack", (InvokeMethod<bool, Nova::StopHaystack>) );
 
-	NODE_SET_PROTOTYPE_METHOD(s_ct, "IsNovadUp", (InvokeMethod<bool, bool, Nova::IsNovadUp>) );
+	NODE_SET_PROTOTYPE_METHOD(s_ct, "IsNovadUp", (InvokeMethod<bool, Nova::IsNovadUp>) );
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "IsHaystackUp", (InvokeMethod<bool, Nova::IsHaystackUp>) );
 	//              
 	//              NODE_SET_PROTOTYPE_METHOD(s_ct, "SaveAllSuspects", (InvokeMethod<Boolean, bool, Nova::SaveAllSuspects>) );
-	NODE_SET_PROTOTYPE_METHOD(s_ct, "ReclassifyAllSuspects", (InvokeMethod<bool, Nova::ReclassifyAllSuspects>) );
+	NODE_SET_PROTOTYPE_METHOD(s_ct, "ReclassifyAllSuspects", (InvokeMethod<bool, ReclassifyAllSuspectsWrapper>) );
 	
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "GetLocalIP", (InvokeMethod<std::string, std::string, Nova::GetLocalIP>) );
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "GetSubnetFromInterface", (InvokeMethod<std::string, std::string, Nova::GetSubnetFromInterface>) );
 
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "Shutdown", Shutdown );
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "ClearSuspect", ClearSuspect );
-	NODE_SET_PROTOTYPE_METHOD(s_ct, "GetSuspectDetailsString", GetSuspectDetailsString );
+	NODE_SET_PROTOTYPE_METHOD(s_ct, "RequestSuspectDetailsString", RequestSuspectDetailsString );
 
 	// Javascript object constructor
 	target->Set(String::NewSymbol("Instance"),
 			s_ct->GetFunction());
 }
 
-
-Handle<Value> NovaNode::GetSuspectDetailsString(const Arguments &args) {
+Handle<Value> NovaNode::RequestSuspectDetailsString(const Arguments &args)
+{
 	HandleScope scope;
-	string details;
 
 	string suspectIp = cvv8::CastFromJS<string>(args[0]);
 	string suspectInterface = cvv8::CastFromJS<string>(args[1]);
@@ -264,17 +294,19 @@ Handle<Value> NovaNode::GetSuspectDetailsString(const Arguments &args) {
 	id.set_m_ip(htonl(address.s_addr));
 	id.set_m_ifname(suspectInterface);
 
-	Suspect *suspect = GetSuspectWithData(id);
-	if (suspect != NULL) {
-		details = suspect->ToString();
-		details += "\n";
-		details += suspect->GetFeatureSet().toString();
-		delete suspect;
-	} else {
-		details = "Unable to complete request";
-	}
+	RequestSuspectWithData(id);
 
-	return scope.Close(cvv8::CastToJS(details));
+//	Suspect *suspect;
+//	if (suspect != NULL) {
+//		details = suspect->ToString();
+//		details += "\n";
+//		details += suspect->GetFeatureSet().toString();
+//		delete suspect;
+//	} else {
+//		details = "Unable to complete request";
+//	}
+
+	return scope.Close(Null());
 }
 
 // Figure out what the names of features are in the featureset
@@ -296,11 +328,12 @@ Handle<Value> NovaNode::ClearAllSuspects(const Arguments &)
 	HandleScope scope;
 	
 	HandleAllSuspectsCleared();
-	
-	bool cleared = Nova::ClearAllSuspects();
+	Nova::ClearAllSuspects();
 
-	Local<Boolean> result = Local<Boolean>::New( Boolean::New(cleared) );
-	return scope.Close(result);
+//	bool cleared;
+//	Local<Boolean> result = Local<Boolean>::New( Boolean::New(cleared) );
+	
+	return scope.Close(Null());
 }
 
 Handle<Value> NovaNode::GetSupportedEngines(const Arguments &)
@@ -356,7 +389,9 @@ Handle<Value> NovaNode::ClearSuspect(const Arguments &args)
 	SuspectID_pb id;
 	id.set_m_ifname(suspectInterface);
 	id.set_m_ip(ntohl(address));
-	return scope.Close(Boolean::New(Nova::ClearSuspect(id)));
+	Nova::ClearSuspect(id);
+
+	return scope.Close(Null());
 }
 
 NovaNode::NovaNode() :
@@ -377,21 +412,7 @@ NovaNode::~NovaNode()
 // Update our internal suspect list to that of novad
 void NovaNode::SynchInternalList()
 {
-	vector<SuspectID_pb> suspects = GetSuspectList(SUSPECTLIST_ALL);
-
-	for (uint i = 0; i < suspects.size(); i++)
-	{
-		Suspect *suspect = GetSuspect(suspects.at(i));
-
-		if (suspect != NULL)
-		{
-			HandleNewSuspect(suspect);
-		}
-		else
-		{
-			cout << "Error: No suspect received" << endl;
-		}
-	}
+	RequestSuspects(SUSPECTLIST_ALL);
 }
 
 
@@ -410,7 +431,6 @@ Handle<Value> NovaNode::sendSuspect(const Arguments& args)
 
 	string suspectIp = cvv8::CastFromJS<string>(args[0]);
 	string suspectInterface = cvv8::CastFromJS<string>(args[1]);
-	Local<Function> callbackFunction = Local<Function>::Cast(args[2]);
 
 	struct in_addr address;
 	inet_pton(AF_INET, suspectIp.c_str(), &address);
@@ -419,17 +439,19 @@ Handle<Value> NovaNode::sendSuspect(const Arguments& args)
 	id.set_m_ifname(suspectInterface);
 	id.set_m_ip(htonl(address.s_addr));
 
-	Suspect *suspect = GetSuspect(id);
+	RequestSuspect(id);
 
-	if (suspect == NULL) {
-		Local<Boolean> result = Local<Boolean>::New( Boolean::New(false) );
-		return scope.Close(result);
-	}
+//	Suspect *suspect =
+//
+//	if (suspect == NULL) {
+//		Local<Boolean> result = Local<Boolean>::New( Boolean::New(false) );
+//		return scope.Close(result);
+//	}
+//
+//	v8::Persistent<Value> weak_handle = Persistent<Value>::New(SuspectJs::WrapSuspect(suspect));
+//	weak_handle.MakeWeak(suspect, &DoneWithSuspectCallback);
 	
-
-	v8::Persistent<Value> weak_handle = Persistent<Value>::New(SuspectJs::WrapSuspect(suspect));
-	weak_handle.MakeWeak(suspect, &DoneWithSuspectCallback);
-	return scope.Close(weak_handle);
+	return scope.Close(Null());
 }
 
 

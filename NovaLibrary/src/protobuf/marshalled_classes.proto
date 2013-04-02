@@ -41,6 +41,8 @@ enum MessageType
 	UPDATE_ALL_SUSPECTS_CLEARED_ACK = 29;
 	UPDATE_SUSPECT_CLEARED = 30;
 	UPDATE_SUSPECT_CLEARED_ACK = 31;
+
+	CONNECTION_SHUTDOWN = 32;
 };
 
 enum SuspectFeatureMode
@@ -61,12 +63,13 @@ enum SuspectListType
 message Message_pb
 {
 	required MessageType m_type = 1;
-	optional string m_filePath = 2;
-	optional bool m_success = 3;
-	optional SuspectID_pb m_suspectID = 4;
-	repeated SuspectID_pb m_suspectIDs = 5;
-	optional SuspectListType m_listType = 6;
-	optional uint32 m_startTime = 7;
-	optional SuspectFeatureMode m_featureMode = 8;
-	optional uint32 m_sessionIndex = 9;
+	optional int32 m_messageID = 2;
+	optional uint32 m_sessionIndex = 3;
+	optional string m_filePath = 4;
+	optional bool m_success = 5;
+	optional SuspectID_pb m_suspectID = 6;
+	repeated SuspectID_pb m_suspectIDs = 7;
+	optional SuspectListType m_listType = 8;
+	optional uint32 m_startTime = 9;
+	optional SuspectFeatureMode m_featureMode = 10;
 }
