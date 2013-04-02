@@ -243,7 +243,6 @@ block headerAdditions
       {
         $('#ipBlock').css('display', 'block');
       }
-      else
       {
         $('#ipBlock').css('display', 'none');
       }
@@ -267,6 +266,10 @@ block headerAdditions
       {
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
+        if(source.id.indexOf('delete') != -1)
+        {
+          return;
+        }
         var hoverInfoCss = {top:($(source).position().top + $topology.position().top),
                             left:(($(source).position().left + $topology.position().left + $(source).outerWidth()))};
         var titleCss = {'font-weight':'bold', 'font-size':'18px'};
@@ -344,12 +347,20 @@ block headerAdditions
       }
       else if(e.type == 'mouseleave')
       {
-        var newHoverEle = e.toElement || e.relatedTarget;
-        if(!hoverhold && newHoverEle.id != 'hoverInfo')
+        if(!hoverhold)
         {
           $hoverInfo.fadeOut(200, function(){
             fadeEleIn = true;
           });
+        }
+      }
+      else if(e.type == 'mouseover')
+      {
+        var evt = (e ? e : window.event);
+        var source = evt.target || evt.srcElement;
+        if($hoverInfo.is(':hidden') && source.id.indexOf('delete') == -1)
+        {
+          $hoverInfo.fadeIn(200);
         }
       }
       else if(e.type == 'drag')
@@ -525,6 +536,7 @@ block headerAdditions
       deleteMe.style.borderLeft = '1px solid black';
       deleteMe.style.backgroundColor = 'red';
       deleteMe.setAttribute('onclick', 'deleteCanvasEleClick(event, ' + eleCount + ')');
+      deleteMe.id = eleCount + 'delete';
       div.appendChild(deleteMe);
       
       if(type == 'drop')
@@ -703,6 +715,7 @@ block headerAdditions
             }
             nodeCount = {};
           }
+          handleOffscreenIndicators();
         });
       }
       else
@@ -1330,15 +1343,6 @@ block headerAdditions
       $hoverInfo.fadeOut(100);
     }
     
-    function hoverFade(e)
-    {
-      var newTarget = e.toElement || e.relatedTarget;
-      if(!hoverhold && newTarget.id == 'nodeCanvas')
-      {
-        $hoverInfo.fadeOut(100);
-      }
-    }
-    
     function deleteSelected()
     {
       var deleteNodes = [];
@@ -1439,7 +1443,7 @@ block headerAdditions
             var d = parseInt(delta);
             var bWidth = isNaN(parseInt($(this).css('border-width'))) ? 0 
               : parseInt($(this).css('border-width'));
-            if(((parseInt($(this).outerWidth()) <= parseInt(25 + bWidth)) && d < 0)
+            if(((parseInt($(this).outerWidth()) <= parseInt(33 + bWidth)) && d < 0)
             || ((parseInt($(this).outerWidth()) >= parseInt(75 + bWidth)) && d > 0))
             {
               return;
@@ -1703,7 +1707,7 @@ block content
           div#deleteNodes Delete Selected
           div#mergeNodes Merge Selected
           div#splitNodes Split Selected
-      div#hoverInfo(onmouseout='hoverFade(event)')
+      div#hoverInfo
         div#pres
           label#hoverName
           br
