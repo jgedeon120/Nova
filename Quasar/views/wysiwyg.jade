@@ -336,9 +336,12 @@ block headerAdditions
           }
         }
         
-        $hoverInfo.css(hoverInfoCss).stop().fadeIn(200, function(){
-          fadeEleIn = false;
-        });
+        if(fadeEleIn)
+        {
+          $hoverInfo.css(hoverInfoCss).stop().fadeIn(200, function(){
+            fadeEleIn = false;
+          });
+        }
       }
       else if(e.type == 'mouseleave')
       {
