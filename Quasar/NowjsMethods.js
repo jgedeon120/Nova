@@ -826,6 +826,10 @@ everyone.now.WriteHoneydConfig = function(cb)
 
 everyone.now.GetConfigSummary = function(configName, cb)
 {
+  var oldConfig = NovaCommon.config.GetCurrentConfig();
+  NovaCommon.honeydConfig.SwitchConfiguration(configName);
+  NovaCommon.config.SetCurrentConfig(configName);
+  
   NovaCommon.honeydConfig.LoadAllTemplates();
   
   var scriptProfileBindings = NovaCommon.GetPorts();

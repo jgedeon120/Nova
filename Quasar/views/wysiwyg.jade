@@ -53,7 +53,7 @@ block headerAdditions
     
     function setUpSelects()
     {
-      var configSelect = $('#configurations');
+      var configSelect = $('#configurationSelect');
       for(var i in configurationList)
       {
         if(configurationList[i] != '' && configurationList[i] != undefined)
@@ -62,6 +62,10 @@ block headerAdditions
           option.value = configurationList[i];
           option.innerHTML = configurationList[i];
           option.id = configurationList[i];
+          if(currentConfig == configurationList[i])
+          {
+            option.selected = true;
+          }
           configSelect.append(option);
         }
       }
@@ -146,12 +150,10 @@ block headerAdditions
       {
         $(source).css('background-color', '');
         selectedProfile = undefined;
-        clicked = false
+        clicked = false;
         $profileInfo.fadeOut(100);
         return;
       }
-      var evt = (e ? e : window.event);
-      var source = evt.target || evt.srcElement;
       $(source).css('background-color', '#E8A02F');
       selectedProfile = source.innerHTML;
       clicked = true;
@@ -162,28 +164,29 @@ block headerAdditions
       var set = $('#nodeNumber').val();
       $('#setNumNodes').html(set);
     }
-  
+
     function clearProfileSelected()
     {
       $('#profilesHook').find('td').css('background-color', '');
       selectedProfile = undefined;
     }
-    
-    function repopulateProfilesList(cb)
+
+    function repopulateNodeCanvas(cb)
     {
-      currentConfig = $('#configurations').val();
-      
-      if(typeof now.GetConfigSummary == 'function')
-      {
-        now.GetConfigSummary(currentConfig, function(scriptProfileBindings, profileObj, profiles, nodes){
-          var profHook = $('#profilesHook');
-          profHook.empty();
-          
-          var endDex = profileObj.length;
-          
-          for(var i in profileObj)
-          {
-            if(profileObj[i].name != 'default')
+      currentConfig = $('#configurationSelect').val();
+      nodeTopology = {};
+      $('.canvasElement').each(function(){
+        $(this).remove();
+      });
+      if((typeof now.GetConfigSummary == 'function') && (typeof now.WriteWysiwygTopology == 'function'))
+      { 
+        now.WriteWysiwygTopology(nodeTopology, function(){
+          console.log('WriteWysiwygTopology finished');
+          now.GetConfigSummary(currentConfig, function(scriptProfileBindings, profileObj, profiles, nodes){
+            var profHook = $('#profilesHook');
+            profHook.empty();
+            
+            for(var i in profileObj)
             {
               var profile = {};
               profile.name = profileObj[i].name;
@@ -196,20 +199,20 @@ block headerAdditions
               append.appendChild(td0);
               profHook.append(append);
             }
-          }
-          
-          profHook.find('td').first().toggleClass('first');
-          if(profHook.find('td').size() >= 3)
-          {
-            profHook.find('td').slice(1, -1).toggleClass('middle');
-          }
-          profHook.find('td').last().toggleClass('last');
-          
-          cb && cb()
+            
+            profHook.find('td').first().toggleClass('first');
+            if(profHook.find('td').size() >= 3)
+            {
+              profHook.find('td').slice(1, -1).toggleClass('middle');
+            }
+            profHook.find('td').last().toggleClass('last');
+            
+            cb && cb()
+          });
         });
       }
     }
-    
+
     function saveSelectedParameters()
     {
       clicked = false;
@@ -236,13 +239,14 @@ block headerAdditions
       
       nodeTopology[eleCount] = profileObject;
     }
-    
+
     function showIpBlock()
     {
       if($('#allocationType').val() != 'DHCP')
       {
         $('#ipBlock').css('display', 'block');
       }
+      else
       {
         $('#ipBlock').css('display', 'none');
       }
@@ -596,13 +600,12 @@ block headerAdditions
         }
         else
         {
-          alerts('Could not create honeyd nodes: No connection to server');
+          alert('Could not create honeyd nodes: No connection to server');
         }
       }
       else if(type == 'prepop')
       {
         var macSplit = nodeObj.mac.split(',')[0];
-      
         for(var j in nodeList)
         {
           if(nodeList[j].mac == macSplit)
@@ -674,6 +677,7 @@ block headerAdditions
           var findOtherNodesList = [];
           if(topo != undefined && topo.length > 0)
           {
+            console.log('topo == ' + topo);
             for(var i in topo)
             {
               findOtherNodesList.push(topo[i].mac);
@@ -683,37 +687,77 @@ block headerAdditions
           }
           else
           {
-            for(var i in nodeList)
+            if(nodeList)
             {
-              haveMac.push(nodeList[i].mac);
-              var key = nodeList[i].pfile + nodeList[i].portset + nodeList[i].interface + nodeList[i].ip;
-              if(nodeCount[key] == undefined)
-              {
-                nodeCount[key] = {};
-                nodeCount[key].count = 1;
-                nodeCount[key].mac = nodeList[i].mac;
-                nodeCount[key].selectedProfile = nodeList[i].pfile;
-              }
-              else
-              {
-                nodeCount[key].count++;
-                nodeCount[key].mac += ',' + nodeList[i].mac;
-              }
+              now.GetNodes(function(nodesList){
+                nodeList = nodesList;
+                for(var i in nodeList)
+                {
+                  haveMac.push(nodeList[i].mac);
+                  var key = nodeList[i].pfile + nodeList[i].portset + nodeList[i].interface + nodeList[i].ip;
+                  if(nodeCount[key] == undefined)
+                  {
+                    nodeCount[key] = {};
+                    nodeCount[key].count = 1;
+                    nodeCount[key].mac = nodeList[i].mac;
+                    nodeCount[key].selectedProfile = nodeList[i].pfile;
+                  }
+                  else
+                  {
+                    nodeCount[key].count++;
+                    nodeCount[key].mac += ',' + nodeList[i].mac;
+                  }
+                }
+                for(var i in nodeCount)
+                {
+                  eleCountUpdate = addNodeToCanvas(nodeCount[i], 'prepop', undefined, undefined, xEleCount, yEleCount);
+                  if(eleCountUpdate != undefined)
+                  {
+                    xEleCount = eleCountUpdate.xCount;
+                    yEleCount = eleCountUpdate.yCount;
+                  }
+                  else
+                  {
+                    eleCountUpdate = {};
+                  }
+                }
+                nodeCount = {};
+              });
             }
-            for(var i in nodeCount)
+            else
             {
-              eleCountUpdate = addNodeToCanvas(nodeCount[i], 'prepop', undefined, undefined, xEleCount, yEleCount);
-              if(eleCountUpdate != undefined)
+              for(var i in nodeList)
               {
-                xEleCount = eleCountUpdate.xCount;
-                yEleCount = eleCountUpdate.yCount;
+                haveMac.push(nodeList[i].mac);
+                var key = nodeList[i].pfile + nodeList[i].portset + nodeList[i].interface + nodeList[i].ip;
+                if(nodeCount[key] == undefined)
+                {
+                  nodeCount[key] = {};
+                  nodeCount[key].count = 1;
+                  nodeCount[key].mac = nodeList[i].mac;
+                  nodeCount[key].selectedProfile = nodeList[i].pfile;
+                }
+                else
+                {
+                  nodeCount[key].count++;
+                  nodeCount[key].mac += ',' + nodeList[i].mac;
+                }
               }
-              else
+              for(var i in nodeCount)
               {
-                eleCountUpdate = {};
+                eleCountUpdate = addNodeToCanvas(nodeCount[i], 'prepop', undefined, undefined, xEleCount, yEleCount);
+                if(eleCountUpdate != undefined)
+                {
+                  xEleCount = eleCountUpdate.xCount;
+                  yEleCount = eleCountUpdate.yCount;
+                }
+                else
+                {
+                  eleCountUpdate = {};
+                }
               }
+              nodeCount = {};
             }
-            nodeCount = {};
           }
           handleOffscreenIndicators();
         });
@@ -1585,12 +1629,11 @@ block headerAdditions
               var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
               var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
               var index = ui.draggable.attr('id');
-              
               nodeTopology[index].coordinates = {x:x, y:y};
             }
           });
               
-        repopulateProfilesList(function(){
+        repopulateNodeCanvas(function(){
           prepopulateCanvasWithNodes();
         });
       });
@@ -1634,11 +1677,6 @@ block headerAdditions
       }
     });
     window.addEventListener('beforeunload', function(){
-      // TODO: This event is triggered twice for some reason
-      // when the user selects the option to reload the page,
-      // provided the else statement is hit. Doesn't have any
-      // real effect on the topology saving, but it is a bad
-      // UX element.
       if(typeof now.WriteWysiwygTopology == 'function')
       {
         now.WriteWysiwygTopology(nodeTopology, function(){
@@ -1688,7 +1726,7 @@ block content
         bre
         label Configurations
         br
-        select#configurations(onchange='repopulateProfilesList()')
+        select#configurationSelect(onchange='nodeList = {}; repopulateNodeCanvas(function(){prepopulateCanvasWithNodes()})')
         br
         br
         label Number of nodes 

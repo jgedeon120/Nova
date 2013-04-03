@@ -759,7 +759,8 @@ app.get('/wysiwyg', function(req, res){
   
   var interfaces = NovaCommon.config.ListInterfaces().sort();
   
-  res.render('wysiwyg.jade', { locals: {
+  res.render('wysiwyg.jade', {
+    locals: {
       configurations: NovaCommon.honeydConfig.GetConfigurationsList(),
       current: NovaCommon.config.GetCurrentConfig(),
       nodes: nodeList,
@@ -1726,6 +1727,7 @@ app.post('/honeydConfigManage', function (req, res){
   {
     NovaCommon.honeydConfig.AddConfiguration(newName, cloneBool, configToClone);
     NovaCommon.honeydConfig.SwitchConfiguration(newName);
+    NovaCommon.config.SetCurrentConfig(newName);
     NovaCommon.honeydConfig.LoadAllTemplates();
   
     res.render('saveRedirect.jade', {
