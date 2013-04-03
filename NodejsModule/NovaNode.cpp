@@ -20,11 +20,14 @@
 #include "SuspectTable.h"
 #include "Suspect.h"
 #include "Config.h"
+#include "HashMapStructs.h"
 
 using namespace node;
 using namespace v8;
 using namespace Nova;
 using namespace std;
+
+Nova::HashMap<uint32_t, Persistent<Function>, std::hash<uint32_t>, eq_uint32_t> jsCallbacks;
 
 void NovaNode::InitNovaCallbackProcessing()
 {
@@ -86,6 +89,18 @@ void NovaNode::NovaCallbackHandling(eio_req*)
 			LOG(DEBUG, "Got a clear callback request for a suspect on interface " + cb.m_suspectIP.m_ifname(), "");
 			HandleSuspectCleared(s);
 			break;
+
+		/* TODO
+		 * case SUSPECT_WE_WANTED:
+		 *  See if there's an entry for this msg id is jsCallbacks
+		 *   suspect *s = msg.Suspect();
+		 *  const unsigned argc = 1;
+  	  	  	Local<Value> argv[argc] = { Local<Value>::New(String::New(s->ToString() + "\n" + s->GetFeatureSet().toString();)) };
+  	  	  	jsCallbacks[msgId]->Call(Context::GetCurrent()->Global(), argc, argv);
+
+  	  	  	Delete from jsCallbacks
+		 *
+		 */
 
 		default:
 			break;
@@ -252,12 +267,16 @@ void NovaNode::Init(Handle<Object> target)
 }
 
 
+
 Handle<Value> NovaNode::GetSuspectDetailsString(const Arguments &args) {
 	HandleScope scope;
 	string details;
 
 	string suspectIp = cvv8::CastFromJS<string>(args[0]);
 	string suspectInterface = cvv8::CastFromJS<string>(args[1]);
+
+	// Javascript callback function
+	Persistent<Function> cb = Persistent<Function>::New( args[2].As<Function>());
 
 	struct in_addr address;
 	inet_pton(AF_INET, suspectIp.c_str(), &address);
@@ -266,17 +285,13 @@ Handle<Value> NovaNode::GetSuspectDetailsString(const Arguments &args) {
 	id.set_m_ip(htonl(address.s_addr));
 	id.set_m_ifname(suspectInterface);
 
-	Suspect *suspect = GetSuspectWithData(id);
-	if (suspect != NULL) {
-		details = suspect->ToString();
-		details += "\n";
-		details += suspect->GetFeatureSet().toString();
-		delete suspect;
-	} else {
-		details = "Unable to complete request";
-	}
+	uint32_t requestId = 0;
+	// TODO Call the magic async function that gives us a message ID we can look for later
+	// requestId = GetAsyncSuspect(address, suspectInterface);
+	jsCallbacks[requestId] = cb;
 
-	return scope.Close(cvv8::CastToJS(details));
+
+	return scope.Close( Null() );
 }
 
 // Figure out what the names of features are in the featureset
