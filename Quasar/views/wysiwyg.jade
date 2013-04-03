@@ -56,7 +56,7 @@ block headerAdditions
       var configSelect = $('#configurationSelect');
       for(var i in configurationList)
       {
-        if(configurationList[i] != '' && configurationList[i] != undefined)
+        if((configurationList[i] != '') && (configurationList[i] != undefined))
         {
           var option = theDoc.createElement('option');
           option.value = configurationList[i];
@@ -336,24 +336,15 @@ block headerAdditions
           }
         }
         
-        if(fadeEleIn)
-        {
-          $hoverInfo.css(hoverInfoCss).fadeIn(200, function(){
-            fadeEleIn = false;
-          });
-        }
-        else
-        {
-          setTimeout(function(){$hoverInfo.css(hoverInfoCss).fadeIn(200, function(){
-            fadeEleIn = false;
-          });}, 200);
-        }
+        $hoverInfo.css(hoverInfoCss).stop().fadeIn(200, function(){
+          fadeEleIn = false;
+        });
       }
       else if(e.type == 'mouseleave')
       {
         if(!hoverhold)
         {
-          $hoverInfo.fadeOut(200, function(){
+          $hoverInfo.stop().fadeOut(200, function(){
             fadeEleIn = true;
           });
         }
@@ -362,14 +353,14 @@ block headerAdditions
       {
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
-        if($hoverInfo.is(':hidden') && source.id.indexOf('delete') == -1)
+        if(source.id.indexOf('delete') == -1)
         {
-          $hoverInfo.fadeIn(200);
+          $hoverInfo.stop().fadeIn(200);
         }
       }
       else if(e.type == 'drag')
       {
-        $hoverInfo.fadeOut(150, function(){
+        $hoverInfo.stop().fadeOut(150, function(){
           fadeEleIn = true;
         });
         $contextMenu.fadeOut(100);
@@ -414,7 +405,7 @@ block headerAdditions
         var source = evt.target || evt.srcElement;
         var hoverInfoCss = {top:($(source).position().top + $topology.position().top),
                             left:(($(source).position().left + $topology.position().left + $(source).outerWidth()))};
-        $hoverInfo.css(hoverInfoCss).fadeIn(200);
+        $hoverInfo.css(hoverInfoCss).stop().fadeIn(200);
       }
     }
     
@@ -449,7 +440,7 @@ block headerAdditions
           selected.push(source);
           var hoverInfoCss = {top:($(source).position().top + $topology.position().top),
                               left:(($(source).position().left + $topology.position().left + $(source).outerWidth()))};
-          $hoverInfo.css(hoverInfoCss).fadeIn(200);
+          $hoverInfo.css(hoverInfoCss).stop().fadeIn(200);
           hoverNode = source.id;
           hoverhold = true;
         }
@@ -465,7 +456,7 @@ block headerAdditions
       e.stopImmediatePropagation();
       delete nodeTopology[source];
       $('#' + source).remove();
-      $hoverInfo.fadeOut(100);
+      $hoverInfo.stop().fadeOut(100);
     }
     
     function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitData)
@@ -475,7 +466,7 @@ block headerAdditions
       var x = 0;
       var y = 0;
       
-      if(left != undefined && top != undefined)
+      if((left != undefined) && (top != undefined))
       {
         x = left;
         y = top;
@@ -491,7 +482,7 @@ block headerAdditions
         containment:'#nodeCanvas',
         revert: 'invalid'});
 
-      if(xEleCount != undefined && yEleCount != undefined)
+      if((xEleCount != undefined) && (yEleCount != undefined))
       {
         y = (yEleCount * zoom.height);
         x = (xEleCount * zoom.width);
@@ -510,7 +501,7 @@ block headerAdditions
             .css(prepopCss)
             .css(zoom)
             .attr('class', 'ui-draggable canvasElement');
-      if(nodeObj.mac != undefined && type == 'prepop')
+      if((nodeObj.mac != undefined) && (type == 'prepop'))
       {
         $(div).data('mac', nodeObj.mac)
               .data('preexisting', true);
@@ -563,13 +554,13 @@ block headerAdditions
         var vendor = nodeTopology[eleCount].vendor;
         var ethInterface = nodeTopology[eleCount].iface;
         var count = nodeTopology[eleCount].count.toString();
-        if(typeof now.createHoneydNodes == 'function' && typeof now.GetNodes == 'function')
+        if((typeof now.createHoneydNodes == 'function') && (typeof now.GetNodes == 'function'))
         {
           now.createHoneydNodes(ipType, ip1, ip2, ip3, ip4, profile, portset, vendor, ethInterface, count);
-                  
+
           nodes = [];
           var setMAC = [];
-  
+
           now.GetNodes(function(nodesList){
             nodes = nodesList;
             var add = true;
@@ -675,13 +666,11 @@ block headerAdditions
       {
         now.ReadWysiwygTopology(function(topo){
           var findOtherNodesList = [];
-          if(topo != undefined && topo.length > 0)
+          if((topo != undefined) && (topo.length > 0))
           {
-            console.log('topo == ' + topo);
             for(var i in topo)
             {
               findOtherNodesList.push(topo[i].mac);
-              
               addNodeToCanvas(topo[i], 'prepop', topo[i].coordinates.x, topo[i].coordinates.y);
             }
           }
@@ -1007,14 +996,14 @@ block headerAdditions
         })
         .on('contextmenu', function(e){
           e.preventDefault();
-          $hoverInfo.fadeOut(100);
+          $hoverInfo.stop().fadeOut(100);
           toggleContextMenu(e);
         });
     }
     
     function toggleContextMenu(e)
     {
-      $hoverInfo.fadeOut(100);
+      $hoverInfo.stop().fadeOut(100);
       
       var evt = (e ? e : window.event);
       var source = evt.target || evt.srcElement;
@@ -1072,7 +1061,6 @@ block headerAdditions
         
         var cmCss = {left: (parseInt(left) + (zoom.width / 2)),
                      top: (parseInt(top) + (zoom.height / 2))};
-                     
         $contextMenu.css(cmCss).fadeIn(200);
         cmCss.left += (zoom.width / 2);
         $modalSplit.css(cmCss);
@@ -1285,7 +1273,7 @@ block headerAdditions
       {
         alert('Cannot change a node amount to a negative value!');
         $('#' + hoverNode).removeClass('ui-selected');
-        $hoverInfo.fadeOut(100);
+        $hoverInfo.stop().fadeOut(100);
         return;
       }
       var delta = newValue - oldValue;
@@ -1384,7 +1372,7 @@ block headerAdditions
       }
       hoverhold = false;
       $('#' + hoverNode).removeClass('ui-selected').css('border', '');
-      $hoverInfo.fadeOut(100);
+      $hoverInfo.stop().fadeOut(100);
     }
     
     function deleteSelected()
@@ -1404,7 +1392,7 @@ block headerAdditions
       });
       
       $contextMenu.fadeOut(100);
-      $hoverInfo.fadeOut(100);
+      $hoverInfo.stop().fadeOut(100);
       
       now.deleteNodes(deleteNodes);
     }
@@ -1515,7 +1503,7 @@ block headerAdditions
           else if(e.which == 1 && !$hoverInfo.is(':hidden') && $(source).attr('class') != undefined 
           && $(source).attr('class').indexOf('canvasElement') == -1)
           {
-            $hoverInfo.fadeOut(100);
+            $hoverInfo.stop().fadeOut(100);
             $('.ui-selected').each(function(){
               $(this).removeClass('ui-selected').css('border', '');
             });

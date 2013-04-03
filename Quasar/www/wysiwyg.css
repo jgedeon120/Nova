@@ -73,6 +73,7 @@
   border-bottom: 1px solid black;
   height: 18px;
   width: 45%;
+  text-align: center;
 }
 
 #dragBar {
