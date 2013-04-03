@@ -114,7 +114,7 @@ int NovaNode::AfterNovaCallbackHandling(eio_req*)
 
 void NovaNode::HandleNewSuspect(Suspect* suspect)
 {
-	eio_nop( EIO_PRI_DEFAULT, NovaNode::HandleNewSuspectOnV8Thread, suspect);
+	eio_nop(EIO_PRI_DEFAULT, NovaNode::HandleNewSuspectOnV8Thread, suspect);
 }
 
 
@@ -123,7 +123,8 @@ void NovaNode::HandleNewSuspect(Suspect* suspect)
 void NovaNode::SendSuspect(Suspect* suspect)
 {
 	// Do we have anyplace to actually send the suspect?
-	if (m_CallbackRegistered) {
+	if (m_CallbackRegistered)
+	{
 		// Make a copy of it so we can safely delete the one in the suspect table when updates come in
 		Suspect *suspectCopy = new Suspect((*suspect));
 
@@ -424,7 +425,6 @@ Handle<Value> NovaNode::New(const Arguments& args)
 	return args.This();
 }
 
-
 Handle<Value> NovaNode::sendSuspect(const Arguments& args)
 {
 	HandleScope scope;
@@ -440,20 +440,9 @@ Handle<Value> NovaNode::sendSuspect(const Arguments& args)
 	id.set_m_ip(htonl(address.s_addr));
 
 	RequestSuspect(id);
-
-//	Suspect *suspect =
-//
-//	if (suspect == NULL) {
-//		Local<Boolean> result = Local<Boolean>::New( Boolean::New(false) );
-//		return scope.Close(result);
-//	}
-//
-//	v8::Persistent<Value> weak_handle = Persistent<Value>::New(SuspectJs::WrapSuspect(suspect));
-//	weak_handle.MakeWeak(suspect, &DoneWithSuspectCallback);
 	
 	return scope.Close(Null());
 }
-
 
 Handle<Value> NovaNode::sendSuspectList(const Arguments& args)
 {
@@ -461,7 +450,7 @@ Handle<Value> NovaNode::sendSuspectList(const Arguments& args)
 
 	LOG(DEBUG, "Triggered sendSuspectList", "");
 
-	if( ! args[0]->IsFunction() )
+	if(!args[0]->IsFunction())
 	{
 		LOG(DEBUG, 
 				"Attempted to register OnNewSuspect with non-function, excepting","");
@@ -469,17 +458,17 @@ Handle<Value> NovaNode::sendSuspectList(const Arguments& args)
 	}
 
 	Local<Function> callbackFunction;
-	callbackFunction = Local<Function>::New( args[0].As<Function>() );
+	callbackFunction = Local<Function>::New(args[0].As<Function>());
 
-	    
-	if (m_CallbackRegistered) {
+	if(m_CallbackRegistered)
+	{
 		for(SuspectHashTable::iterator it = m_suspects.begin(); it != m_suspects.end(); it++)
 		{
 			SendSuspect((*it).second);
 		}
 	}
 
-	Local<Boolean> result = Local<Boolean>::New( Boolean::New(true) );
+	Local<Boolean> result = Local<Boolean>::New(Boolean::New(true));
 	return scope.Close(result);
 }
 
@@ -487,7 +476,7 @@ Handle<Value> NovaNode::registerOnNewSuspect(const Arguments& args)
 {
 	HandleScope scope;
 
-	if( ! args[0]->IsFunction() )
+	if(!args[0]->IsFunction())
 	{
 		LOG(DEBUG, 
 				"Attempted to register OnNewSuspect with non-function, excepting","");
@@ -507,7 +496,7 @@ Handle<Value> NovaNode::registerOnAllSuspectsCleared(const Arguments& args)
 {
 	HandleScope scope;
 
-	if( ! args[0]->IsFunction() )
+	if(!args[0]->IsFunction())
 	{
 		LOG(DEBUG, 
 				"Attempted to register OnAllSuspectsCleared with non-function, excepting","");
@@ -526,7 +515,7 @@ Handle<Value> NovaNode::registerOnSuspectCleared(const Arguments& args)
 {
 	HandleScope scope;
 
-	if( ! args[0]->IsFunction() )
+	if(!args[0]->IsFunction())
 	{
 		LOG(DEBUG, 
 				"Attempted to register OnSuspectCleared with non-function, excepting","");

@@ -238,13 +238,18 @@ void HandleRequestSuspect(Message *incoming)
 	}
 
 	Suspect tempSuspect;
-	if(reply.m_contents.m_featuremode() == NO_FEATURE_DATA)
+
+	//If there was no requested suspect, then return an empty suspect (failure)
+	if(incoming->m_contents.m_suspectids_size() > 0)
 	{
-		tempSuspect = suspects.GetShallowSuspect(incoming->m_contents.m_suspectids(0));
-	}
-	else
-	{
-		tempSuspect = suspects.GetSuspect(incoming->m_contents.m_suspectids(0));
+		if(reply.m_contents.m_featuremode() == NO_FEATURE_DATA)
+		{
+			tempSuspect = suspects.GetShallowSuspect(incoming->m_contents.m_suspectids(0));
+		}
+		else
+		{
+			tempSuspect = suspects.GetSuspect(incoming->m_contents.m_suspectids(0));
+		}
 	}
 
 	reply.m_suspects.push_back(&tempSuspect);
