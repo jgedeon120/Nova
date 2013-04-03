@@ -1070,9 +1070,8 @@ app.get('/GetSuspectDetails', function (req, res)
     
     var suspectIp = req.query["ip"];
     var suspectInterface = req.query["interface"];
-    NovaCommon.nova.RequestSuspectDetailsString(suspectIp, suspectInterface);
+    NovaCommon.nova.RequestSuspectDetailsString(suspectIp, suspectInterface, function(suspectString) {
 
-    var suspectString = ""
     res.render('suspectDetails.jade', {
         locals: {
             suspect: suspectIp
@@ -1080,6 +1079,8 @@ app.get('/GetSuspectDetails', function (req, res)
             , details: suspectString
         }
     })
+
+	});
 });
 
 app.get('/editHoneydNode', function (req, res)

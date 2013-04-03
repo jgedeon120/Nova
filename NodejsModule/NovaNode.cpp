@@ -20,6 +20,7 @@
 #include "SuspectTable.h"
 #include "Suspect.h"
 #include "Config.h"
+#include "HashMapStructs.h"
 #include "messaging/MessageManager.h"
 
 
@@ -27,6 +28,8 @@ using namespace node;
 using namespace v8;
 using namespace Nova;
 using namespace std;
+
+Nova::HashMap<uint32_t, Persistent<Function>, std::hash<uint32_t>, eq_uint32_t> jsCallbacks;
 
 void NovaNode::InitNovaCallbackProcessing()
 {
@@ -72,6 +75,17 @@ void NovaNode::NovaCallbackHandling(eio_req*)
 				}
 				break;
 			}
+		/* TODO
+		 * case SUSPECT_WE_WANTED:
+		 *  See if there's an entry for this msg id is jsCallbacks
+		 *   suspect *s = msg.Suspect();
+		 *  const unsigned argc = 1;
+  	  	  	Local<Value> argv[argc] = { Local<Value>::New(String::New(s->ToString() + "\n" + s->GetFeatureSet().toString();)) };
+  	  	  	jsCallbacks[msgId]->Call(Context::GetCurrent()->Global(), argc, argv);
+
+  	  	  	Delete from jsCallbacks
+		 *
+		 */
 			case REQUEST_ALL_SUSPECTS_REPLY:
 			{
 				for(uint i = 0; i < message->m_suspects.size(); i++)
@@ -296,6 +310,10 @@ Handle<Value> NovaNode::RequestSuspectDetailsString(const Arguments &args)
 	id.set_m_ifname(suspectInterface);
 
 	RequestSuspectWithData(id);
+	uint32_t requestId = 0;
+	// TODO Call the magic async function that gives us a message ID we can look for later
+	// requestId = GetAsyncSuspect(address, suspectInterface);
+	jsCallbacks[requestId] = cb;
 
 //	Suspect *suspect;
 //	if (suspect != NULL) {
