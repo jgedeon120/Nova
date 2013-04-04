@@ -59,13 +59,14 @@ private:
 
 	static void NovaCallbackHandling(eio_req __attribute__((__unused__)) *req);
 	static int AfterNovaCallbackHandling(eio_req __attribute__((__unused__)) *req);
-	static void HandleNewSuspect(Suspect* suspect);
-	static void SendSuspect(Suspect* suspect);
+	static void HandleNewSuspect(Suspect *suspect);
+	static void SendSuspect(Suspect *suspect);
 	static void HandleAllSuspectsCleared();
-	static void HandleSuspectCleared(Suspect*);
-	static int HandleNewSuspectOnV8Thread(eio_req* req);
-	static int HandleAllClearedOnV8Thread(eio_req*);
-	static int HandleSuspectClearedOnV8Thread(eio_req*);
+	static void HandleSuspectCleared(Suspect *);
+	static int HandleNewSuspectOnV8Thread(eio_req *req);
+	static int HandleAllClearedOnV8Thread(eio_req *);
+	static int HandleMessageWithIDOnV8Thread(eio_req *);
+	static int HandleSuspectClearedOnV8Thread(eio_req *);
 	static void HandleCallbackError();
 
 public:
@@ -73,9 +74,9 @@ public:
 	static Persistent<FunctionTemplate> s_ct;
 
 	static void Init(Handle<Object> target);
-	static Handle<Value> CheckConnection(const Arguments __attribute__((__unused__)) & args);
-	static Handle<Value> Shutdown(const Arguments __attribute__((__unused__)) & args);
-	static Handle<Value> ClearSuspect(const Arguments & args);
+	static Handle<Value> CheckConnection(const Arguments __attribute__((__unused__)) &args);
+	static Handle<Value> Shutdown(const Arguments __attribute__((__unused__)) &args);
+	static Handle<Value> ClearSuspect(const Arguments &args);
 	NovaNode();
 	~NovaNode();
 

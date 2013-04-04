@@ -22,7 +22,6 @@
 #include "Config.h"
 #include "HashMapStructs.h"
 #include "messaging/MessageManager.h"
-#include "Lock.h"
 
 #include <map>
 
@@ -31,13 +30,11 @@ using namespace v8;
 using namespace Nova;
 using namespace std;
 
-pthread_mutex_t jsCallbacksMutex;
-map<uint32_t, Local<Function>> jsCallbacks;
+map<uint32_t, Persistent<Function>> jsCallbacks;
 
 void NovaNode::InitNovaCallbackProcessing()
 {
 	m_callbackRunning = false;
-	pthread_mutex_init(&jsCallbacksMutex, NULL);
 
 	eio_custom(NovaCallbackHandling, EIO_PRI_DEFAULT, AfterNovaCallbackHandling, NULL);
 }
@@ -72,13 +69,7 @@ void NovaNode::NovaCallbackHandling(eio_req*)
 		//If this is a callback for a specific operation
 		if(message->m_contents.has_m_messageid())
 		{
-			Lock lock(&jsCallbacksMutex);
-			if(jsCallbacks.count(message->m_contents.m_messageid()) > 0)
-			{
-				Local<Function> function = jsCallbacks[message->m_contents.m_messageid()];
-				Local<Value> argv[1] = { Local<Value>::New(String::New("hello world")) };
-				function->Call(Context::GetCurrent()->Global(), 1, argv);
-			}
+			eio_nop(EIO_PRI_DEFAULT, NovaNode::HandleMessageWithIDOnV8Thread, message);
 			continue;
 		}
 
@@ -102,17 +93,6 @@ void NovaNode::NovaCallbackHandling(eio_req*)
 			}
 			case REQUEST_SUSPECT_REPLY:
 			{
-				/* TODO
-				 * case SUSPECT_WE_WANTED:
-				 *  See if there's an entry for this msg id is jsCallbacks
-				 *   suspect *s = msg.Suspect();
-				 *  const unsigned argc = 1;
-		  	  	  	Local<Value> argv[argc] = { Local<Value>::New(String::New(s->ToString() + "\n" + s->GetFeatureSet().toString();)) };
-		  	  	  	jsCallbacks[msgId]->Call(Context::GetCurrent()->Global(), argc, argv);
-
-		  	  	  	Delete from jsCallbacks
-				 *
-				 */
 				break;
 			}
 			case UPDATE_ALL_SUSPECTS_CLEARED:
@@ -142,6 +122,20 @@ void NovaNode::NovaCallbackHandling(eio_req*)
 	}
 }
 
+int NovaNode::HandleMessageWithIDOnV8Thread(eio_req *arg)
+{
+	Nova::Message *message = static_cast<Nova::Message*>(arg->data);
+
+	if(jsCallbacks.count(message->m_contents.m_messageid()) > 0)
+	{
+		HandleScope scope;
+		Persistent<Function> function = jsCallbacks[message->m_contents.m_messageid()];
+		Local<Value> argv[1] = { Local<Value>::New(String::New(message->m_suspects[0]->ToString().c_str())) };
+		function->Call(Context::GetCurrent()->Global(), 1, argv);
+	}
+	return 0;
+}
+
 int NovaNode::AfterNovaCallbackHandling(eio_req*)
 {
 	return 0;
@@ -158,7 +152,7 @@ void NovaNode::HandleNewSuspect(Suspect* suspect)
 void NovaNode::SendSuspect(Suspect* suspect)
 {
 	// Do we have anyplace to actually send the suspect?
-	if (m_CallbackRegistered)
+	if(m_CallbackRegistered)
 	{
 		// Make a copy of it so we can safely delete the one in the suspect table when updates come in
 		Suspect *suspectCopy = new Suspect((*suspect));
@@ -190,21 +184,24 @@ int NovaNode::HandleNewSuspectOnV8Thread(eio_req* req)
 	
 	Suspect* suspect = static_cast<Suspect*>(req->data);
 		
-	if (suspect != NULL) {	
-		if (m_suspects.keyExists(suspect->GetIdentifier())) {
+	if(suspect != NULL)
+	{
+		if(m_suspects.keyExists(suspect->GetIdentifier()))
+		{
 			delete m_suspects[suspect->GetIdentifier()];
 		}
 		
 		m_suspects[suspect->GetIdentifier()] = suspect;
 		SendSuspect(suspect);
-	} else {
+	} else
+	{
 		LOG(DEBUG, "HandleNewSuspectOnV8Thread got a NULL suspect pointer. Ignoring.", "");
 	}
 	return 0;
-
 }
 
-void NovaNode::DoneWithSuspectCallback(Persistent<Value> suspect, void *paramater) {
+void NovaNode::DoneWithSuspectCallback(Persistent<Value> suspect, void *paramater)
+{
 	Suspect *s = static_cast<Suspect*>(paramater);
 	delete s;	
 	suspect.ClearWeak();
@@ -216,7 +213,8 @@ int NovaNode::HandleSuspectClearedOnV8Thread(eio_req* req)
 {
 	HandleScope scope;
 	Suspect* suspect = static_cast<Suspect*>(req->data);
-	if (m_suspects.keyExists(suspect->GetIdentifier())) {
+	if (m_suspects.keyExists(suspect->GetIdentifier()))
+	{
 		delete m_suspects[suspect->GetIdentifier()];
 	}
 	m_suspects.erase(suspect->GetIdentifier());
@@ -322,7 +320,7 @@ Handle<Value> NovaNode::RequestSuspectDetailsString(const Arguments &args)
 
 	string suspectIp = cvv8::CastFromJS<string>(args[0]);
 	string suspectInterface = cvv8::CastFromJS<string>(args[1]);
-	Local<Function> cb = Local<Function>::Cast(args[2]);
+	Persistent<Function> cb = Persistent<Function>::New(args[2].As<Function>());
 
 	struct in_addr address;
 	inet_pton(AF_INET, suspectIp.c_str(), &address);
@@ -334,9 +332,10 @@ Handle<Value> NovaNode::RequestSuspectDetailsString(const Arguments &args)
 	//TODO: Get new message ID
 	uint32_t messageID = 1;
 
-	RequestSuspectWithData(id, messageID);
-
 	jsCallbacks[messageID] = cb;
+
+	sleep(2);
+	RequestSuspectWithData(id, messageID);
 
 	return scope.Close(Null());
 }
@@ -483,8 +482,7 @@ Handle<Value> NovaNode::sendSuspectList(const Arguments& args)
 
 	if(!args[0]->IsFunction())
 	{
-		LOG(DEBUG, 
-				"Attempted to register OnNewSuspect with non-function, excepting","");
+		LOG(DEBUG, "Attempted to register OnNewSuspect with non-function, excepting","");
 		return ThrowException(Exception::TypeError(String::New("Argument must be a function")));
 	}
 
