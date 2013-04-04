@@ -22,21 +22,24 @@
 #include "Config.h"
 #include "HashMapStructs.h"
 #include "messaging/MessageManager.h"
+#include "Lock.h"
 
+#include <map>
 
 using namespace node;
 using namespace v8;
 using namespace Nova;
 using namespace std;
 
-Nova::HashMap<uint32_t, Persistent<Function>, std::hash<uint32_t>, eq_uint32_t> jsCallbacks;
+pthread_mutex_t jsCallbacksMutex;
+map<uint32_t, Local<Function>> jsCallbacks;
 
 void NovaNode::InitNovaCallbackProcessing()
 {
 	m_callbackRunning = false;
+	pthread_mutex_init(&jsCallbacksMutex, NULL);
 
-	eio_custom(NovaCallbackHandling, EIO_PRI_DEFAULT, AfterNovaCallbackHandling, (void*)0);
-
+	eio_custom(NovaCallbackHandling, EIO_PRI_DEFAULT, AfterNovaCallbackHandling, NULL);
 }
 
 void NovaNode::CheckInitNova()
@@ -65,6 +68,20 @@ void NovaNode::NovaCallbackHandling(eio_req*)
 	while(true)
 	{
 		Nova::Message *message = MessageManager::Instance().DequeueMessage();
+
+		//If this is a callback for a specific operation
+		if(message->m_contents.has_m_messageid())
+		{
+			Lock lock(&jsCallbacksMutex);
+			if(jsCallbacks.count(message->m_contents.m_messageid()) > 0)
+			{
+				Local<Function> function = jsCallbacks[message->m_contents.m_messageid()];
+				Local<Value> argv[1] = { Local<Value>::New(String::New("hello world")) };
+				function->Call(Context::GetCurrent()->Global(), 1, argv);
+			}
+			continue;
+		}
+
 		switch(message->m_contents.m_type())
 		{
 			case UPDATE_SUSPECT:
@@ -75,23 +92,27 @@ void NovaNode::NovaCallbackHandling(eio_req*)
 				}
 				break;
 			}
-		/* TODO
-		 * case SUSPECT_WE_WANTED:
-		 *  See if there's an entry for this msg id is jsCallbacks
-		 *   suspect *s = msg.Suspect();
-		 *  const unsigned argc = 1;
-  	  	  	Local<Value> argv[argc] = { Local<Value>::New(String::New(s->ToString() + "\n" + s->GetFeatureSet().toString();)) };
-  	  	  	jsCallbacks[msgId]->Call(Context::GetCurrent()->Global(), argc, argv);
-
-  	  	  	Delete from jsCallbacks
-		 *
-		 */
 			case REQUEST_ALL_SUSPECTS_REPLY:
 			{
 				for(uint i = 0; i < message->m_suspects.size(); i++)
 				{
 					HandleNewSuspect(message->m_suspects[i]);
 				}
+				break;
+			}
+			case REQUEST_SUSPECT_REPLY:
+			{
+				/* TODO
+				 * case SUSPECT_WE_WANTED:
+				 *  See if there's an entry for this msg id is jsCallbacks
+				 *   suspect *s = msg.Suspect();
+				 *  const unsigned argc = 1;
+		  	  	  	Local<Value> argv[argc] = { Local<Value>::New(String::New(s->ToString() + "\n" + s->GetFeatureSet().toString();)) };
+		  	  	  	jsCallbacks[msgId]->Call(Context::GetCurrent()->Global(), argc, argv);
+
+		  	  	  	Delete from jsCallbacks
+				 *
+				 */
 				break;
 			}
 			case UPDATE_ALL_SUSPECTS_CLEARED:
@@ -301,6 +322,7 @@ Handle<Value> NovaNode::RequestSuspectDetailsString(const Arguments &args)
 
 	string suspectIp = cvv8::CastFromJS<string>(args[0]);
 	string suspectInterface = cvv8::CastFromJS<string>(args[1]);
+	Local<Function> cb = Local<Function>::Cast(args[2]);
 
 	struct in_addr address;
 	inet_pton(AF_INET, suspectIp.c_str(), &address);
@@ -309,21 +331,12 @@ Handle<Value> NovaNode::RequestSuspectDetailsString(const Arguments &args)
 	id.set_m_ip(htonl(address.s_addr));
 	id.set_m_ifname(suspectInterface);
 
-	RequestSuspectWithData(id);
-	uint32_t requestId = 0;
-	// TODO Call the magic async function that gives us a message ID we can look for later
-	// requestId = GetAsyncSuspect(address, suspectInterface);
-	jsCallbacks[requestId] = cb;
+	//TODO: Get new message ID
+	uint32_t messageID = 1;
 
-//	Suspect *suspect;
-//	if (suspect != NULL) {
-//		details = suspect->ToString();
-//		details += "\n";
-//		details += suspect->GetFeatureSet().toString();
-//		delete suspect;
-//	} else {
-//		details = "Unable to complete request";
-//	}
+	RequestSuspectWithData(id, messageID);
+
+	jsCallbacks[messageID] = cb;
 
 	return scope.Close(Null());
 }
