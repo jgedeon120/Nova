@@ -67,10 +67,7 @@ void RequestSuspectList(enum SuspectListType listType, int32_t messageID)
 	{
 		request.m_contents.set_m_messageid(messageID);
 	}
-	if(!MessageManager::Instance().WriteMessage(&request, 0))
-	{
-		LOG(DEBUG, "xxxDEBUGxxx WRITE LIST FAILED", "");
-	}
+	MessageManager::Instance().WriteMessage(&request, 0);
 }
 
 void RequestSuspect(SuspectID_pb address, int32_t messageID)

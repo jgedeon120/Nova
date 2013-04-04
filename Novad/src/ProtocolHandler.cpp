@@ -170,7 +170,6 @@ void HandleStopCaptureRequest(Message *incoming)
 
 void HandleRequestSuspectList(Message *incoming)
 {
-	LOG(DEBUG, "xxxDEBUGxxx Got a list request, sending reply", "");
 	Message reply;
 	reply.m_contents.set_m_type(REQUEST_SUSPECTLIST_REPLY);
 	reply.m_contents.set_m_listtype(incoming->m_contents.m_listtype());
@@ -240,15 +239,15 @@ void HandleRequestSuspect(Message *incoming)
 	Suspect tempSuspect;
 
 	//If there was no requested suspect, then return an empty suspect (failure)
-	if(incoming->m_contents.m_suspectids_size() > 0)
+	if(incoming->m_contents.has_m_suspectid())
 	{
 		if(reply.m_contents.m_featuremode() == NO_FEATURE_DATA)
 		{
-			tempSuspect = suspects.GetShallowSuspect(incoming->m_contents.m_suspectids(0));
+			tempSuspect = suspects.GetShallowSuspect(incoming->m_contents.m_suspectid());
 		}
 		else
 		{
-			tempSuspect = suspects.GetSuspect(incoming->m_contents.m_suspectids(0));
+			tempSuspect = suspects.GetSuspect(incoming->m_contents.m_suspectid());
 		}
 	}
 

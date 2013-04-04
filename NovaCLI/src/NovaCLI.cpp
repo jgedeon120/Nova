@@ -726,8 +726,19 @@ void MonitorCallback(int32_t messageID)
     			{
     				for(uint i = 0; i < message->m_suspects.size(); i++)
     				{
-    					cout << message->m_suspects[i]->GetIpString() << " " << message->m_suspects[i]->GetClassification() << endl;
+    					cout << message->m_suspects[0]->ToString() << endl;
     				}
+    				message->DeleteContents();
+    				break;
+    			}
+    			case REQUEST_SUSPECT_REPLY:
+    			{
+    				if(message->m_suspects.size() == 0)
+					{
+						cout << "No suspects to list" << endl;
+						break;
+					}
+    				cout << message->m_suspects[0]->ToString() << endl;
     				message->DeleteContents();
     				break;
     			}
