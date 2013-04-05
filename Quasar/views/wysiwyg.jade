@@ -103,10 +103,69 @@ block headerAdditions
               $interfaces.append(option);
             }
             
-            var pointerCss = {top:($(source).position().top + $(source).height()),
-                              left:($(source).position().left + $(source).outerWidth())};
-                              
-            $profileInfo.css(pointerCss).fadeIn(200);
+            now.GetPortSets(source.innerHTML, function(portsets){
+              var $table = $('#profileTableHook');
+              $table.empty();
+              
+              var generateDefaultRow = function(type, sType)
+              {
+                var tr = theDoc.createElement('tr');
+                var td = theDoc.createElement('td');
+                $(td).attr('colspan', 2).html('Default ' + sType  + ' Action: ' + udp)
+                .toggleClass('right');
+                $(tr).append(td);
+                $table.append(tr);
+              }
+              
+              var generateGeneralRow = function(pNum, pProtoc, pBehav)
+              {
+                var tr = theDoc.createElement('tr');
+                var td0 = theDoc.createElement('td');
+                var td1 = theDoc.createElement('td');
+                $(td0).toggleClass('left').html(pNum + '_' + pProtoc);
+                $(td1).toggleClass('right').html(pBehav);
+                $(tr).append(td0);
+                $(tr).append(td1);
+                $table.append(tr);
+              }
+              
+              for(var i in portsets)
+              {
+                if(portsets[i].setName == $portSets.val())
+                {
+                  var udp = portsets[i].UDPBehavior;
+                  var tcp = portsets[i].TCPBehavior;
+                  var icmp = portsets[i].ICMPBehavior;
+ 
+                  generateDefaultRow(udp, 'UDP');
+                  generateDefaultRow(tcp, 'TCP');
+                  generateDefaultRow(icmp, 'ICMP');
+                  
+                  for(var j in portsets[i].PortExceptions)
+                  {
+                    var num = portsets[i].PortExceptions[j].portNum;
+                    var proto = portsets[i].PortExceptions[j].protocol;
+                    var behav = '';
+                    
+                    if(portsets[i].PortExceptions[j].behavior == 'script')
+                    {
+                      behav = portsets[i].PortExceptions[j].scriptName;
+                    }
+                    else
+                    {
+                      behav = portsets[i].PortExceptions[j].behavior;
+                    }
+                    
+                    generateGeneralRow(num, proto, behav);
+                  }
+                  break;
+                }
+              }
+              
+              var pointerCss = {top:($(source).position().top + $(source).height()),
+                                left:($(source).position().left + $(source).outerWidth())};
+              $profileInfo.css(pointerCss).stop().fadeIn(200);
+            });
           });
         }
         else
@@ -122,7 +181,7 @@ block headerAdditions
       {
         if(e == undefined)
         {
-          $profileInfo.fadeOut(100);
+          $profileInfo.stop().fadeOut(100);
           return;
         }
         var evt = (e ? e : window.event);
@@ -133,7 +192,7 @@ block headerAdditions
         }
         else
         {
-          $profileInfo.fadeOut(100);
+          $profileInfo.stop().fadeOut(100);
         }
       }
     }
@@ -151,7 +210,7 @@ block headerAdditions
         $(source).css('background-color', '');
         selectedProfile = undefined;
         clicked = false;
-        $profileInfo.fadeOut(100);
+        $profileInfo.stop().fadeOut(100);
         return;
       }
       $(source).css('background-color', '#E8A02F');
@@ -1693,6 +1752,14 @@ block content
         br
         label Port Sets
         select#portSets
+        br
+        br
+        table#portsetTable
+          thead
+            tr
+              th(class='left') Port
+              th(class='right') Behavior
+          tbody#profileTableHook
         br
         label Ethernet Vendors
         select#vendors

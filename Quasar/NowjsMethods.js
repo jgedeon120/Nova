@@ -1222,32 +1222,32 @@ everyone.now.updateUserPassword = function (username, newPassword, cb)
 
 var GetPortSets = function (profileName, cb)
 {
-    var portSetNames = NovaCommon.honeydConfig.GetPortSetNames(profileName);
-    
-    var portSets = [];  
+  var portSetNames = NovaCommon.honeydConfig.GetPortSetNames(profileName);
+  
+  var portSets = [];  
 
-    for(var i = 0; i < portSetNames.length; i++)
+  for(var i = 0; i < portSetNames.length; i++)
+  {
+    var portSet = NovaCommon.honeydConfig.GetPortSet(profileName, portSetNames[i]);
+    portSet.setName = i;
+    portSet.TCPBehavior = portSet.GetTCPBehavior();
+    portSet.UDPBehavior = portSet.GetUDPBehavior();
+    portSet.ICMPBehavior = portSet.GetICMPBehavior();
+
+    portSet.PortExceptions = portSet.GetPorts();
+    for(var j = 0; j < portSet.PortExceptions.length; j++)
     {
-        var portSet = NovaCommon.honeydConfig.GetPortSet( profileName, portSetNames[i] );
-        portSet.setName = i;
-        portSet.TCPBehavior = portSet.GetTCPBehavior();
-        portSet.UDPBehavior = portSet.GetUDPBehavior();
-        portSet.ICMPBehavior = portSet.GetICMPBehavior();
-
-        portSet.PortExceptions = portSet.GetPorts();
-        for(var j = 0; j < portSet.PortExceptions.length; j++)
-        {
-            portSet.PortExceptions[j].portNum = portSet.PortExceptions[j].GetPortNum();
-            portSet.PortExceptions[j].protocol = portSet.PortExceptions[j].GetProtocol();
-            portSet.PortExceptions[j].behavior = portSet.PortExceptions[j].GetBehavior();
-            portSet.PortExceptions[j].scriptName = portSet.PortExceptions[j].GetScriptName();
-            portSet.PortExceptions[j].scriptConfiguration = portSet.PortExceptions[j].GetScriptConfiguration();
-        }
-        portSets.push(portSet);
+      portSet.PortExceptions[j].portNum = portSet.PortExceptions[j].GetPortNum();
+      portSet.PortExceptions[j].protocol = portSet.PortExceptions[j].GetProtocol();
+      portSet.PortExceptions[j].behavior = portSet.PortExceptions[j].GetBehavior();
+      portSet.PortExceptions[j].scriptName = portSet.PortExceptions[j].GetScriptName();
+      portSet.PortExceptions[j].scriptConfiguration = portSet.PortExceptions[j].GetScriptConfiguration();
     }
+    portSets.push(portSet);
+  }
 
-    if(typeof cb == 'function')
-    {
+  if(typeof cb == 'function')
+  {
     cb(portSets, profileName);
   }
   return portSets;

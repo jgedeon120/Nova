@@ -568,6 +568,23 @@
   z-index: 2006;
 }
 
+#portsetTable {
+  border-collapse: collapse;
+  background-color: #E4F2FF;
+  width: 99%;
+}
+
+#portsetTable .left {
+  border-top: 2px solid #D0E9FC;
+  border-bottom: 2px solid #D0E9FC;
+  border-right: 2px solid #D0E9FC;
+}
+
+#portsetTable .right {
+  border-top: 2px solid #D0E9FC;
+  border-bottom: 2px solid #D0E9FC;
+}
+
 #hoverInfo label {
   margin-right: 10px;
   font-weight: bold;

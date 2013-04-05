@@ -2353,8 +2353,7 @@ function ConvertInterfaceToAlias(iface)
     }
 }
 
-setInterval(function()
-{
+setInterval(function(){
     try 
     {
         everyone.now.updateHaystackStatus(NovaCommon.nova.IsHaystackUp());
