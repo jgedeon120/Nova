@@ -1214,7 +1214,7 @@ block headerAdditions
         
         function updateCounter(id)
         {
-          if($('#splitRange').val() > $('#splitRange').attr('max') || $('#splitRange').val() < 1)
+          if(($('#splitRange').val() > $('#splitRange').attr('max')) || ($('#splitRange').val() < 1))
           {
             $('#splitRange').val('1');
           }
@@ -1534,8 +1534,8 @@ block headerAdditions
             var d = parseInt(delta);
             var bWidth = isNaN(parseInt($(this).css('border-width'))) ? 0 
               : parseInt($(this).css('border-width'));
-            if(((parseInt($(this).outerWidth()) <= parseInt(33 + bWidth)) && d < 0)
-            || ((parseInt($(this).outerWidth()) >= parseInt(75 + bWidth)) && d > 0))
+            if(((parseInt($(this).outerWidth()) <= parseInt(33 + bWidth)) && (d < 0))
+            || ((parseInt($(this).outerWidth()) >= parseInt(75 + bWidth)) && (d > 0)))
             {
               return;
             }
