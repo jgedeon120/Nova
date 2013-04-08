@@ -124,8 +124,7 @@ block headerAdditions
                 var td1 = theDoc.createElement('td');
                 $(td0).toggleClass('left').html(pNum + '_' + pProtoc);
                 $(td1).toggleClass('right').html(pBehav);
-                $(tr).append(td0);
-                $(tr).append(td1);
+                $(tr).append(td0, td1);
                 $table.append(tr);
               }
               
@@ -253,8 +252,7 @@ block headerAdditions
               profile.children = [];
               var append = theDoc.createElement('tr');
               var td0 = theDoc.createElement('td');
-              td0.innerHTML = profile.name;
-              td0.onclick = profileClicked;
+              $(td0).html(profile.name).click(function(e){profileClicked(e)});
               append.appendChild(td0);
               profHook.append(append);
             }
@@ -684,6 +682,7 @@ block headerAdditions
         $(splitData.src).data('mac', splitData.srcNodeMacs);
         $('#' + splitData.src.id + 'text').html(splitData.srcCount);
         nodeTopology[splitData.src.id].count = splitData.srcCount;
+        nodeTopology[splitData.src.id].mac = splitData.srcNodeMacs;
         
         var testMac = splitData.splNodeMacs.split(',')[0];
         for(var j in nodes)
@@ -1143,14 +1142,13 @@ block headerAdditions
         $(text).html('Use the slider to split the nodes into two groups:');
         $(slider).attr('step', 1).attr('min', 1).attr('max', max).attr('value', start);
         var counter = theDoc.createElement('label');
-        counter.id = 'updateMe';
         var delta = (parseInt($('#' + ele.id + 'text').html()) - Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
-        counter.innerHTML = start + ', ' + delta;
+        $(counter).attr('id', 'updateMe').html(start + ', ' + delta);
         var container = theDoc.createElement('div');
         var bottom = theDoc.createElement('label');
-        bottom.id = 'bottom';
+        $(bottom).attr('id', 'bottom');
         var top = theDoc.createElement('label');
-        top.id = 'top';
+        $(top).attr('id', 'top');
         $(bottom).html('1');
         $(top).html($('#' + ele.id + 'text').html());
         $(container).append(bottom, slider, top);
@@ -1209,9 +1207,8 @@ block headerAdditions
         $(slider).attr('max', max);
         $(slider).attr('value', start);
         var counter = theDoc.createElement('label');
-        counter.id = 'updateMe';
         var delta = (parseInt($('#' + ele.id + 'text').html()) - Math.floor(parseInt($('#' + ele.id + 'text').html()) / 2));
-        counter.innerHTML = start + ', ' + delta;
+        $(counter).attr('id', 'updateMe').html(start + ', ' + delta);
         var container = theDoc.createElement('div');
         $(container).append(bottom, slider, top);
         
@@ -1562,8 +1559,9 @@ block headerAdditions
             oldY = e.clientY;
             $topology.off('mouseenter');
           }
-          else if(e.which == 1 && !$hoverInfo.is(':hidden') && $(source).attr('class') != undefined 
-          && $(source).attr('class').indexOf('canvasElement') == -1)
+          else if((e.which == 1) && !$hoverInfo.is(':hidden') 
+          && ($(source).attr('class') != undefined) 
+          && ($(source).attr('class').indexOf('canvasElement') == -1))
           {
             $hoverInfo.stop().fadeOut(100);
             $('.ui-selected').each(function(){
@@ -1744,7 +1742,9 @@ block content
     h1 Haystack WYSIWYG
     div#modalDialog(title='Split Nodes')
       div#rangeDiv
-      button#splitAccept Split Nodes
+      button#splitAccept
+        img.buttonIcon(src='images/start.png', alt='Confirm button image')
+        span.buttonSpan Split Nodes
     div#profileInfo
       div#pres
         label#name
@@ -1778,7 +1778,9 @@ block content
           input#ip3(type='number', min='0', max='255', value='0', step='1')
           input#ip4(type='number', min='0', max='255', value='0', step='1')
         br
-        button(onclick='saveSelectedParameters()') Save Parameters
+        button(onclick='saveSelectedParameters()')
+          img.buttonIcon(src='images/start.png', alt='Confirm button image')
+          span.buttonSpan Save Parameters
     div#container
       div#dragBar(class='sameHeight')
         bre
@@ -1823,5 +1825,7 @@ block content
           label New Amount Value:
           input#changeCount(type='number', min='0', step='1')
           br
-          button#updateCount(onclick='updateCount()') Update Node Amount
+          button#updateCount(onclick='updateCount()')
+            img.buttonIcon(src='images/start.png', alt='Confirm button image')
+            span.buttonSpan Update Node Amount
             
