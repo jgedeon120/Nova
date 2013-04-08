@@ -1158,7 +1158,7 @@ everyone.now.GetHostileEvents = function (cb)
 everyone.now.ClearHostileEvents = function (cb)
 {
     NovaCommon.dbqSuspectAlertsDeleteAll.run(function(err){
-        if (err)
+        if(err)
         {
             console.log("Database error: " + err);
             cb(err);
@@ -1177,12 +1177,12 @@ everyone.now.WizardHasRun = function (cb)
 everyone.now.deleteUserEntry = function (usernamesToDelete, cb)
 {
     var username;
-    for (var i = 0; i < usernamesToDelete.length; i++)
+    for(var i = 0; i < usernamesToDelete.length; i++)
     {
         username = String(usernamesToDelete[i]);
         NovaCommon.dbqCredentialsDeleteUser.run(username, function (err)
         {
-            if (err)
+            if(err)
             {
                 console.log("Database error: " + err);
                 cb(false);
@@ -1256,13 +1256,13 @@ everyone.now.GetPortSets = GetPortSets;
 
 
 function databaseError(err, cb) {
-        if (err)
-        {
-            LOG("ERROR", "Database error: " + err);
-            cb && cb(err);
-            return true;
-        }
-        return false;
+  if (err)
+  {
+    LOG("ERROR", "Database error: " + err);
+    cb && cb(err);
+    return true;
+  }
+  return false;
 }
 
 everyone.now.GetUnseenSuspects = function(cb) {

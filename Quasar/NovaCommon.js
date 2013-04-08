@@ -22,100 +22,99 @@ var sql = require('sqlite3').verbose();
 var crypto = require('crypto');
 
 var NovaCommon = new function() {
-    console.log("Initializing nova C++ code");
-    this.novaconfig = require('novaconfig.node');
-    this.nova = new this.novaconfig.Instance();
-    this.config = new this.novaconfig.NovaConfigBinding();
-    this.honeydConfig = new this.novaconfig.HoneydConfigBinding();
-    this.vendorToMacDb = new this.novaconfig.VendorMacDbBinding();
-    this.osPersonalityDb = new this.novaconfig.OsPersonalityDbBinding();
-    this.trainingDb = new this.novaconfig.CustomizeTrainingBinding();
-    this.whitelistConfig = new this.novaconfig.WhitelistConfigurationBinding();
-    this.LOG = require("../NodejsModule/Javascript/Logger").LOG;
+  console.log("Initializing nova C++ code");
+  this.novaconfig = require('novaconfig.node');
+  this.nova = new this.novaconfig.Instance();
+  this.config = new this.novaconfig.NovaConfigBinding();
+  this.honeydConfig = new this.novaconfig.HoneydConfigBinding();
+  this.vendorToMacDb = new this.novaconfig.VendorMacDbBinding();
+  this.osPersonalityDb = new this.novaconfig.OsPersonalityDbBinding();
+  this.trainingDb = new this.novaconfig.CustomizeTrainingBinding();
+  this.whitelistConfig = new this.novaconfig.WhitelistConfigurationBinding();
+  this.LOG = require("../NodejsModule/Javascript/Logger").LOG;
 
-    var classifiersConstructor = new require('./classifiers.js');
-    this.classifiers = new classifiersConstructor(this.config);
+  var classifiersConstructor = new require('./classifiers.js');
+  this.classifiers = new classifiersConstructor(this.config);
 
-    this.cNodeToJs = function(node){
-        var ret = {};
-        ret.enabled = node.IsEnabled();
-        ret.pfile = node.GetProfile();
-        ret.ip = node.GetIP();
-        ret.mac = node.GetMAC();
-        ret.interface = node.GetInterface();
-        ret.portset = node.GetPortSet();
-        ret.vendor = this.honeydConfig.GetNodeVendor(ret.mac);
-        return ret;
-    }
+  this.cNodeToJs = function(node){
+      var ret = {};
+      ret.enabled = node.IsEnabled();
+      ret.pfile = node.GetProfile();
+      ret.ip = node.GetIP();
+      ret.mac = node.GetMAC();
+      ret.interface = node.GetInterface();
+      ret.portset = node.GetPortSet();
+      ret.vendor = this.honeydConfig.GetNodeVendor(ret.mac);
+      return ret;
+  }
 
-    this.StartNovad = function(){
-        var command = NovaCommon.config.ReadSetting("COMMAND_START_NOVAD");
-        exec(command, function(error, stdout, stderr){
-            if(error != null){console.log("Error running command '" + command + "' :" + error);}
-        });
-    }
+  this.StartNovad = function(){
+      var command = NovaCommon.config.ReadSetting("COMMAND_START_NOVAD");
+      exec(command, function(error, stdout, stderr){
+          if(error != null){console.log("Error running command '" + command + "' :" + error);}
+      });
+  }
+  
+  this.StopNovad = function(){
+      var command = NovaCommon.config.ReadSetting("COMMAND_STOP_NOVAD");
+      exec(command, function(error, stdout, stderr){
+          if(error != null){console.log("Error running command '" + command + "' :" + error);}
+      });
+  }
+  
+  this.StartHaystack = function(cb){
+      var command = NovaCommon.config.ReadSetting("COMMAND_START_HAYSTACK");
+      exec(command, function(error, stdout, stderr){
+          if(error != null){console.log("Error running command '" + command + "' :" + error);}
+		cb && cb();
+      });
+  }
+  
+  this.StopHaystack = function(cb){
+      var command = NovaCommon.config.ReadSetting("COMMAND_STOP_HAYSTACK");
+      exec(command, function(error, stdout, stderr){
+          if(error != null){console.log("Error running command '" + command + "' :" + error);}
+		cb && cb();
+      });
+  }
+
+  this.GetPorts = function()
+  {
+    var scriptBindings = {};
+    var profiles = this.honeydConfig.GetProfileNames();
     
-    this.StopNovad = function(){
-        var command = NovaCommon.config.ReadSetting("COMMAND_STOP_NOVAD");
-        exec(command, function(error, stdout, stderr){
-            if(error != null){console.log("Error running command '" + command + "' :" + error);}
-        });
-    }
-    
-    this.StartHaystack = function(cb){
-        var command = NovaCommon.config.ReadSetting("COMMAND_START_HAYSTACK");
-        exec(command, function(error, stdout, stderr){
-            if(error != null){console.log("Error running command '" + command + "' :" + error);}
-			cb && cb();
-        });
-    }
-    
-    this.StopHaystack = function(cb){
-        var command = NovaCommon.config.ReadSetting("COMMAND_STOP_HAYSTACK");
-        exec(command, function(error, stdout, stderr){
-            if(error != null){console.log("Error running command '" + command + "' :" + error);}
-			cb && cb();
-        });
-    }
-
-    this.GetPorts = function()
+    for(var i in profiles)
     {
-      var scriptBindings = {};
-      
-      var profiles = this.honeydConfig.GetProfileNames();
-      
-      for(var i in profiles)
+      var profileName = profiles[i];
+      var portSets = this.honeydConfig.GetPortSetNames(profiles[i]);
+      for(var portSetName in portSets)
       {
-        var profileName = profiles[i];
-    
-        var portSets = this.honeydConfig.GetPortSetNames(profiles[i]);
-        for(var portSetName in portSets)
+        var portSet = this.honeydConfig.GetPortSet(profiles[i], portSets[portSetName]);
+        var ports = [];
+        var tmp = portSet.GetPorts();
+        for(var p in tmp)
         {
-            var portSet = this.honeydConfig.GetPortSet(profiles[i], portSets[portSetName]);
-            var ports = [];
-
-                        var tmp = portSet.GetPorts();
-            for (var p in tmp)
+          ports.push(tmp[p]);
+        }
+        for(var p in ports)
+        {
+          if(ports[p].GetScriptName() != undefined && ports[p].GetScriptName() != '')
+          {
+            if(scriptBindings[ports[p].GetScriptName()] == undefined)
             {
-                ports.push(tmp[p]);
+              scriptBindings[ports[p].GetScriptName()] = profileName + "(" + portSetName + ")" + ':' + ports[p].GetPortNum();
             }
-            for(var p in ports)
+            else
             {
-                if(ports[p].GetScriptName() != undefined && ports[p].GetScriptName() != '')
-                {
-                    if(scriptBindings[ports[p].GetScriptName()] == undefined)
-                    {
-                        scriptBindings[ports[p].GetScriptName()] = profileName + "(" + portSetName + ")" + ':' + ports[p].GetPortNum();
-                    } else {
-                        scriptBindings[ports[p].GetScriptName()] += '<br>' + profileName + "(" + portSetName + ")" + ':' + ports[p].GetPortNum();
-                    }
-                }
+              scriptBindings[ports[p].GetScriptName()] += '<br>' + profileName + "(" + portSetName + ")" + ':' + ports[p].GetPortNum();
             }
+          }
         }
       }
-    
-      return scriptBindings;
     }
+  
+    return scriptBindings;
+  }
 
 	var novaDb = new sql.Database(this.config.GetPathHome() + "/data/novadDatabase.db", sql.OPEN_READWRITE, databaseOpenResult);
 	var db = new sql.Database(this.config.GetPathHome() + "/data/quasarDatabase.db", sql.OPEN_READWRITE, databaseOpenResult);
@@ -152,17 +151,17 @@ var NovaCommon = new function() {
      // Queries regarding the seen suspects table
 	this.dbqAddNewSuspect = db.prepare('INSERT INTO suspectsSeen values(?, ?, 0, 0)');
 	this.dbqIsNewSuspect = db.prepare('SELECT COUNT(*) AS rows from suspectsSeen WHERE ip = ? AND interface = ?');
-    this.dbqSeenAllData = db.prepare('SELECT seenAllData FROM suspectsSeen WHERE ip = ? AND interface = ?');
+  this.dbqSeenAllData = db.prepare('SELECT seenAllData FROM suspectsSeen WHERE ip = ? AND interface = ?');
 	
-    this.dbqMarkAllSuspectSeen = db.prepare('UPDATE suspectsSeen SET seenSuspect = 1');
-    this.dbqMarkAllSuspectDataSeen = db.prepare('UPDATE suspectsSeen SET seenAllData = 1');
+  this.dbqMarkAllSuspectSeen = db.prepare('UPDATE suspectsSeen SET seenSuspect = 1');
+  this.dbqMarkAllSuspectDataSeen = db.prepare('UPDATE suspectsSeen SET seenAllData = 1');
 	
-    this.dbqMarkSuspectSeen = db.prepare('UPDATE suspectsSeen SET seenSuspect = 1 WHERE ip = ? AND interface = ?');
+  this.dbqMarkSuspectSeen = db.prepare('UPDATE suspectsSeen SET seenSuspect = 1 WHERE ip = ? AND interface = ?');
 	this.dbqMarkSuspectDataSeen = db.prepare('UPDATE suspectsSeen SET seenAllData = 1 WHERE ip = ? and interface = ?');
 	
-    this.dbqMarkSuspectDataUnseen = db.prepare('UPDATE suspectsSeen SET seenAllData = 0 WHERE ip = ? and interface = ?');
+  this.dbqMarkSuspectDataUnseen = db.prepare('UPDATE suspectsSeen SET seenAllData = 0 WHERE ip = ? and interface = ?');
 	
-    this.dbqGetUnseenSuspects = db.prepare('SELECT ip, interface FROM suspectsSeen WHERE seenSuspect = 0');
+  this.dbqGetUnseenSuspects = db.prepare('SELECT ip, interface FROM suspectsSeen WHERE seenSuspect = 0');
 	this.dbqGetUnseenDataSuspects = db.prepare('SELECT ip, interface FROM suspectsSeen WHERE seenAllData = 0');
 
 
@@ -185,7 +184,7 @@ var NovaCommon = new function() {
 	this.dbqDeleteHostname = hostNameDb.prepare('DELETE from allocs WHERE name = ?');
 
 
-	this.HashPassword = function (password, salt)
+	this.HashPassword = function(password, salt)
 	{
 		var shasum = crypto.createHash('sha1');
 		shasum.update(password + salt);
