@@ -164,7 +164,7 @@ block headerAdditions
               
               var pointerCss = {top:($(source).position().top + $(source).height() - 10),
                                 left:($(source).position().left + $(source).outerWidth() + 20)};
-              $profileInfo.css(pointerCss).stop().fadeIn(200);
+              $profileInfo.css(pointerCss).fadeIn(200);
             });
           });
         }
@@ -1748,21 +1748,40 @@ block content
         + 
         span.kbk S 
         \: Save Topology
-      p(style='margin-left: 5px') Middle Mouse Drag: Move all nodes
-      p(style='margin-left: 5px; font-size: 14px;') User can drag lasso over nodes to capture them for:
+      p(style='margin-left: 5px') 
+        span(style='font-weight: bold;') Middle Mouse Drag: 
+        Move all nodes
+      p(style='margin-left: 5px; font-size: 16px;') User can drag lasso over nodes to capture them for:
       p(style='margin-left: 10px; font-weight: bold;') 
         span.kbk Del
         \: Delete Selected Nodes
-      p(style='margin-left: 10px;') Left Click Mouse Drag: Move all selected nodes 
+      p(style='margin-left: 10px;') 
+        span(style='font-weight: bold;') Left Click Mouse Drag: 
+        Move all selected nodes 
       p(style='margin-left: 10px; font-size: 14px;') Right-Click menu:
-      p(style='margin-left: 15px;') Delete Selected: Delete all selected nodes
-      p(style='margin-left: 15px;') Merge Selected: Nodes can only be merged if they share the same interface, portset, ethernet vendor, and IP address allocation type
-      p(style='margin-left: 15px;') Split Selected: Split selected node into two nodes (will only appear if one node is selected)
-      p(style='margin-left: 5px; font-size: 14px;') Making a new Node:
-      p(style='margin-left: 10px;') 1\) Select Configuration from Dropdown
-      p(style='margin-left: 10px;') 2\) Select number of Nodes to create
-      p(style='margin-left: 10px;') 3\) Click on desired profile - configure as desired, Save Parameters
-      p(style='margin-left: 10px;') 4\) Drag highlighted node in left bar onto Canvas
+      p(style='margin-left: 15px;') 
+        span(style='font-weight: bold;') Delete Selected: 
+        Delete all selected nodes
+      p(style='margin-left: 15px;') 
+        span(style='font-weight: bold;') Merge Selected: 
+        Nodes can only be merged if they share the same interface, portset, ethernet vendor, and IP address allocation type
+      p(style='margin-left: 15px;')
+        span(style='font-weight: bold;') Split Selected: 
+        Split selected node into two nodes (will only appear if one node is selected)
+      p(style='margin-left: 5px; font-size: 16px;') Making a new Node:
+      p(style='margin-left: 10px;') 
+        span(style='font-weight: bold;') 1\) 
+        span Select Configuration from Dropdown
+      p(style='margin-left: 10px;') 
+        span(style='font-weight: bold;') 2\) 
+        span Select number of Nodes to create
+      p(style='margin-left: 10px;') 
+        span(style='font-weight: bold;') 3\) 
+        span Click on desired profile - configure as desired, Save Parameters
+      p(style='margin-left: 10px;') 
+        span(style='font-weight: bold;') 4\) 
+        span Drag highlighted node in left bar onto Canvas
+      br
     div#modalDialog(title='Split Nodes')
       div#rangeDiv
       button#splitAccept
