@@ -71,7 +71,19 @@ CREATE TABLE credentials(
 	user VARCHAR(100) PRIMARY KEY,
 	pass VARCHAR(100),
 	salt VARCHAR(100)
-);"
+);
+
+CREATE TABLE lastHoneydNodeIPs(
+	mac VARCHAR(100) PRIMARY KEY,
+	ip varchar(100)
+);
+
+CREATE TABLE lastTrainingDataSelection(
+	uid INTEGER PRIMARY KEY,
+	included INTEGER
+);
+
+"
 
 
 quasarDbFilePath="$DESTDIR/usr/share/nova/userFiles/data/quasarDatabase.db"

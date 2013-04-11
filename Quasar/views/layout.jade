@@ -17,6 +17,7 @@
 doctype 5
 html(lang="en", onclick='removeContextMenu();')
   head
+    title Quasar - Nova Web UI
     meta(charset="utf-8")
     link(rel="stylesheet", type="text/css", href="style.css", media="screen")
     link(rel="stylesheet", type="text/css", href="/dojo/dijit/themes/claro/claro.css", media="screen")
@@ -24,9 +25,12 @@ html(lang="en", onclick='removeContextMenu();')
 
     script(type="text/javascript", src="/nowjs/now.js")
     script(type="text/javascript", src="/scripts/knockout.js")
-    script(type="text/javascript", src="/scripts/jquery.js")
+    script(src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js")
     script(type="text/javascript", src="/dojo/dojo/dojo.js", data-dojo-config="async:true, parseOnLoad:true")
     script
+      // CDN fallback for jQuery
+      window.jQuery || document.write('<script src="scripts/jquery.js"><\\/script>');
+      
       // This function should be replaced in other jade files, and will be called when the DOM is ready
       function init() {};
 
@@ -236,7 +240,7 @@ html(lang="en", onclick='removeContextMenu();')
             // This is so the browser will cache all 3 pics when it first loads
             table(style="float: left; font-size: 16px;")
               tr
-                td(style="text-align: right; font-weight: bold;") Packet Classifier:&nbsp 
+                td(style="text-align: right; font-weight: bold;") Packet Classifier:&nbsp;
                 td(style="padding: 0;")
                   img#nova_status_icon_orange(src="/images/orangedot.png", width="20px", height="20px")
                   img#nova_status_icon_red(src="/images/reddot.png", width="20px", height="20px", style="display: none;")
@@ -244,7 +248,7 @@ html(lang="en", onclick='removeContextMenu();')
                 td
                   div#nova_status(style='font-weight: bold;') Checking
               tr
-                td(style="text-align: right; font-weight: bold;") Haystack&nbsp Status:&nbsp  
+                td(style="text-align: right; font-weight: bold;") Haystack&nbsp; Status:&nbsp;
                 td(style="padding: 0;")
                   img#haystack_status_icon_orange(src="/images/orangedot.png", width="20px", height="20px")
                   img#haystack_status_icon_red(src="/images/reddot.png", width="20px", height="20px", style="display: none;")

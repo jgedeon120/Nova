@@ -50,6 +50,8 @@ block content
       p Right click suspects for more options
       div.novaGrid
         div#suspectTable
+
+      p#numberOfSuspects Recieved data for 0 suspects
     div(data-dojo-type="dijit.layout.ContentPane", title="Suspects", id="nova_suspects_error_view", style="display: block; width: 600px; margin: 0 auto; text-align: center")
       h4 The Packet Classifier is not currently connected or running. If the status shows as offline, try starting it.
       
@@ -313,6 +315,8 @@ block headerAdditions
         }
       }
       suspectGrid.PushEntry(row);
+
+      $('#numberOfSuspects').text("Recieved data for " + String(Object.keys(suspectGrid.m_elements).length) + " suspects");
     };
 
     var applyAdvancedFilter = function(){
@@ -480,14 +484,18 @@ block headerAdditions
         });
 
         resendSuspects();
-
-        setInterval(function(){
+    
+        var renderSuspects = function(){
             if(!liveUpdate || lastNovadStatus == false) {return;}
            
             var start = new Date().getTime();
             suspectGrid.Render(); 
             console.log("Time to render grid of size " + suspectGrid.Size() + ": " + (new Date().getTime() - start) + "ms");
-        }, 3000);
+        };
+        
+        setTimeout(renderSuspects, 100);
+        setTimeout(renderSuspects, 500);
+        setInterval(renderSuspects, 3000);
     }
 
     function replacementContextMenu(e)
