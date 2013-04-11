@@ -781,14 +781,7 @@ void MonitorCallback(int32_t messageID)
     			}
     			case UPDATE_ALL_SUSPECTS_CLEARED:
     			{
-    				if(message->m_contents.m_success())
-    				{
-    					cout << "All suspects were cleared" << endl;
-    				}
-    				else
-    				{
-    					cout << "Failed to clear all suspects" << endl;
-    				}
+					cout << "All suspects were cleared" << endl;
     				break;
     			}
     			case UPDATE_SUSPECT_CLEARED:

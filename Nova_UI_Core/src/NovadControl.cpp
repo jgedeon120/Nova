@@ -90,7 +90,6 @@ void StopNovad(int32_t messageID)
 		killRequest.m_contents.set_m_messageid(messageID);
 	}
 	MessageManager::Instance().WriteMessage(&killRequest, 0);
-	//DisconnectFromNovad();
 }
 
 bool HardStopNovad()

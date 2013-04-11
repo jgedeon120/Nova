@@ -81,12 +81,17 @@ void HandleClearAllRequest(Message *incoming)
 		LOG(DEBUG, "Cleared all suspects due to UI request",
 				"Got a CONTROL_CLEAR_ALL_REQUEST, cleared all suspects.");
 
+		//First, send the reply (wth message ID) to just the original sender
 		Message updateMessage(UPDATE_ALL_SUSPECTS_CLEARED);
 		if(incoming->m_contents.has_m_messageid())
 		{
 			updateMessage.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
 		}
-		MessageManager::Instance().WriteMessage(&updateMessage, 0);
+		MessageManager::Instance().WriteMessage(&updateMessage, incoming->m_contents.m_sessionindex());
+
+		//Now send a generic message to the rest of the clients
+		updateMessage.m_contents.clear_m_messageid();
+		MessageManager::Instance().WriteMessageExcept(&updateMessage, incoming->m_contents.m_sessionindex());
 	}
 }
 
@@ -123,7 +128,7 @@ void HandleClearSuspectRequest(Message *incoming)
 			"Got a CONTROL_CLEAR_SUSPECT_REQUEST, cleared suspect: "
 			+string(inet_ntoa(suspectAddress))+ " on interface " + incoming->m_contents.m_suspectid().m_ifname() + ".");
 
-	//Notify the other clients about the cleared suspect
+	//First, send the reply (wth message ID) to just the original sender
 	Message updateMessage;
 	updateMessage.m_contents.set_m_type(UPDATE_SUSPECT_CLEARED);
 	updateMessage.m_contents.set_m_success(true);
@@ -133,6 +138,10 @@ void HandleClearSuspectRequest(Message *incoming)
 	}
 	updateMessage.m_contents.mutable_m_suspectid()->CopyFrom(incoming->m_contents.m_suspectid());
 	MessageManager::Instance().WriteMessage(&updateMessage, 0);
+
+	//Now send a generic message to the rest of the clients
+	updateMessage.m_contents.clear_m_messageid();
+	MessageManager::Instance().WriteMessageExcept(&updateMessage, incoming->m_contents.m_sessionindex());
 }
 
 void HandleSaveSuspectsRequest(Message *incoming)

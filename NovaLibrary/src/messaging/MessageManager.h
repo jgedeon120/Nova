@@ -44,11 +44,17 @@ public:
 	// NOTE: Blocking call. To be called from worker threads
 	Nova::Message *DequeueMessage();
 
-	//Writes a given Message to the provided socket
+	//Writes a given Message to the provided sessionIndex (0 for all sessions)
 	//	message - A pointer to the message object to send
 	//	sessionIndex - The index of the session to send the message to. (0 for all sessions)
 	// Returns - true on successfully sending the object, false on error
 	bool WriteMessage(Message *message, uint32_t sessionIndex);
+
+	//Writes a given Message to the all sessions except the given one
+	//	message - A pointer to the message object to send
+	//	sessionIndex - The index of the session to exclude
+	// Returns - true on successfully sending the object, false on error
+	bool WriteMessageExcept(Message *message, uint32_t sessionIndex);
 
 	//The following functions are only used internally (used from static functions, thus needing to be public)
 	//Users of the messaging subsystem will not need to call these:

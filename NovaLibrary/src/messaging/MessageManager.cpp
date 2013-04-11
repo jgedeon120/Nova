@@ -152,6 +152,57 @@ bool MessageManager::WriteMessage(Message *message, uint32_t sessionIndex)
 	}
 }
 
+bool MessageManager::WriteMessageExcept(Message *message, uint32_t sessionIndex)
+{
+	if(message == NULL)
+	{
+		return false;
+	}
+	if(sessionIndex == 0)
+	{
+		return false;
+	}
+
+	Lock lock(&m_bevMapMutex);
+	if(m_bevMap.empty())
+	{
+		return false;
+	}
+
+	map<uint32_t, struct bufferevent*>::iterator it;
+	for(it = m_bevMap.begin(); it != m_bevMap.end(); it++)
+	{
+		struct bufferevent *bev = it->second;
+
+		if((it->first == sessionIndex) || (bev == NULL))
+		{
+			continue;
+		}
+
+		uint32_t length = message->GetLength();
+		char *buffer = new char[length + sizeof(uint32_t)];
+
+		memcpy(buffer, &length, sizeof(length));
+
+		if(!message->Serialize(buffer + sizeof(uint32_t), length))
+		{
+			delete[] buffer;
+			continue;
+		}
+		bufferevent_lock(bev);
+		if(bufferevent_write(bev, buffer, length + sizeof(uint32_t)) == -1)
+		{
+			delete[] buffer;
+			bufferevent_unlock(bev);
+			continue;
+		}
+
+		delete[] buffer;
+		bufferevent_unlock(bev);
+	}
+	return true;
+}
+
 void MessageManager::WriteDispatcher(struct bufferevent *bev, void *ctx)
 {
 	bufferevent_lock(bev);
