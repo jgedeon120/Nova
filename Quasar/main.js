@@ -218,12 +218,12 @@ var logFile = fs.createWriteStream('./serverLog.log', {flags: 'a'});
 app.use(express.logger({stream: logFile}));
 
 var WEB_UI_PORT = NovaCommon.config.ReadSetting("WEB_UI_PORT");
-var WEB_UI_IFACE = 'eth0';
+var WEB_UI_IFACE = NovaCommon.config.ReadSetting("WEB_UI_IFACE");
 var WEB_UI_ADDRESS = '';
 var interfaces = os.networkInterfaces();
+
 for(var i in interfaces)
 {
-  console.log('i == ' + i);
   if(i == WEB_UI_IFACE)
   {
     for(var j in interfaces[i])
@@ -245,7 +245,7 @@ if(WEB_UI_ADDRESS == '')
 }
 else
 {
-  console.info("Listening on address " + WEB_UI_ADDRESS + ":" + WEB_UI_PORT);
+  console.info("Listening on address " + WEB_UI_ADDRESS + ":" + WEB_UI_PORT + " (" + WEB_UI_IFACE + ")");
   app.listen(WEB_UI_PORT, WEB_UI_ADDRESS);
 }
 
