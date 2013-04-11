@@ -236,6 +236,7 @@ for(var i in interfaces)
     }
   }
 }
+interfaces = undefined;
 
 if(WEB_UI_ADDRESS == '')
 {
@@ -931,6 +932,7 @@ app.get('/advancedOptions', function (req, res)
             , CUSTOM_PCAP_FILTER: NovaCommon.config.ReadSetting("CUSTOM_PCAP_FILTER")
             , CUSTOM_PCAP_MODE: NovaCommon.config.ReadSetting("CUSTOM_PCAP_MODE")
             , WEB_UI_PORT: NovaCommon.config.ReadSetting("WEB_UI_PORT")
+            , WEB_UI_IFACE: NovaCommon.config.ReadSetting("WEB_UI_IFACE")
             , CLEAR_AFTER_HOSTILE_EVENT: NovaCommon.config.ReadSetting("CLEAR_AFTER_HOSTILE_EVENT")
             , MASTER_UI_IP: NovaCommon.config.ReadSetting("MASTER_UI_IP")
             , MASTER_UI_RECONNECT_TIME: NovaCommon.config.ReadSetting("MASTER_UI_RECONNECT_TIME")
@@ -2084,19 +2086,24 @@ app.post('/configureNovaSave', function (req, res)
         NovaCommon.config.WriteSetting("INTERFACE", req.body["INTERFACE"]);
       }
 
-      if (req.body["SMTP_USER"] !== undefined)
+      if(req.body['WEB_UI_IFACE'] != WEB_UI_IFACE)
+      {
+        NovaCommon.config.WriteSetting('WEB_UI_IFACE', req.body['WEB_UI_IFACE']);
+      }
+
+      if(req.body["SMTP_USER"] !== undefined)
       {
         NovaCommon.config.SetSMTPUser(req.body["SMTP_USER"]);
       }
-      if (req.body["SMTP_PASS"] !== undefined)
+      if(req.body["SMTP_PASS"] !== undefined)
       {
         NovaCommon.config.SetSMTPPass(req.body["SMTP_PASS"]);
       }
 
       //if no errors, send the validated form data to the WriteSetting method
-      for (var item = 6; item < configItems.length; item++)
+      for(var item = 6; item < configItems.length; item++)
       {
-        if (req.body[configItems[item]] != undefined)
+        if(req.body[configItems[item]] != undefined)
         {
           NovaCommon.config.WriteSetting(configItems[item], req.body[configItems[item]]);
         }
