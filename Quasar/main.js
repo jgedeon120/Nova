@@ -450,7 +450,7 @@ if(NovaCommon.config.ReadSetting('MASTER_UI_ENABLED') === '1')
     var quick = {};
     quick.type = 'addId';
     quick.id = clientId;
-    quick.nova = NovaCommon.nova.IsNovadUp(false).toString();
+    quick.nova = NovaCommon.nova.IsNovadConnected().toString();
     quick.haystack = NovaCommon.nova.IsHaystackUp(false).toString();
     quick.benignRequest = (benignRequest == true ? 'true' : 'false');
     quick.port = NovaCommon.config.ReadSetting("WEB_UI_PORT");
@@ -701,7 +701,7 @@ if(NovaCommon.config.ReadSetting('MASTER_UI_ENABLED') === '1')
       message1.id = clientId;
       message1.type = 'statusChange';
       message1.component = 'nova';
-      message1.status = NovaCommon.nova.IsNovadUp(false).toString();
+      message1.status = NovaCommon.nova.IsNovadConnected(false).toString();
       var message2 = {};
       message2.id = clientId;
       message2.type = 'statusChange';
@@ -2324,13 +2324,13 @@ setInterval(function()
     try 
     {
         everyone.now.updateHaystackStatus(NovaCommon.nova.IsHaystackUp());
-        everyone.now.updateNovadStatus(NovaCommon.nova.IsNovadUp(false));
+        everyone.now.updateNovadStatus(NovaCommon.nova.IsNovadConnected());
     } 
     catch(err) 
     {
 
     }
-}, 5000);
+}, 1000);
 
 
 everyone.now.AddInterfaceAlias = function(iface, alias, callback)

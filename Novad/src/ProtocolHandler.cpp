@@ -121,7 +121,7 @@ void HandleClearSuspectRequest(Message *incoming)
 
 	LOG(DEBUG, "Cleared a suspect due to UI request",
 			"Got a CONTROL_CLEAR_SUSPECT_REQUEST, cleared suspect: "
-			+string(inet_ntoa(suspectAddress))+ "on interface " + incoming->m_contents.m_suspectid().m_ifname() + ".");
+			+string(inet_ntoa(suspectAddress))+ " on interface " + incoming->m_contents.m_suspectid().m_ifname() + ".");
 
 	//Notify the other clients about the cleared suspect
 	Message updateMessage;

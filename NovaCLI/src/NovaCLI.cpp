@@ -49,6 +49,8 @@ int main(int argc, const char *argv[])
 	// Disable notifications and email in the CLI
 	Logger::Inst()->SetUserLogPreferences(EMAIL, EMERGENCY, '+');
 
+	InitMessaging();
+
 	// We parse the input arguments here,
 	// but refer to other functions to do any
 	// actual work.
@@ -444,7 +446,7 @@ void StatusNovaWrapper()
 		Ping(1);
 		MonitorCallback(1);
 
-		if(IsNovadUp())
+		if(IsNovadConnected())
 		{
 			cout << "Novad Status: Running and responding" << endl;
 		}
@@ -489,8 +491,26 @@ void StartNovaWrapper(bool debug)
 	}
 	else
 	{
-		cout << "Novad is already running" << endl;
-		DisconnectFromNovad();
+		//Verify that the connection is good
+		Ping(1);
+		MonitorCallback(1);
+
+		if(IsNovadConnected())
+		{
+			cout << "Novad is already running" << endl;
+			DisconnectFromNovad();
+		}
+		else
+		{
+			if(StartNovad(debug))
+			{
+				cout << "Started Novad" << endl;
+			}
+			else
+			{
+				cout << "Failed to start Novad" << endl;
+			}
+		}
 	}
 }
 
@@ -517,6 +537,7 @@ void StopNovaWrapper()
 {
 	Connect();
 	StopNovad();
+	MonitorCallback();
 }
 
 void StopHaystackWrapper()
@@ -726,7 +747,7 @@ void MonitorCallback(int32_t messageID)
     			{
     				for(uint i = 0; i < message->m_suspects.size(); i++)
     				{
-    					cout << message->m_suspects[0]->ToString() << endl;
+    					cout << message->m_suspects[i]->ToString() << endl;
     				}
     				message->DeleteContents();
     				break;

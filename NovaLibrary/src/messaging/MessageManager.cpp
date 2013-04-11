@@ -152,6 +152,23 @@ bool MessageManager::WriteMessage(Message *message, uint32_t sessionIndex)
 	}
 }
 
+void MessageManager::WriteDispatcher(struct bufferevent *bev, void *ctx)
+{
+	bufferevent_lock(bev);
+
+	struct evbuffer *output = bufferevent_get_output(bev);
+	uint32_t evbufferLength = evbuffer_get_length(output);
+
+	bufferevent_unlock(bev);
+
+	if(evbufferLength == 0)
+	{
+		Message *shutdown = new Message();
+		shutdown->m_contents.set_m_type(CONNECTION_SHUTDOWN);
+		MessageManager::Instance().EnqueueMessage(shutdown);
+	}
+}
+
 void MessageManager::MessageDispatcher(struct bufferevent *bev, void *ctx)
 {
 	bool keepGoing = true;
@@ -241,6 +258,8 @@ void MessageManager::ErrorDispatcher(struct bufferevent *bev, short error, void 
 
 void MessageManager::DoAccept(evutil_socket_t listener, short event, void *arg)
 {
+	LOG(DEBUG, "Connected to client", "");
+
     struct sockaddr_storage ss;
     socklen_t slen = sizeof(ss);
     int fd = accept(listener, (struct sockaddr*)&ss, &slen);

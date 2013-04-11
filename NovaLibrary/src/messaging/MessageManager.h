@@ -65,7 +65,11 @@ public:
 	//	Contains logic to clean up after a dead socket, and setup new connections, or print errors
 	static void ErrorDispatcher(struct bufferevent *bev, short error, void *ctx);
 	static void DoAccept(evutil_socket_t listener, short event, void *arg);
+	static void WriteDispatcher(struct bufferevent *bev, void *ctx);
 	static void *AcceptDispatcher(void *);
+
+	//Blocks until a WriteDispatch event has occurred with an empty buffer
+	void WaitForFlush();
 
 	//Return the next monotonically increasing session index number
 	uint32_t GetNextSessionIndex();
@@ -92,7 +96,6 @@ private:
 	pthread_mutex_t m_sessionIndexMutex;
 
 	pthread_cond_t m_popWakeupCondition;
-
 };
 
 }

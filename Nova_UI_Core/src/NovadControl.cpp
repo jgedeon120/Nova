@@ -24,6 +24,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <unistd.h>
+#include "event2/thread.h"
 
 using namespace Nova;
 using namespace std;
@@ -34,18 +35,29 @@ queue<Message*> messageQueue;
 pthread_cond_t popWakeupCondition;
 
 extern bool isConnected;
+extern struct event_base *libeventBase;
+extern pthread_mutex_t bufferevent_mutex;
 
 namespace Nova
 {
 
+void InitMessaging()
+{
+	pthread_mutex_init(&messageQueueMutex, NULL);
+	pthread_cond_init(&popWakeupCondition, NULL);
+
+	evthread_use_pthreads();
+	libeventBase = event_base_new();
+	pthread_mutex_init(&bufferevent_mutex, NULL);
+
+	pthread_t messageWorker;
+	pthread_create(&messageWorker, NULL, Nova::ClientMessageWorker, NULL);
+	pthread_detach(messageWorker);
+}
+
 bool StartNovad(bool blocking)
 {
-	if(IsNovadUp())
-	{
-		return true;
-	}
-
-	if (!blocking)
+	if(!blocking)
 	{
 		if(system("nohup novad > /dev/null&") != 0)
 		{
@@ -66,7 +78,6 @@ bool StartNovad(bool blocking)
 		{
 			return true;
 		}
-
 	}
 }
 
@@ -79,8 +90,7 @@ void StopNovad(int32_t messageID)
 		killRequest.m_contents.set_m_messageid(messageID);
 	}
 	MessageManager::Instance().WriteMessage(&killRequest, 0);
-
-	DisconnectFromNovad();
+	//DisconnectFromNovad();
 }
 
 bool HardStopNovad()
@@ -165,11 +175,13 @@ void StopPacketCapture(int32_t messageID)
 
 void *ClientMessageWorker(void *arg)
 {
-	pthread_mutex_init(&messageQueueMutex, NULL);
-	pthread_cond_init(&popWakeupCondition, NULL);
 	while(true)
 	{
 		Message *message = MessageManager::Instance().DequeueMessage();
+
+		//If we got a message, then we know we're connected
+		//Unless the message is a shutdown message, which we handle below
+		isConnected = true;
 
 		//Handle the message in the context of the UI_Core
 		switch(message->m_contents.m_type())
@@ -192,7 +204,6 @@ void *ClientMessageWorker(void *arg)
 			}
 			case REQUEST_PONG:
 			{
-				isConnected = true;
 				break;
 			}
 			case CONNECTION_SHUTDOWN:
@@ -211,6 +222,7 @@ void *ClientMessageWorker(void *arg)
 		messageQueue.push(message);
 		pthread_cond_signal(&popWakeupCondition);
 	}
+	LOG(ERROR, "Messaging worker thread died, should not happen", "");
 	return NULL;
 }
 

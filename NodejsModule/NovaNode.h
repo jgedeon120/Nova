@@ -87,7 +87,7 @@ public:
 	static Handle<Value> GetDIM(const Arguments& args);
 	static Handle<Value> GetSupportedEngines(const Arguments& args);
 	static Handle<Value> sendSuspectList(const Arguments& args);
-	static Handle<Value> sendSuspect(const Arguments& args);
+	static Handle<Value> RequestSuspectCallback(const Arguments& args);
 	static Handle<Value> ClearAllSuspects(const Arguments& args);
 	static Handle<Value> registerOnNewSuspect(const Arguments& args);
 	static Handle<Value> registerOnAllSuspectsCleared(const Arguments& args);

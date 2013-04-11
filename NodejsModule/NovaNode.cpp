@@ -30,18 +30,17 @@ using namespace v8;
 using namespace Nova;
 using namespace std;
 
-map<uint32_t, Persistent<Function>> jsCallbacks;
+map<int32_t, Persistent<Function>> jsCallbacks;
+int32_t messageID = 0;
 
 void NovaNode::InitNovaCallbackProcessing()
 {
-	m_callbackRunning = false;
-
 	eio_custom(NovaCallbackHandling, EIO_PRI_DEFAULT, AfterNovaCallbackHandling, NULL);
 }
 
 void NovaNode::CheckInitNova()
 {
-	if(Nova::IsNovadUp())
+	if(Nova::IsNovadConnected())
 	{
 		return;
 	}
@@ -59,13 +58,12 @@ void NovaNode::CheckInitNova()
 
 void NovaNode::NovaCallbackHandling(eio_req*)
 {
+	InitMessaging();
 	LOG(DEBUG, "Initializing Novad callback processing","");
-	m_callbackRunning = true;
 
 	while(true)
 	{
-		Nova::Message *message = MessageManager::Instance().DequeueMessage();
-
+		Nova::Message *message = DequeueUIMessage();
 		//If this is a callback for a specific operation
 		if(message->m_contents.has_m_messageid())
 		{
@@ -132,6 +130,7 @@ int NovaNode::HandleMessageWithIDOnV8Thread(eio_req *arg)
 		Persistent<Function> function = jsCallbacks[message->m_contents.m_messageid()];
 		Local<Value> argv[1] = { Local<Value>::New(String::New(message->m_suspects[0]->ToString().c_str())) };
 		function->Call(Context::GetCurrent()->Global(), 1, argv);
+		jsCallbacks.erase(message->m_contents.m_messageid());
 	}
 	return 0;
 }
@@ -145,7 +144,6 @@ void NovaNode::HandleNewSuspect(Suspect* suspect)
 {
 	eio_nop(EIO_PRI_DEFAULT, NovaNode::HandleNewSuspectOnV8Thread, suspect);
 }
-
 
 // Sends a copy of the suspect from the C++ side to the server side Javascript side
 // Note: Only call this from inside the v8 thread. Provides no locking.
@@ -239,7 +237,6 @@ int NovaNode::HandleAllClearedOnV8Thread(eio_req*)
 	return 0;
 }
 
-
 void NovaNode::HandleCallbackError()
 {
 	LOG(ERROR, "Novad provided CALLBACK_ERROR, will continue and move on","");
@@ -279,7 +276,7 @@ void NovaNode::Init(Handle<Object> target)
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "GetSupportedEngines", GetSupportedEngines);
 
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "sendSuspectList", sendSuspectList);
-	NODE_SET_PROTOTYPE_METHOD(s_ct, "sendSuspect", sendSuspect);
+	NODE_SET_PROTOTYPE_METHOD(s_ct, "RequestSuspectCallback", RequestSuspectCallback);
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "ClearAllSuspects", ClearAllSuspects);
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "registerOnNewSuspect", registerOnNewSuspect );
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "registerOnAllSuspectsCleared", registerOnAllSuspectsCleared );
@@ -296,7 +293,7 @@ void NovaNode::Init(Handle<Object> target)
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "StartHaystack", (InvokeMethod<bool, bool, Nova::StartHaystack>) );
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "StopHaystack", (InvokeMethod<bool, Nova::StopHaystack>) );
 
-	NODE_SET_PROTOTYPE_METHOD(s_ct, "IsNovadUp", (InvokeMethod<bool, Nova::IsNovadUp>) );
+	NODE_SET_PROTOTYPE_METHOD(s_ct, "IsNovadConnected", (InvokeMethod<bool, Nova::IsNovadConnected>) );
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "IsHaystackUp", (InvokeMethod<bool, Nova::IsHaystackUp>) );
 	//              
 	//              NODE_SET_PROTOTYPE_METHOD(s_ct, "SaveAllSuspects", (InvokeMethod<Boolean, bool, Nova::SaveAllSuspects>) );
@@ -310,8 +307,8 @@ void NovaNode::Init(Handle<Object> target)
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "RequestSuspectDetailsString", RequestSuspectDetailsString );
 
 	// Javascript object constructor
-	target->Set(String::NewSymbol("Instance"),
-			s_ct->GetFunction());
+	target->Set(String::NewSymbol("Instance"), s_ct->GetFunction());
+	InitNovaCallbackProcessing();
 }
 
 Handle<Value> NovaNode::RequestSuspectDetailsString(const Arguments &args)
@@ -329,12 +326,10 @@ Handle<Value> NovaNode::RequestSuspectDetailsString(const Arguments &args)
 	id.set_m_ip(htonl(address.s_addr));
 	id.set_m_ifname(suspectInterface);
 
-	//TODO: Get new message ID
-	uint32_t messageID = 1;
+	messageID++;
 
 	jsCallbacks[messageID] = cb;
 
-	sleep(2);
 	RequestSuspectWithData(id, messageID);
 
 	return scope.Close(Null());
@@ -361,9 +356,6 @@ Handle<Value> NovaNode::ClearAllSuspects(const Arguments &)
 	HandleAllSuspectsCleared();
 	Nova::ClearAllSuspects();
 
-//	bool cleared;
-//	Local<Boolean> result = Local<Boolean>::New( Boolean::New(cleared) );
-	
 	return scope.Close(Null());
 }
 
@@ -386,17 +378,12 @@ Handle<Value> NovaNode::CheckConnection(const Arguments &)
 {
 	HandleScope scope;
 
-	if (!m_callbackRunning)
-	{
-		LOG(DEBUG, "Attempting to connect to Novad...", "");
-		CheckInitNova();
-		InitNovaCallbackProcessing();
-	}
+	LOG(DEBUG, "Attempting to connect to Novad...", "");
+	CheckInitNova();
 
 	Local<Boolean> result = Local<Boolean>::New( Boolean::New(true) );
 	return scope.Close(result);
 }
-
 
 Handle<Value> NovaNode::Shutdown(const Arguments &)
 {
@@ -446,7 +433,6 @@ void NovaNode::SynchInternalList()
 	RequestSuspects(SUSPECTLIST_ALL);
 }
 
-
 Handle<Value> NovaNode::New(const Arguments& args)
 {
 	HandleScope scope;
@@ -455,12 +441,13 @@ Handle<Value> NovaNode::New(const Arguments& args)
 	return args.This();
 }
 
-Handle<Value> NovaNode::sendSuspect(const Arguments& args)
+Handle<Value> NovaNode::RequestSuspectCallback(const Arguments& args)
 {
 	HandleScope scope;
 
 	string suspectIp = cvv8::CastFromJS<string>(args[0]);
 	string suspectInterface = cvv8::CastFromJS<string>(args[1]);
+	Persistent<Function> cb = Persistent<Function>::New(args[2].As<Function>());
 
 	struct in_addr address;
 	inet_pton(AF_INET, suspectIp.c_str(), &address);
@@ -469,7 +456,9 @@ Handle<Value> NovaNode::sendSuspect(const Arguments& args)
 	id.set_m_ifname(suspectInterface);
 	id.set_m_ip(htonl(address.s_addr));
 
-	RequestSuspect(id);
+	messageID++;
+	jsCallbacks[messageID] = cb;
+	RequestSuspect(id, messageID);
 	
 	return scope.Close(Null());
 }
@@ -580,6 +569,5 @@ SuspectHashTable NovaNode::m_suspects = SuspectHashTable();
 bool NovaNode::m_CallbackRegistered=false;
 bool NovaNode::m_AllSuspectsClearedCallbackRegistered=false;
 bool NovaNode::m_SuspectClearedCallbackRegistered=false;
-bool NovaNode::m_callbackRunning=false;
 pthread_t NovaNode::m_NovaCallbackThread=0;
 

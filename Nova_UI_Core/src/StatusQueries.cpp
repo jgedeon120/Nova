@@ -31,7 +31,7 @@ extern bool isConnected;
 namespace Nova
 {
 
-bool IsNovadUp()
+bool IsNovadConnected()
 {
 	return isConnected;
 }

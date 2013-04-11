@@ -29,7 +29,6 @@
 #include <sys/un.h>
 #include <sys/socket.h>
 #include "event.h"
-#include "event2/thread.h"
 
 using namespace std;
 using namespace Nova;
@@ -37,9 +36,10 @@ using namespace Nova;
 //Socket communication variables
 int IPCSocketFD = -1;
 bool isConnected = false;
+bool shouldDispatch  = false;
 
-static struct event_base *libeventBase = NULL;
-static struct bufferevent *bufferevent = NULL;
+struct event_base *libeventBase = NULL;
+struct bufferevent *bufferevent = NULL;
 pthread_mutex_t bufferevent_mutex;				//Mutex for the bufferevent pointer (not object)
 pthread_t eventDispatchThread;
 
@@ -48,6 +48,10 @@ namespace Nova
 
 void *EventDispatcherThread(void *arg)
 {
+	if(!shouldDispatch)
+	{
+		return NULL;
+	}
 	int ret = event_base_dispatch(libeventBase);
 	if(ret != 0)
 	{
@@ -65,24 +69,12 @@ void *EventDispatcherThread(void *arg)
 
 bool ConnectToNovad()
 {
-	if(IsNovadUp())
+	if(IsNovadConnected())
 	{
 		return true;
 	}
 
 	DisconnectFromNovad();
-
-	//Create new base
-	if(libeventBase == NULL)
-	{
-		evthread_use_pthreads();
-		libeventBase = event_base_new();
-		pthread_mutex_init(&bufferevent_mutex, NULL);
-
-		pthread_t messageWorker;
-		pthread_create(&messageWorker, NULL, Nova::ClientMessageWorker, NULL);
-		pthread_detach(messageWorker);
-	}
 
 	//Builds the key path
 	string key = Config::Inst()->GetPathHome();
@@ -110,7 +102,8 @@ bool ConnectToNovad()
 		uint32_t *sessionIndex = new uint32_t;
 		*sessionIndex = MessageManager::Instance().GetNextSessionIndex();
 
-		bufferevent_setcb(bufferevent, MessageManager::MessageDispatcher, NULL, MessageManager::ErrorDispatcher, sessionIndex);
+		bufferevent_setcb(bufferevent, MessageManager::MessageDispatcher, MessageManager::WriteDispatcher,
+				MessageManager::ErrorDispatcher, sessionIndex);
 
 		if(bufferevent_enable(bufferevent, EV_READ) == -1)
 		{
@@ -146,16 +139,17 @@ bool ConnectToNovad()
 		LOG(DEBUG, "New connection established", "");
 	}
 
+	shouldDispatch = true;
 	pthread_create(&eventDispatchThread, NULL, EventDispatcherThread, NULL);
 
 	isConnected = true;
-
 	return true;
 }
 
 void DisconnectFromNovad()
 {
 	//Close out any possibly remaining socket artifacts
+	shouldDispatch = false;
 	if(libeventBase != NULL)
 	{
 		if(eventDispatchThread != 0)
@@ -164,7 +158,7 @@ void DisconnectFromNovad()
 			{
 				LOG(WARNING, "Unable to exit event loop", "");
 			}
-			pthread_join(eventDispatchThread, NULL);
+			//pthread_join(eventDispatchThread, NULL);
 			eventDispatchThread = 0;
 		}
 	}

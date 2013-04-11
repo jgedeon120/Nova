@@ -28,6 +28,14 @@
 
 namespace Nova
 {
+
+//************************************************************************
+//**						Initialization								**
+//************************************************************************
+
+//Must be run first before any other function in the UI_Core
+void InitMessaging();
+
 //************************************************************************
 //**						Status Queries								**
 //************************************************************************
@@ -45,12 +53,12 @@ void StopNovad(int32_t messageID = -1);
 bool HardStopNovad();
 
 //Queries Novad to see if it is currently up or down
-//	the result is eventually stored such that IsNovadUp() can retrieve it
+//	the result is eventually stored such that IsNovadConnected() can retrieve it
 void Ping(int32_t messageID = -1);
 
 //Checks if novad is currently up and running
 //	this is a local check and does not produce any new messages
-bool IsNovadUp();
+bool IsNovadConnected();
 
 
 //************************************************************************
