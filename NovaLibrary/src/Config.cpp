@@ -83,7 +83,9 @@ string Config::m_prefixes[] =
 	"CUSTOM_PCAP_FILTER",
 	"CUSTOM_PCAP_MODE",
 	"TRAINING_SESSION",
+	"MANAGE_IFACE_ENABLE",
 	"WEB_UI_PORT",
+	"WEB_UI_IFACE",
 	"CLEAR_AFTER_HOSTILE_EVENT",
 	"CAPTURE_BUFFER_SIZE",
 	"MASTER_UI_IP",
@@ -731,6 +733,25 @@ void Config::LoadConfig_Internal()
 				continue;
 			}
 
+			// MANAGE_IFACE_ENABLE
+			prefixIndex++;
+			prefix = m_prefixes[prefixIndex];
+			if(!line.substr(0, prefix.size()).compare(prefix))
+			{
+				line = line.substr(prefix.size() + 1, line.size());
+				if(atoi(line.c_str()) == 0)
+				{
+					m_manIfaceEnable = false;
+					isValid[prefixIndex] = true;
+				}
+				else if(atoi(line.c_str()) == 1)
+				{
+					m_manIfaceEnable = true;
+					isValid[prefixIndex] = true;
+				}
+				continue;
+			}
+
 			// WEB_UI_PORT
 			prefixIndex++;
 			prefix = m_prefixes[prefixIndex];
@@ -740,6 +761,20 @@ void Config::LoadConfig_Internal()
 				if(atoi(line.c_str()) > 0)
 				{
 					m_webUIPort = atoi(line.c_str());
+					isValid[prefixIndex] = true;
+				}
+				continue;
+			}
+
+			// WEB_UI_IFACE
+			prefixIndex++;
+			prefix = m_prefixes[prefixIndex];
+			if(!line.substr(0, prefix.size()).compare(prefix))
+			{
+				line = line.substr(prefix.size() + 1, line.size());
+				if(line.size() > 0)
+				{
+					m_webUIIface = line;
 					isValid[prefixIndex] = true;
 				}
 				continue;

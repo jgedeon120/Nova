@@ -409,7 +409,16 @@ CUSTOM_PCAP_MODE 0
 # Folder name for a training capture session
 TRAINING_SESSION null
 
-
+############################################
+# MANAGE_IFACE_ENABLE #
+############################################
+#
+# Enable management interface; if 0 (false),
+# Quasar will be available on all interfaces.
+# Otherwise, if 1 (true) then Quasar will only
+# be available on localhost/127.0.0.1 and the
+# address of the selected interface
+MANAGE_IFACE_ENABLE 0
 
 ############################################
 # WEB_UI_PORT #
@@ -419,13 +428,18 @@ TRAINING_SESSION null
 # Note: anything < 1024 requires root to use
 WEB_UI_PORT 8080
 
+############################################
+# WEB_UI_IFACE #
+############################################
+#
+# Interface to access Quasar over.
+WEB_UI_IFACE eth0
 
 ############################################
 # CLEAR_AFTER_HOSTILE_EVENT #
 ############################################
 # Clear suspect data when there is a hostile event
 CLEAR_AFTER_HOSTILE_EVENT 0
-
 
 ############################################
 # CAPTURE_BUFFER_SIZE #
@@ -434,7 +448,6 @@ CLEAR_AFTER_HOSTILE_EVENT 0
 # If you get warnings about dropped packets
 # during high load, try increasing this.
 CAPTURE_BUFFER_SIZE 1048576
-
 
 ############################################
 # MASTER_UI_ENABLED
