@@ -218,36 +218,45 @@ var logFile = fs.createWriteStream('./serverLog.log', {flags: 'a'});
 app.use(express.logger({stream: logFile}));
 
 var WEB_UI_PORT = NovaCommon.config.ReadSetting("WEB_UI_PORT");
-var WEB_UI_IFACE = NovaCommon.config.ReadSetting("WEB_UI_IFACE");
-var WEB_UI_ADDRESS = '';
-var interfaces = os.networkInterfaces();
-
-for(var i in interfaces)
+if(NovaCommon.config.ReadSetting("MANAGE_IFACE_ENABLE") == '1')
 {
-  if(i == WEB_UI_IFACE)
+  var WEB_UI_IFACE = NovaCommon.config.ReadSetting("WEB_UI_IFACE");
+  var WEB_UI_ADDRESS = '';
+  var interfaces = os.networkInterfaces();
+  
+  for(var i in interfaces)
   {
-    for(var j in interfaces[i])
+    if(i == WEB_UI_IFACE)
     {
-      var address = interfaces[i][j];
-      if(address.family == 'IPv4' && !address.internal)
+      for(var j in interfaces[i])
       {
-        WEB_UI_ADDRESS = address.address;
+        var address = interfaces[i][j];
+        if(address.family == 'IPv4' && !address.internal)
+        {
+          WEB_UI_ADDRESS = address.address;
+        }
       }
     }
   }
-}
-interfaces = undefined;
-
-if(WEB_UI_ADDRESS == '')
-{
-  console.log('Could not procure a value for WEB_UI_ADDRESS, using none.');
-  console.info("Listening on port " + WEB_UI_PORT);
-  app.listen(WEB_UI_PORT); 
+  interfaces = undefined;
+  
+  if(WEB_UI_ADDRESS == '')
+  {
+    console.log('Could not procure a value for WEB_UI_ADDRESS, using none.');
+    console.info("Listening on port " + WEB_UI_PORT);
+    app.listen(WEB_UI_PORT); 
+  }
+  else
+  {
+    console.info("Listening on address " + WEB_UI_ADDRESS + ":" + WEB_UI_PORT + " (" + WEB_UI_IFACE + ")");
+    app.listen(WEB_UI_PORT, WEB_UI_ADDRESS);
+    app.listen(WEB_UI_PORT, '127.0.0.1');
+  }
 }
 else
 {
-  console.info("Listening on address " + WEB_UI_ADDRESS + ":" + WEB_UI_PORT + " (" + WEB_UI_IFACE + ")");
-  app.listen(WEB_UI_PORT, WEB_UI_ADDRESS);
+  app.listen(WEB_UI_PORT);
+  console.info("Listening on port " + WEB_UI_PORT);
 }
 
 var everyone = nowjs.initialize(app);
@@ -476,7 +485,7 @@ if(NovaCommon.config.ReadSetting('MASTER_UI_ENABLED') === '1')
     var quick = {};
     quick.type = 'addId';
     quick.id = clientId;
-    quick.nova = NovaCommon.nova.IsNovadUp(false).toString();
+    quick.nova = NovaCommon.nova.IsNovadConnected().toString();
     quick.haystack = NovaCommon.nova.IsHaystackUp(false).toString();
     quick.benignRequest = (benignRequest == true ? 'true' : 'false');
     quick.port = NovaCommon.config.ReadSetting("WEB_UI_PORT");
@@ -727,7 +736,7 @@ if(NovaCommon.config.ReadSetting('MASTER_UI_ENABLED') === '1')
       message1.id = clientId;
       message1.type = 'statusChange';
       message1.component = 'nova';
-      message1.status = NovaCommon.nova.IsNovadUp(false).toString();
+      message1.status = NovaCommon.nova.IsNovadConnected(false).toString();
       var message2 = {};
       message2.id = clientId;
       message2.type = 'statusChange';
@@ -931,6 +940,7 @@ app.get('/advancedOptions', function (req, res)
             , MIN_PACKET_THRESHOLD: NovaCommon.config.ReadSetting("MIN_PACKET_THRESHOLD")
             , CUSTOM_PCAP_FILTER: NovaCommon.config.ReadSetting("CUSTOM_PCAP_FILTER")
             , CUSTOM_PCAP_MODE: NovaCommon.config.ReadSetting("CUSTOM_PCAP_MODE")
+            , MANAGE_IFACE_ENABLE: NovaCommon.config.ReadSetting("MANAGE_IFACE_ENABLE")
             , WEB_UI_PORT: NovaCommon.config.ReadSetting("WEB_UI_PORT")
             , WEB_UI_IFACE: NovaCommon.config.ReadSetting("WEB_UI_IFACE")
             , CLEAR_AFTER_HOSTILE_EVENT: NovaCommon.config.ReadSetting("CLEAR_AFTER_HOSTILE_EVENT")
@@ -1100,7 +1110,7 @@ app.get('/GetSuspectDetails', function (req, res)
     
     var suspectIp = req.query["ip"];
     var suspectInterface = req.query["interface"];
-    var suspectString = NovaCommon.nova.GetSuspectDetailsString(suspectIp, suspectInterface);
+    NovaCommon.nova.RequestSuspectDetailsString(suspectIp, suspectInterface, function(suspectString) {
 
     res.render('suspectDetails.jade', {
         locals: {
@@ -1109,6 +1119,8 @@ app.get('/GetSuspectDetails', function (req, res)
             , details: suspectString
         }
     })
+
+	});
 });
 
 app.get('/editHoneydNode', function (req, res)
@@ -2399,13 +2411,13 @@ setInterval(function(){
     try 
     {
         everyone.now.updateHaystackStatus(NovaCommon.nova.IsHaystackUp());
-        everyone.now.updateNovadStatus(NovaCommon.nova.IsNovadUp(false));
+        everyone.now.updateNovadStatus(NovaCommon.nova.IsNovadConnected());
     } 
     catch(err) 
     {
 
     }
-}, 5000);
+}, 1000);
 
 
 everyone.now.AddInterfaceAlias = function(iface, alias, callback)
