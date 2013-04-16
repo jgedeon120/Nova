@@ -130,24 +130,6 @@ void *ClassificationLoop(void *ptr)
 		}
 		doppel->UpdateDoppelganger();
 
-		if(Config::Inst()->GetSaveFreq() > 0)
-		{
-			if((time(NULL) - lastSaveTime) > Config::Inst()->GetSaveFreq())
-			{
-				AppendToStateFile();
-			}
-		}
-
-		if(Config::Inst()->GetDataTTL() > 0)
-		{
-			if((time(NULL) - lastLoadTime) > Config::Inst()->GetDataTTL())
-			{
-				AppendToStateFile();
-				suspects.EraseAllSuspects();
-				RefreshStateFile();
-				LoadStateFile();
-			}
-		}
 	}while(Config::Inst()->GetClassificationTimeout() && !Config::Inst()->GetReadPcap());
 
 	if(Config::Inst()->GetReadPcap())

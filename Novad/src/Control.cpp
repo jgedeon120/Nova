@@ -38,7 +38,6 @@ namespace Nova
 void SaveAndExit(int param)
 {	
 	StopCapture();
-	AppendToStateFile();
 
 	if(Config::Inst()->GetIsDmEnabled())
 	{

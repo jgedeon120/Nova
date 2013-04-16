@@ -98,27 +98,6 @@ public:
 
 	void SetHaystackNodes(std::vector<uint32_t> nodes);
 
-	// Copies the suspect pointed to in 'suspect', into the table location associated with key
-	// 		suspect: pointer to the Suspect you wish to copy in
-	// Returns (0) on Success, (-1) if the Suspect is Checked Out by another thread
-	// and (-2) if the Suspect does not exist (Key invalid or suspect was deleted)
-	// Note:  This function blocks until it can acquire a write lock on the suspect
-	// IP address must be the same as key checked out with
-	SuspectTableRet CheckIn(Suspect *suspect);
-
-	//Releases the lock on the suspect at key allowing another thread to check it out
-	//		key: IP address of the suspect as a uint value (host byte order)
-	// Returns (0) on Success, (-1) if the Suspect is checked out by someone else
-	// and (1) if the Suspect is not checked out
-	// Note:  This function blocks until it can acquire a write lock on the suspect
-	SuspectTableRet CheckIn(Nova::SuspectID_pb key);
-
-	// Copies out a suspect and marks the suspect so that it cannot be written or deleted
-	// 		key: IP address of the suspect as a uint value (host byte order)
-	// Returns empty Suspect on failure.
-	// Note: A 'Checked Out' Suspect cannot be modified until is has been replaced by the suspect 'Checked In'
-	// 		However the suspect can continue to be read. It is similar to having a read lock.
-	Suspect CheckOut(Nova::SuspectID_pb key);
 
 	// Lookup and get an Asynchronous copy of the Suspect
 	// 		key: IP address of the suspect as a uint value (host byte order)
@@ -159,20 +138,6 @@ public:
 
 	// Saves suspectTable to a human readable text file
 	void SaveSuspectsToFile(std::string filename);
-
-	//Iterates over the table, serializing each suspect and dumping the raw data to out
-	//		out: ofstream you wish to write the contents to
-	// Returns: size in bytes of data written
-	//Note: Information can be retrieved by deserializing at the beginning of the dump and using the value returned
-	// as an offset to start the next deserialization
-	uint32_t DumpContents(std::ofstream *out, time_t timestamp = 0);
-
-	//Iterates over the table, serializing each suspect and dumping the raw data to out
-	//		out: ofstream you wish to write the contents to
-	// Returns: size in bytes of data written
-	//Note: Information can be retrieved by deserializing at the beginning of the dump and using the value returned
-	// as an offset to start the next deserialization
-	uint32_t ReadContents(std::ifstream *in, time_t timestamp = 0); //XXX
 
 	// Checks the validity of the key - public thread-safe version
 	// 		key: IP address of the suspect as a uint value (host byte order)

@@ -64,17 +64,6 @@ void StartCapture();
 void StopCapture();
 void StopCapture_noLocking();
 
-// Append to state file
-void AppendToStateFile();
-
-// Cleans up the state file
-//	- Removes old entries
-//	- Removes cleared suspects
-void RefreshStateFile();
-
-// Appends all entries in the state file to the suspect table
-void LoadStateFile();
-
 // Do any cleanup needed before exit when in training mode
 void CloseTrainingCapture();
 
