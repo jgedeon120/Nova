@@ -302,20 +302,19 @@ everyone.now.IsHaystackUp = function(cb)
     cb(NovaCommon.nova.IsHaystackUp());
 };
 
-everyone.now.IsNovadUp = function(cb)
+everyone.now.IsNovadConnected = function(cb)
 {
-    cb(NovaCommon.nova.IsNovadUp(false));
+    cb(NovaCommon.nova.IsNovadConnected());
 };
 
 everyone.now.StartNovad = function()
 {
     var result = NovaCommon.StartNovad(false);
-
     setTimeout(function(){
     result = NovaCommon.nova.CheckConnection();
       try 
       {
-          everyone.now.updateNovadStatus(NovaCommon.nova.IsNovadUp(false));
+          everyone.now.updateNovadStatus(NovaCommon.nova.IsNovadConnected());
       }
       catch(err){};
     }, 1000);
@@ -331,7 +330,7 @@ everyone.now.StopNovad = function(cb)
   NovaCommon.nova.CloseNovadConnection();
   try 
   {
-    everyone.now.updateNovadStatus(NovaCommon.nova.IsNovadUp(false));
+    everyone.now.updateNovadStatus(NovaCommon.nova.IsNovadConnected());
   }
   catch(err){};
 };
@@ -342,7 +341,7 @@ everyone.now.HardStopNovad = function(passwd)
   NovaCommon.nova.CloseNovadConnection();
   try 
   {
-    everyone.now.updateNovadStatus(NovaCommon.nova.IsNovadUp(false));
+    everyone.now.updateNovadStatus(NovaCommon.nova.IsNovadConnected());
   }
   catch(err){};
 };

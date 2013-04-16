@@ -31,6 +31,7 @@ block headerAdditions
     var currentConfig = '#{current}';
     var theDoc = document;
     var haveMac = [];
+    var nodes = {};
     var $topology = '';
     var $dragMe = '';
     var $hoverInfo = '';
@@ -161,9 +162,9 @@ block headerAdditions
                 }
               }
               
-              var pointerCss = {top:($(source).position().top + $(source).height()),
-                                left:($(source).position().left + $(source).outerWidth())};
-              $profileInfo.css(pointerCss).stop().fadeIn(200);
+              var pointerCss = {top:($(source).position().top + $(source).height() - 10),
+                                left:($(source).position().left + $(source).outerWidth() + 20)};
+              $profileInfo.css(pointerCss).fadeIn(200);
             });
           });
         }
@@ -238,34 +239,32 @@ block headerAdditions
       });
       if((typeof now.GetConfigSummary == 'function') && (typeof now.WriteWysiwygTopology == 'function'))
       { 
-        now.WriteWysiwygTopology(nodeTopology, function(){
-          console.log('WriteWysiwygTopology finished');
-          now.GetConfigSummary(currentConfig, function(scriptProfileBindings, profileObj, profiles, nodes){
-            var profHook = $('#profilesHook');
-            profHook.empty();
-            
-            for(var i in profileObj)
-            {
-              var profile = {};
-              profile.name = profileObj[i].name;
-              profile.parent = profileObj[i].parent;
-              profile.children = [];
-              var append = theDoc.createElement('tr');
-              var td0 = theDoc.createElement('td');
-              $(td0).html(profile.name).click(function(e){profileClicked(e)});
-              append.appendChild(td0);
-              profHook.append(append);
-            }
-            
-            profHook.find('td').first().toggleClass('first');
-            if(profHook.find('td').size() >= 3)
-            {
-              profHook.find('td').slice(1, -1).toggleClass('middle');
-            }
-            profHook.find('td').last().toggleClass('last');
-            
-            cb && cb();
-          });
+        console.log('WriteWysiwygTopology finished');
+        now.GetConfigSummary(currentConfig, function(scriptProfileBindings, profileObj, profiles, nodes){
+          var profHook = $('#profilesHook');
+          profHook.empty();
+          
+          for(var i in profileObj)
+          {
+            var profile = {};
+            profile.name = profileObj[i].name;
+            profile.parent = profileObj[i].parent;
+            profile.children = [];
+            var append = theDoc.createElement('tr');
+            var td0 = theDoc.createElement('td');
+            $(td0).html(profile.name).click(function(e){profileClicked(e)});
+            append.appendChild(td0);
+            profHook.append(append);
+          }
+          
+          profHook.find('td').first().toggleClass('first');
+          if(profHook.find('td').size() >= 3)
+          {
+            profHook.find('td').slice(1, -1).toggleClass('middle');
+          }
+          profHook.find('td').last().toggleClass('last');
+          
+          cb && cb();
         });
       }
     }
@@ -435,26 +434,11 @@ block headerAdditions
         {
           $('.ui-selected').not($(source)).each(function(){
             var relX = parseInt(dx) + parseInt($(this).css('left'));
-            if(relX > $topology.outerWidth() - 100)
-            {
-              relX = $topology.outerWidth() - 100;
-            }
-            else if(relX < 0)
-            {
-              relX = 0;
-            }
             var relY = parseInt(dy) + parseInt($(this).css('top'));
-            if(relY > $topology.outerHeight() - zoom.height)
-            {
-              relY = $topology.outerHeight() - zoom.height;
-            }
-            else if(relY < 0)
-            {
-              relY = 0;
-            }
             var adjustPos = {left:relX, top:relY};
             $(this).css(adjustPos);    
           });
+          handleOffscreenIndicators();
         }
         oldX = x;
         oldY = y;
@@ -1434,6 +1418,18 @@ block headerAdditions
       $hoverInfo.stop().fadeOut(100);
     }
     
+    function handleHelpPaneSlide()
+    {
+      if($('#helpPane').is(':hidden'))
+      {
+        $('#helpPane').slideDown(400);
+      }
+      else
+      {
+        $('#helpPane').slideUp(400);
+      }
+    }
+    
     function deleteSelected()
     {
       var deleteNodes = [];
@@ -1739,7 +1735,53 @@ block headerAdditions
     
 block content
   div#pageWrap(onmouseover='hideProfileInfo(event)')
-    h1 Haystack WYSIWYG
+    div(style='width: 250px;')
+      label(style='font-size: 20px; font-weight: bold;') Haystack WYSIWYG
+      div#expandHelp(onclick='handleHelpPaneSlide()') ?
+    br
+    div#helpPane
+      h1(style='margin-left: 5px;') User Actions
+      p(style='margin-left: 5px; font-weight: bold;') 
+        span.kbk Ctrl 
+        + 
+        span.kbk Shift
+        + 
+        span.kbk S 
+        \: Save Topology
+      p(style='margin-left: 5px') 
+        span(style='font-weight: bold;') Middle Mouse Drag: 
+        Move all nodes
+      p(style='margin-left: 5px; font-size: 16px;') User can drag lasso over nodes to capture them for:
+      p(style='margin-left: 10px; font-weight: bold;') 
+        span.kbk Del
+        \: Delete Selected Nodes
+      p(style='margin-left: 10px;') 
+        span(style='font-weight: bold;') Left Click Mouse Drag: 
+        Move all selected nodes 
+      p(style='margin-left: 10px; font-size: 14px;') Right-Click menu:
+      p(style='margin-left: 15px;') 
+        span(style='font-weight: bold;') Delete Selected: 
+        Delete all selected nodes
+      p(style='margin-left: 15px;') 
+        span(style='font-weight: bold;') Merge Selected: 
+        Nodes can only be merged if they share the same interface, portset, ethernet vendor, and IP address allocation type
+      p(style='margin-left: 15px;')
+        span(style='font-weight: bold;') Split Selected: 
+        Split selected node into two nodes (will only appear if one node is selected)
+      p(style='margin-left: 5px; font-size: 16px;') Making a new Node:
+      p(style='margin-left: 10px;') 
+        span(style='font-weight: bold;') 1\) 
+        span Select Configuration from Dropdown
+      p(style='margin-left: 10px;') 
+        span(style='font-weight: bold;') 2\) 
+        span Select number of Nodes to create
+      p(style='margin-left: 10px;') 
+        span(style='font-weight: bold;') 3\) 
+        span Click on desired profile - configure as desired, Save Parameters
+      p(style='margin-left: 10px;') 
+        span(style='font-weight: bold;') 4\) 
+        span Drag highlighted node in left bar onto Canvas
+      br
     div#modalDialog(title='Split Nodes')
       div#rangeDiv
       button#splitAccept
@@ -1783,7 +1825,7 @@ block content
           span.buttonSpan Save Parameters
     div#container
       div#dragBar(class='sameHeight')
-        bre
+        br
         label Configurations
         br
         select#configurationSelect(onchange='nodeList = {}; repopulateNodeCanvas(function(){prepopulateCanvasWithNodes()})')
@@ -1791,6 +1833,7 @@ block content
         br
         label Number of nodes 
         input#nodeNumber(type='number', min='1', max='50', value='1', onchange='updateDragHeader()')
+        br
         br
         label Profiles
         br

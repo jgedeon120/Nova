@@ -611,3 +611,41 @@
 #nodeNumber {
   width: 80%;
 }
+
+#expandHelp {
+  background-color: #009900; 
+  width: 20px;
+  height: 20px;
+  font-size: 18px;
+  float: right;
+  cursor: pointer;
+  text-align: center;
+  border: 2px solid black;
+  border-radius: 5px;
+}
+
+#helpPane {
+  background-color: #F1CC91;
+  border: 2px solid black;
+  border-radius: 5px;
+  z-index: 3000;
+  width: 760px;
+  display: none;
+  position: absolute;
+}
+
+.kbk {
+  border: 1px solid gray;
+  font-size: 1.2em;
+  box-shadow: 1px 0 1px 0 #eee, 0 2px 0 2px #ccc, 0 2px 0 3px #444;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  margin: 2px 3px;
+  padding: 1px 5px;
+  background-color: white;
+}
+
+
+
+
