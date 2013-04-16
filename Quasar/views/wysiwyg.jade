@@ -771,7 +771,7 @@ block headerAdditions
               case 'DHCP':
                 for(var i in topo)
                 {
-                  if(topo[i].ip == 'DHCP' && topo[i].interface == group.iface)
+                  if(topo[i].ip == 'DHCP' && topo[i].iface == group.iface)
                   {
                     addNodeToCanvas(topo[i], 'prepop', topo[i].coordinates.x, topo[i].coordinates.y);
                   }
