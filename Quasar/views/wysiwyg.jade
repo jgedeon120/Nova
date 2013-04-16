@@ -21,44 +21,44 @@ block headerAdditions
   link(rel="stylesheet", type="text/css", href="wysiwyg.css", media="screen")
   style(type='text/css')
     .selectedTab {
-        width: 100px;
-        background-color: #AFD9FF;
-        border-color: black;
-        border-width: 2px;
-        border-left-style: none;
-        border-right-style: none;
-        border-bottom-style: none;
-        border-radius: 0px;
-        border-top-left-radius: 15px;
-        border-top-right-radius: 15px;
-        border-bottom-right-radius: 0px;
-        border-bottom-left-radius: 0px;
-        padding-bottom: 0px;
-        margin-bottom: 0px;
-        margin-left: 0px;
-        margin-right: 10px;
-        height: 25px;
-        font-size: 20px;
+      width: 100px;
+      background-color: #AFD9FF;
+      border-color: black;
+      border-width: 2px;
+      border-left-style: none;
+      border-right-style: none;
+      border-bottom-style: none;
+      border-radius: 0px;
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+      border-bottom-right-radius: 0px;
+      border-bottom-left-radius: 0px;
+      padding-bottom: 0px;
+      margin-bottom: 0px;
+      margin-left: 0px;
+      margin-right: 10px;
+      height: 25px;
+      font-size: 20px;
     }
 
     .unselectedTab {
-        width: 100px;
-        background-color: #E4F2FF;
-        border-color: black;
-        border-width: 2px;
-        border-left-style: none;
-        border-right-style: none;
-        border-bottom-style: none;
-        border-top-left-radius: 15px;
-        border-top-right-radius: 15px;
-        border-bottom-right-radius: 0px;
-        border-bottom-left-radius: 0px;
-        padding-bottom: 0px;
-        margin-bottom: 0px;
-        margin-left: 0px;
-        margin-right: 10px;
-        height: 25px;
-        font-size: 20px;
+      width: 100px;
+      background-color: #E4F2FF;
+      border-color: black;
+      border-width: 2px;
+      border-left-style: none;
+      border-right-style: none;
+      border-bottom-style: none;
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+      border-bottom-right-radius: 0px;
+      border-bottom-left-radius: 0px;
+      padding-bottom: 0px;
+      margin-bottom: 0px;
+      margin-left: 0px;
+      margin-right: 10px;
+      height: 25px;
+      font-size: 20px;
     }
 
   script(type='text/javascript', src='scripts/jquery-ui-1.10.1.custom.js')
@@ -764,13 +764,33 @@ block headerAdditions
       if(typeof now.ReadWysiwygTopology == 'function')
       {
         now.ReadWysiwygTopology(function(topo){
-          var findOtherNodesList = [];
           if((topo != undefined) && (topo.length > 0))
           {
-            for(var i in topo)
+            switch(group.type)
             {
-              findOtherNodesList.push(topo[i].mac);
-              addNodeToCanvas(topo[i], 'prepop', topo[i].coordinates.x, topo[i].coordinates.y);
+              case 'DHCP':
+                for(var i in topo)
+                {
+                  if(topo[i].ip == 'DHCP' && topo[i].interface == group.iface)
+                  {
+                    addNodeToCanvas(topo[i], 'prepop', topo[i].coordinates.x, topo[i].coordinates.y);
+                  }
+                }
+                break;
+              case 'static':
+                for(var i in topo)
+                {
+                  if(topo[i].ip != 'DHCP')
+                  {
+                    addNodeToCanvas(topo[i], 'prepop', topo[i].coordinates.x, topo[i].coordinates.y);
+                  }
+                }
+                break;
+              default:
+                for(var i in topo)
+                {
+                   addNodeToCanvas(topo[i], 'prepop', topo[i].coordinates.x, topo[i].coordinates.y);
+                }
             }
           }
           else
@@ -1739,7 +1759,7 @@ block headerAdditions
           prepopulateCanvasWithNodes();
         });
       });
-      setTimeout(function(){adjustColumns();}, 1000);
+      setTimeout(function(){adjustColumns();}, 500);
       // TODO: Make setInterval interval value configurable
       setInterval(function(){
         if(typeof now.WriteWysiwygTopology == 'function')
@@ -1809,14 +1829,14 @@ block content
           p(style='margin-left: 5px') 
             span(style='font-weight: bold;') Middle Mouse Drag: 
             Move all nodes
-          p(style='margin-left: 5px; font-size: 16px;') User can drag lasso over nodes to capture them for:
+          p(style='margin-left: 5px;') User can drag lasso over nodes to capture them for:
           p(style='margin-left: 10px; font-weight: bold;') 
             span.kbk Del
             \: Delete Selected Nodes
           p(style='margin-left: 10px;') 
             span(style='font-weight: bold;') Left Click Mouse Drag: 
             Move all selected nodes 
-          p(style='margin-left: 10px; font-size: 14px;') Right-Click menu:
+          p(style='margin-left: 10px;') Right-Click menu:
           p(style='margin-left: 15px;') 
             span(style='font-weight: bold;') Delete Selected: 
             Delete all selected nodes
@@ -1826,7 +1846,7 @@ block content
           p(style='margin-left: 15px;')
             span(style='font-weight: bold;') Split Selected: 
             Split selected node into two nodes (will only appear if one node is selected)
-          p(style='margin-left: 5px; font-size: 16px;') Making a new Node:
+          p(style='margin-left: 5px;') Making a new Node:
           p(style='margin-left: 10px;') 
             span(style='font-weight: bold;') 1\) 
             span Select Configuration from Dropdown
@@ -1841,7 +1861,7 @@ block content
             span Drag highlighted node in left bar onto Canvas
           br
     br
-    div(style='margin-left: 153px')
+    div(style='margin-left: 152px')
       button.selectedTab#bnodeCanvasEth0(onclick='changeTab("nodeCanvaseth0")') Eth0
     div#modalDialog(title='Split Nodes')
       div#rangeDiv
