@@ -19,6 +19,48 @@ extends layout
 
 block headerAdditions
   link(rel="stylesheet", type="text/css", href="wysiwyg.css", media="screen")
+  style(type='text/css')
+    .selectedTab {
+        width: 100px;
+        background-color: #AFD9FF;
+        border-color: black;
+        border-width: 2px;
+        border-left-style: none;
+        border-right-style: none;
+        border-bottom-style: none;
+        border-radius: 0px;
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+        border-bottom-right-radius: 0px;
+        border-bottom-left-radius: 0px;
+        padding-bottom: 0px;
+        margin-bottom: 0px;
+        margin-left: 0px;
+        margin-right: 10px;
+        height: 25px;
+        font-size: 20px;
+    }
+
+    .unselectedTab {
+        width: 100px;
+        background-color: #E4F2FF;
+        border-color: black;
+        border-width: 2px;
+        border-left-style: none;
+        border-right-style: none;
+        border-bottom-style: none;
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+        border-bottom-right-radius: 0px;
+        border-bottom-left-radius: 0px;
+        padding-bottom: 0px;
+        margin-bottom: 0px;
+        margin-left: 0px;
+        margin-right: 10px;
+        height: 25px;
+        font-size: 20px;
+    }
+
   script(type='text/javascript', src='scripts/jquery-ui-1.10.1.custom.js')
   script(type='text/javascript', src='scripts/jquery.ui.selectable.js')
   script(type='text/javascript', src='https://flexicontent.googlecode.com/svn-history/r1517/trunk/com_flexicontent_v2.x/site/librairies/fancybox/lib/jquery.mousewheel-3.0.6.pack.js')
@@ -51,7 +93,7 @@ block headerAdditions
     var topoDrag = false;
     var noclick = false;
     var hoverhold = false;
-    var suffix = 'eth0';
+    var group = {type:'DHCP', iface:'eth0'};
     
     function setUpSelects()
     {
@@ -163,7 +205,7 @@ block headerAdditions
                 }
               }
               
-              var pointerCss = {top:($(source).position().top + $(source).height() - 10),
+              var pointerCss = {top:($(source).position().top + $(source).height() + 14),
                                 left:($(source).position().left + $(source).outerWidth() + 20)};
               $profileInfo.css(pointerCss).fadeIn(200);
             });
@@ -331,7 +373,7 @@ block headerAdditions
         {
           return;
         }
-        var hoverInfoCss = {top:($(source).position().top + $topology.position().top),
+        var hoverInfoCss = {top:($(source).position().top + $topology.position().top + 5),
                             left:(($(source).position().left + $topology.position().left + $(source).outerWidth()))};
         var titleCss = {'font-weight':'bold', 'font-size':'18px'};
         
@@ -448,9 +490,9 @@ block headerAdditions
       {
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
-        var hoverInfoCss = {top:($(source).position().top + $topology.position().top),
+        var hoverInfoCss = {top:($(source).position().top + $topology.position().top + 5),
                             left:(($(source).position().left + $topology.position().left + $(source).outerWidth()))};
-        $hoverInfo.css(hoverInfoCss).stop().fadeIn(200);
+        $hoverInfo.css(hoverInfoCss).fadeIn(200);
       }
     }
     
@@ -483,7 +525,7 @@ block headerAdditions
         {
           $(source).css('border', '1px ridge red').addClass('ui-selected');
           selected.push(source);
-          var hoverInfoCss = {top:($(source).position().top + $topology.position().top),
+          var hoverInfoCss = {top:($(source).position().top + $topology.position().top + 5),
                               left:(($(source).position().left + $topology.position().left + $(source).outerWidth()))};
           $hoverInfo.css(hoverInfoCss).stop().fadeIn(200);
           hoverNode = source.id;
@@ -498,10 +540,13 @@ block headerAdditions
     
     function changeTab(e)
     {
-      var evt = (e ? e : window.event);
-      var source = evt.target || evt.srcElement;
-      $topology = $(source);
-      appendTopoListeners($topology);
+      console.log('changeTab called');
+      now.WriteWysiwygTopology(function(){
+        $topology.fadeOut(400);
+        $topology = $('#' + e);
+        appendTopoListeners($topology);
+        $topology.fadeIn(400);
+      });
     }
     
     function deleteCanvasEleClick(e, source)
@@ -1041,8 +1086,8 @@ block headerAdditions
           $(this).off('mouseenter');
         })
         .on('dragstart', function(e, ui){
-          oldX = ui.helper.offset().left - $('#nodeCanvas').offset().left;
-          oldY = ui.helper.offset().top - $('#nodeCanvas').offset().top;
+          oldX = ui.helper.offset().left - $topology.offset().left;
+          oldY = ui.helper.offset().top - $topology.offset().top;
           if($(this).attr('class').indexOf('ui-selected') == -1)
           {
             clearSelectedCanvas();
@@ -1258,10 +1303,11 @@ block headerAdditions
     
     function appendTopoListeners(topo)
     {
+      console.log('topo == ' + topo.attr('id'));
       var droppableOptions = {accept:'.ui-draggable'};
       topo
         .css('width', '1')
-        .selectable({appendTo:topo.attr('id'),
+        .selectable({appendTo:'#' + topo.attr('id'),
                      distance:30,
                      cancel:'.canvasElement',
                      filter:'.canvasElement'})
@@ -1394,15 +1440,15 @@ block headerAdditions
             
             clearProfileSelected();
             
-            var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
-            var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
+            var x = ui.helper.offset().left - $topology.offset().left;
+            var y = ui.helper.offset().top - $topology.offset().top;
             addNodeToCanvas(nodeObj, 'drop', x, y);
           }
           else if(ui.draggable.attr('class').indexOf('canvasElement') != -1 
           && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
           {
-            var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
-            var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
+            var x = ui.helper.offset().left - $topology.offset().left;
+            var y = ui.helper.offset().top - $topology.offset().top;
             var index = ui.draggable.attr('id');
             nodeTopology[index].coordinates = {x:x, y:y};
           }
@@ -1412,7 +1458,7 @@ block headerAdditions
                       tolerance: 'pointer',
                       cursorAt: {top:25,left:15},
                       cursor: 'move',
-                      containment:topo.attr('id'),
+                      containment: '#' + topo.attr('id'),
                       revert: 'invalid'};
       
       $dragMe.draggable(draggableOptions)
@@ -1711,6 +1757,7 @@ block headerAdditions
     
     $(window).resize(function(){
       handleOffscreenIndicators();
+      adjustColumns();
     });
     $(window).keydown(function(event){
       if(!(event.shiftKey && event.ctrlKey && event.keyCode == 83) && !(event.which == 19))
@@ -1750,50 +1797,52 @@ block content
     div(style='width: 250px;')
       label(style='font-size: 20px; font-weight: bold;') Haystack WYSIWYG
       div#expandHelp(onclick='handleHelpPaneSlide()') ?
+        div#helpPane
+          h1(style='margin-left: 5px;') User Actions
+          p(style='margin-left: 5px; font-weight: bold;') 
+            span.kbk Ctrl 
+            + 
+            span.kbk Shift
+            + 
+            span.kbk S 
+            \: Save Topology
+          p(style='margin-left: 5px') 
+            span(style='font-weight: bold;') Middle Mouse Drag: 
+            Move all nodes
+          p(style='margin-left: 5px; font-size: 16px;') User can drag lasso over nodes to capture them for:
+          p(style='margin-left: 10px; font-weight: bold;') 
+            span.kbk Del
+            \: Delete Selected Nodes
+          p(style='margin-left: 10px;') 
+            span(style='font-weight: bold;') Left Click Mouse Drag: 
+            Move all selected nodes 
+          p(style='margin-left: 10px; font-size: 14px;') Right-Click menu:
+          p(style='margin-left: 15px;') 
+            span(style='font-weight: bold;') Delete Selected: 
+            Delete all selected nodes
+          p(style='margin-left: 15px;') 
+            span(style='font-weight: bold;') Merge Selected: 
+            Nodes can only be merged if they share the same interface, portset, ethernet vendor, and IP address allocation type
+          p(style='margin-left: 15px;')
+            span(style='font-weight: bold;') Split Selected: 
+            Split selected node into two nodes (will only appear if one node is selected)
+          p(style='margin-left: 5px; font-size: 16px;') Making a new Node:
+          p(style='margin-left: 10px;') 
+            span(style='font-weight: bold;') 1\) 
+            span Select Configuration from Dropdown
+          p(style='margin-left: 10px;') 
+            span(style='font-weight: bold;') 2\) 
+            span Select number of Nodes to create
+          p(style='margin-left: 10px;') 
+            span(style='font-weight: bold;') 3\) 
+            span Click on desired profile - configure as desired, Save Parameters
+          p(style='margin-left: 10px;') 
+            span(style='font-weight: bold;') 4\) 
+            span Drag highlighted node in left bar onto Canvas
+          br
     br
-    div#helpPane
-      h1(style='margin-left: 5px;') User Actions
-      p(style='margin-left: 5px; font-weight: bold;') 
-        span.kbk Ctrl 
-        + 
-        span.kbk Shift
-        + 
-        span.kbk S 
-        \: Save Topology
-      p(style='margin-left: 5px') 
-        span(style='font-weight: bold;') Middle Mouse Drag: 
-        Move all nodes
-      p(style='margin-left: 5px; font-size: 16px;') User can drag lasso over nodes to capture them for:
-      p(style='margin-left: 10px; font-weight: bold;') 
-        span.kbk Del
-        \: Delete Selected Nodes
-      p(style='margin-left: 10px;') 
-        span(style='font-weight: bold;') Left Click Mouse Drag: 
-        Move all selected nodes 
-      p(style='margin-left: 10px; font-size: 14px;') Right-Click menu:
-      p(style='margin-left: 15px;') 
-        span(style='font-weight: bold;') Delete Selected: 
-        Delete all selected nodes
-      p(style='margin-left: 15px;') 
-        span(style='font-weight: bold;') Merge Selected: 
-        Nodes can only be merged if they share the same interface, portset, ethernet vendor, and IP address allocation type
-      p(style='margin-left: 15px;')
-        span(style='font-weight: bold;') Split Selected: 
-        Split selected node into two nodes (will only appear if one node is selected)
-      p(style='margin-left: 5px; font-size: 16px;') Making a new Node:
-      p(style='margin-left: 10px;') 
-        span(style='font-weight: bold;') 1\) 
-        span Select Configuration from Dropdown
-      p(style='margin-left: 10px;') 
-        span(style='font-weight: bold;') 2\) 
-        span Select number of Nodes to create
-      p(style='margin-left: 10px;') 
-        span(style='font-weight: bold;') 3\) 
-        span Click on desired profile - configure as desired, Save Parameters
-      p(style='margin-left: 10px;') 
-        span(style='font-weight: bold;') 4\) 
-        span Drag highlighted node in left bar onto Canvas
-      br
+    div(style='margin-left: 153px')
+      button.selectedTab#bnodeCanvasEth0(onclick='changeTab("nodeCanvaseth0")') Eth0
     div#modalDialog(title='Split Nodes')
       div#rangeDiv
       button#splitAccept
@@ -1855,12 +1904,12 @@ block content
         br
         div#dragMe(class='notDraggableYet')
           header#setNumNodes
-      div.tabDiv#eth0tab(class='sameHeight', onclick='clearSelectedCanvas()')
-        div#nodeCanvaseth0
-          div#nodeContextMenu
-            div#deleteNodes Delete Selected
-            div#mergeNodes Merge Selected
-            div#splitNodes Split Selected
+      div#eth0tab(onclick='clearSelectedCanvas()')
+        div.canvas#nodeCanvaseth0(class='sameHeight')
+      div#nodeContextMenu
+        div#deleteNodes Delete Selected
+        div#mergeNodes Merge Selected
+        div#splitNodes Split Selected
       div#hoverInfo
         div#pres
           label#hoverName
