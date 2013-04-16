@@ -440,7 +440,7 @@ if(NovaCommon.config.ReadSetting('MASTER_UI_ENABLED') === '1')
   // credentials for reboots, etc. 
   
   // The reason for the + 1 at the end is because that's the port in use for the 
-  // server-to-server component of wbsockets on Pulsar. Have to do something in case 
+  // server-to-server component of websockets on Pulsar. Have to do something in case 
   // the port gets changed on the Pulsar machine
   var connected = NovaCommon.config.ReadSetting('MASTER_UI_IP') + ':' + (parseInt(NovaCommon.config.ReadSetting('MASTER_UI_PORT')) + 1);
   
@@ -760,7 +760,7 @@ if(NovaCommon.config.ReadSetting('MASTER_UI_ENABLED') === '1')
 
 app.get('/honeydConfigManage', function(req, res){
   var tab;
-  if (req.query["tab"] === undefined)
+  if(req.query["tab"] === undefined)
   {
     tab = "settingsGroups";
   }
@@ -769,11 +769,10 @@ app.get('/honeydConfigManage', function(req, res){
     tab = req.query["tab"];
   }
 
-
   var nodeNames = NovaCommon.honeydConfig.GetNodeMACs();
   var nodeList = [];
   
-  for (var i = 0; i < nodeNames.length; i++)
+  for(var i = 0; i < nodeNames.length; i++)
   {
     var node = NovaCommon.honeydConfig.GetNode(nodeNames[i]);
     var push = NovaCommon.cNodeToJs(node);
@@ -962,6 +961,7 @@ app.get('/advancedOptions', function (req, res)
             , ONLY_CLASSIFY_HONEYPOT_TRAFFIC: NovaCommon.config.ReadSetting("ONLY_CLASSIFY_HONEYPOT_TRAFFIC")
             , TRAINING_DATA_PATH: NovaCommon.config.ReadSetting("TRAINING_DATA_PATH")
             , supportedEngines: NovaCommon.nova.GetSupportedEngines()
+            , MESSAGE_WORKER_THREADS: NovaCommon.config.ReadSetting("MESSAGE_WORKER_THREADS")
         }
     });
 });
@@ -1082,15 +1082,14 @@ app.get('/basicOptions', function (req, res)
 
 app.get('/configHoneydNodes', function (req, res)
 {
-    if (!NovaCommon.honeydConfig.LoadAllTemplates())
-    {
-        RenderError(res, "Unable to load honeyd configuration XML files");
-        return;
-    }
+  if (!NovaCommon.honeydConfig.LoadAllTemplates())
+  {
+    RenderError(res, "Unable to load honeyd configuration XML files");
+    return;
+  }
 
-    var profiles = NovaCommon.honeydConfig.GetLeafProfileNames();
-    
-    var interfaces = NovaCommon.config.ListInterfaces().sort();
+  var profiles = NovaCommon.honeydConfig.GetLeafProfileNames();
+  var interfaces = NovaCommon.config.ListInterfaces().sort();
     
   res.render('configHoneydNodes.jade', {
     locals: {
@@ -1102,76 +1101,87 @@ app.get('/configHoneydNodes', function (req, res)
   });
 });
 
-app.get('/GetSuspectDetails', function (req, res)
+app.get('/getSuspectDetails', function (req, res)
 {
-    if (req.query["ip"] === undefined)
+  if(req.query['ip'] === undefined)
+  {
+    RenderError(res, "Invalid GET arguements. You most likely tried to refresh a page that you shouldn't.", '/');
+    return;
+  }
+  
+  if(req.query['interface'] === undefined)
+  {
+    RenderError(res, "Invalid GET arguements. You most likely tried to refresh a page that you shouldn't.", '/');
+    return;
+  }
+  
+  var suspectIp = req.query['ip'];
+  var suspectInterface = req.query['interface'];
+  
+  NovaCommon.nova.RequestSuspectDetailsString(suspectIp, suspectInterface, function(suspectString){
+    if(suspectString != '')
     {
-        RenderError(res, "Invalid GET arguements. You most likely tried to refresh a page that you shouldn't.", "/");
-        return;
-    }
-    
-    if (req.query["interface"] === undefined)
-    {
-        RenderError(res, "Invalid GET arguements. You most likely tried to refresh a page that you shouldn't.", "/");
-        return;
-    }
-    
-    var suspectIp = req.query["ip"];
-    var suspectInterface = req.query["interface"];
-    NovaCommon.nova.RequestSuspectDetailsString(suspectIp, suspectInterface, function(suspectString){
-		res.render('suspectDetails.jade', {
-		    locals: {
-		        suspect: suspectIp
-		        , interface: suspectInterface
-		        , details: suspectString
-		    }
-		})
-	});
+    	res.render('suspectDetails.jade', {
+        locals: {
+          suspect: suspectIp
+          , interface: suspectInterface
+          , details: suspectString
+        }
+    	});
+  	}
+  	else
+  	{
+      RenderError(res, 'The suspect ' + suspectIp + ' does not exist', '/suspects');
+      return;
+  	}
+  });
 });
 
 app.get('/editHoneydNode', function (req, res)
 {
-    if (req.query["node"] === undefined)
-    {
-        RenderError(res, "Invalid GET arguements. You most likely tried to refresh a page that you shouldn't.", "/configHoneydNodes");
-        return;
-    }
-    
-    var nodeName = req.query["node"];
-    var node = NovaCommon.honeydConfig.GetNode(nodeName);
+  if(req.query["node"] === undefined)
+  {
+    RenderError(res, "Invalid GET arguements. You most likely tried to refresh a page that you shouldn't.", "/configHoneydNodes");
+    return;
+  }
+  
+  var nodeName = req.query["node"];
+  var node = NovaCommon.honeydConfig.GetNode(nodeName);
 
-    if (node == null)
-    {
-        RenderError(res, "Unable to fetch node: " + nodeName, "/configHoneydNodes");
-        return;
-    }
+  if(node == null)
+  {
+    RenderError(res, "Unable to fetch node: " + nodeName, "/configHoneydNodes");
+    return;
+  }
 
-    var interfaces;
-    if (nodeName == "doppelganger")
-    {
-        interfaces = NovaCommon.config.ListLoopbacks().sort();
-    } else {
-        interfaces = NovaCommon.config.ListInterfaces().sort();
-    }
+  var interfaces;
+  if(nodeName == "doppelganger")
+  {
+    interfaces = NovaCommon.config.ListLoopbacks().sort();
+  }
+  else
+  {
+    interfaces = NovaCommon.config.ListInterfaces().sort();
+  }
 
-    res.render('editHoneydNode.jade', {
-        locals: {
-            oldName: nodeName,
-            INTERFACES: interfaces,
-            interfaceAliases: ConvertInterfacesToAliases(interfaces),
-            profiles: NovaCommon.honeydConfig.GetProfileNames(),
-            profile: node.GetProfile(),
-            interface: node.GetInterface(),
-            ip: node.GetIP(),
-            mac: node.GetMAC(),
-            portSet: node.GetPortSet()
-        }
-    })
+  res.render('editHoneydNode.jade', {
+    locals: {
+      oldName: nodeName,
+      INTERFACES: interfaces,
+      interfaceAliases: ConvertInterfacesToAliases(interfaces),
+      profiles: NovaCommon.honeydConfig.GetProfileNames(),
+      profile: node.GetProfile(),
+      interface: node.GetInterface(),
+      ip: node.GetIP(),
+      mac: node.GetMAC(),
+      portSet: node.GetPortSet()
+    }
+  })
 });
 
 app.get('/editHoneydProfile', function (req, res)
 {
-    if (req.query["profile"] === undefined)
+    if(req.query["profile"] === undefined)
     {
         RenderError(res, "Invalid GET arguements. You most likely tried to refresh a page that you shouldn't.", "/configHoneydNodes");
         return;
@@ -1192,7 +1202,7 @@ app.get('/editHoneydProfile', function (req, res)
 
 app.get('/addHoneydProfile', function (req, res)
 {
-    if (req.query["parent"] === undefined)
+    if(req.query["parent"] === undefined)
     {
         RenderError(res, "Invalid GET arguements. You most likely tried to refresh a page that you shouldn't.", "/configHoneydNodes");
         return;
@@ -1216,7 +1226,7 @@ app.get('/customizeTraining', function (req, res)
     NovaCommon.trainingDb = new NovaCommon.novaconfig.CustomizeTrainingBinding();
     
     NovaCommon.dbqGetLastTrainingDataSelection.all(function(err, results) {
-        if (err) {LOG("ERROR", "Database error: " + err)};
+        if(err) {LOG("ERROR", "Database error: " + err)};
         var includedLastTime = {};
 
         for (var i = 0; i < results.length; i++) {
@@ -1236,7 +1246,7 @@ app.get('/customizeTraining', function (req, res)
 
 app.get('/importCapture', function (req, res)
 {
-    if (req.query["trainingSession"] === undefined)
+    if(req.query["trainingSession"] === undefined)
     {
         RenderError(res, "Invalid GET arguements. You most likely tried to refresh a page that you shouldn't.");
         return;
@@ -1246,7 +1256,7 @@ app.get('/importCapture', function (req, res)
     trainingSession = NovaHomePath + "/data/" + trainingSession + "/nova.dump";
     var ips = NovaCommon.trainingDb.GetCaptureIPs(trainingSession);
 
-    if (ips === undefined)
+    if(ips === undefined)
     {
         RenderError(res, "Unable to read capture dump file");
         return;
@@ -1270,7 +1280,7 @@ app.post('/importCaptureSave', function (req, res)
     trainingSession = NovaHomePath + "/data/" + trainingSession + "/nova.dump";
 
     var trainingDump = new NovaCommon.novaconfig.TrainingDumpBinding();
-    if (!trainingDump.LoadCaptureFile(trainingSession))
+    if(!trainingDump.LoadCaptureFile(trainingSession))
     {
         ReadSetting(res, "Unable to parse dump file: " + trainingSession);
     }
@@ -1284,15 +1294,15 @@ app.post('/importCaptureSave', function (req, res)
         var type = id.split('_')[0];
         var ip = id.split('_')[1];
 
-        if (type == 'include')
+        if(type == 'include')
         {
             includedSuspects.push(ip);
             trainingDump.SetIsIncluded(ip, true);
-        } else if (type == 'hostile')
+        } else if(type == 'hostile')
         {
             hostileSuspects.push(ip);
             trainingDump.SetIsHostile(ip, true);
-        } else if (type == 'description')
+        } else if(type == 'description')
         {
             descriptions[ip] = req.body[id];
             trainingDump.SetDescription(ip, req.body[id]);
@@ -1301,7 +1311,7 @@ app.post('/importCaptureSave', function (req, res)
         }
     }
 
-    if (!trainingDump.SaveToDb(NovaHomePath + "/config/training/training.db"))
+    if(!trainingDump.SaveToDb(NovaHomePath + "/config/training/training.db"))
     {
         RenderError(res, "Unable to save to training db");
         return;
@@ -1335,7 +1345,7 @@ app.get('/editUsers', function (req, res)
 
     function (err, results)
     {
-        if (err)
+        if(err)
         {
             RenderError(res, "Database Error: " + err);
             return;
@@ -1397,13 +1407,13 @@ app.get('/', function (req, res)
 
     function (err, results)
     {
-        if (err)
+        if(err)
         {
             RenderError(res, "Database Error: " + err);
             return;
         }
 
-        if (results[0].rows == 0)
+        if(results[0].rows == 0)
         {
             res.redirect('/welcome');
         } else {
@@ -1462,7 +1472,7 @@ app.post('/createNewUser', function (req, res)
     var password = req.body["password"];
     var userName = req.body["username"];
     
-    if (password.length == 0 || userName.length == 0) {
+    if(password.length == 0 || userName.length == 0) {
       RenderError(res, "Can not have blank username or password!", "/setup1");
       return;
     }
@@ -1471,13 +1481,13 @@ app.post('/createNewUser', function (req, res)
 
     function selectCb(err, results, fields)
     {
-        if (err)
+        if(err)
         {
             RenderError(res, "Database Error: " + err, "/createNewUser");
             return;
         }
 
-        if (results[0] == undefined)
+        if(results[0] == undefined)
         {
           var salt = '';
           var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -1506,7 +1516,7 @@ app.post('/createInitialUser', function (req, res)
     var password = req.body["password"];
     var userName = req.body["username"];
 
-    if (password.length == 0 || userName.length == 0) {
+    if(password.length == 0 || userName.length == 0) {
       RenderError(res, "Can not have blank username or password!", "/setup1");
       return;
     }
@@ -1515,13 +1525,13 @@ app.post('/createInitialUser', function (req, res)
 
     function selectCb(err, results)
     {
-        if (err)
+        if(err)
         {
             RenderError(res, "Database Error: " + err);
             return;
         }
 
-        if (results[0] == undefined)
+        if(results[0] == undefined)
         {
           var salt = '';
       var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -1614,11 +1624,11 @@ app.get("/editClassifier", function (req, res)
                 , threshold: "-"
             }
            
-            if (classifier.type == "KNN")
+            if(classifier.type == "KNN")
             {
                 feature.weight = weightString.split(" ")[i];     
             } 
-            else if (classifier.type == "THRESHOLD_TRIGGER")
+            else if(classifier.type == "THRESHOLD_TRIGGER")
             {
                 feature.threshold = thresholdString.split(" ")[i];
             }
@@ -1659,13 +1669,13 @@ app.get("/interfaceAliases", function (req, res)
 
 app.post("/editTLSCerts", function (req, res)
 {
-    if (req.files["cert"] == undefined || req.files["key"] == undefined)
+    if(req.files["cert"] == undefined || req.files["key"] == undefined)
     {
         RenderError(res, "Invalid form submission. This was likely caused by refreshing a page you shouldn't.");
         return;
     }
 
-    if (req.files["cert"].size == 0 || req.files["key"].size == 0)
+    if(req.files["cert"].size == 0 || req.files["key"].size == 0)
     {
         RenderError(res, "You must choose both a key and certificate to upload");
         return;
@@ -1680,10 +1690,10 @@ app.post("/editTLSCerts", function (req, res)
             {
                 fs.writeFile(NovaHomePath + "/config/keys/quasarCert.pem", certData, function(writeErrCert)
                 {
-                    if (readErrKey != null) {RenderError(res, "Error when reading key file"); return;}
-                    if (readErrCert != null) {RenderError(res, "Error when reading cert file"); return;}
-                    if (writeErrKey != null) {RenderError(res, "Error when writing key file"); return;}
-                    if (writeErrCert != null) {RenderError(res, "Error when writing cert file"); return;}
+                    if(readErrKey != null) {RenderError(res, "Error when reading key file"); return;}
+                    if(readErrCert != null) {RenderError(res, "Error when reading cert file"); return;}
+                    if(writeErrKey != null) {RenderError(res, "Error when writing key file"); return;}
+                    if(writeErrCert != null) {RenderError(res, "Error when writing cert file"); return;}
                     
                     res.render('saveRedirect.jade', {
                         locals: {redirectLink: "/"}
@@ -1788,17 +1798,17 @@ app.post('/customizeTrainingSave', function (req, res)
     var uids = NovaCommon.trainingDb.GetUIDs();
 
     NovaCommon.dbqClearLastTrainingDataSelection.run(function(err) {
-        if (err) {LOG("ERROR", 'Database error: ' + err);}
+        if(err) {LOG("ERROR", 'Database error: ' + err);}
      });
 
     for (var uid in uids) {
-        if (req.body[uid] == undefined) {
+        if(req.body[uid] == undefined) {
             NovaCommon.dbqAddLastTrainingDataSelection.run(uid, 0, function(err) {
-                if (err) {LOG("ERROR", 'Database error: ' + err);}
+                if(err) {LOG("ERROR", 'Database error: ' + err);}
             });
         } else {
             NovaCommon.dbqAddLastTrainingDataSelection.run(uid, 1, function(err) {
-                if (err) {LOG("ERROR", 'Database error: ' + err);}
+                if(err) {LOG("ERROR", 'Database error: ' + err);}
             });
         }
     }
@@ -1829,7 +1839,7 @@ app.post('/configureNovaSave', function (req, res)
     "SERVICE_PREFERENCES", "CAPTURE_BUFFER_SIZE", "MIN_PACKET_THRESHOLD", "CUSTOM_PCAP_FILTER", 
     "CUSTOM_PCAP_MODE", "WEB_UI_PORT", "CLEAR_AFTER_HOSTILE_EVENT", "MASTER_UI_IP", "MASTER_UI_RECONNECT_TIME", 
     "MASTER_UI_CLIENT_ID", "MASTER_UI_ENABLED", "CAPTURE_BUFFER_SIZE", "FEATURE_WEIGHTS", "CLASSIFICATION_ENGINE", 
-    "THRESHOLD_HOSTILE_TRIGGERS", "ONLY_CLASSIFY_HONEYPOT_TRAFFIC", "EMAIL_ALERTS_ENABLED", "TRAINING_DATA_PATH"];
+    "THRESHOLD_HOSTILE_TRIGGERS", "ONLY_CLASSIFY_HONEYPOT_TRAFFIC", "EMAIL_ALERTS_ENABLED", "TRAINING_DATA_PATH", "MESSAGE_WORKER_THREADS"];
 
     Validator.prototype.error = function (msg)
     {
@@ -1923,7 +1933,7 @@ app.post('/configureNovaSave', function (req, res)
             }
         }
 
-        if (oneIface) 
+        if(oneIface) 
         {
             NovaCommon.config.AddIface(interfaces);
         }
@@ -1968,13 +1978,13 @@ app.post('/configureNovaSave', function (req, res)
             validator.check(req.body[configItems[item]], 'Doppelganger IP must be in the correct IP format').regex('^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})$');
             var split = req.body[configItems[item]].split('.');
 
-            if (split.length == 4) 
+            if(split.length == 4) 
             {
-                if (split[3] === "0") 
+                if(split[3] === "0") 
                 {
                     validator.check(split[3], 'Can not have last IP octet be 0').equals("255");
                 }
-                if (split[3] === "255") 
+                if(split[3] === "255") 
                 {
                     validator.check(split[3], 'Can not have last IP octet be 255').equals("0");
                 }
@@ -1986,21 +1996,21 @@ app.post('/configureNovaSave', function (req, res)
 
             for (var val = 0; val < split.length; val++) 
             {
-                if (split[val] == "0") 
+                if(split[val] == "0") 
                 {
                     checkIPZero++;
                 }
-                if (split[val] == "255") 
+                if(split[val] == "255") 
                 {
                     checkIPBroad++;
                 }
             }
 
-            if (checkIPZero == 4)
+            if(checkIPZero == 4)
             {
                 validator.check(checkIPZero, '0.0.0.0 is not a valid IP address').is("200");
             }
-            if (checkIPBroad == 4)
+            if(checkIPBroad == 4)
             {
                 validator.check(checkIPZero, '255.255.255.255 is not a valid IP address').is("200");
             }
@@ -2144,7 +2154,7 @@ app.post('/configureNovaSave', function (req, res)
       NovaCommon.config.ReloadConfiguration();
 
       var route = "/suspects";
-      if (req.body['route'] != undefined)
+      if(req.body['route'] != undefined)
       {
         route = req.body['route'];
         if(route == 'manconfig')
@@ -2344,12 +2354,12 @@ function objCopy(src, dst)
 {
     for (var member in src) 
     {
-        if (typeof src[member] == 'function') 
+        if(typeof src[member] == 'function') 
         {
             dst[member] = src[member]();
         }
         // Need to think about this
-        //        else if ( typeof src[member] == 'object' )
+        //        else if( typeof src[member] == 'object' )
         //        {
         //            copyOver(src[member], dst[member]);
         //        }
@@ -2362,7 +2372,7 @@ function objCopy(src, dst)
 
 function switcher(err, user, success, done) 
 {
-    if (!success) 
+    if(!success) 
     {
         return done(null, false, {
             message: 'Username/password combination is incorrect'
@@ -2417,7 +2427,7 @@ function ConvertInterfacesToAliases(interfaces)
 
 function ConvertInterfaceToAlias(iface) 
 {
-    if (interfaceAliases[iface] !== undefined) 
+    if(interfaceAliases[iface] !== undefined) 
     {
         return interfaceAliases[iface] + ' (' + iface + ')';
     } 
@@ -2442,7 +2452,7 @@ setInterval(function(){
 
 everyone.now.AddInterfaceAlias = function(iface, alias, callback)
 {
-    if (alias != "") 
+    if(alias != "") 
     {
         interfaceAliases[iface] = sanitizeCheck(alias).entityEncode();
     } 
