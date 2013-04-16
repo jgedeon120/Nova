@@ -51,6 +51,7 @@ block headerAdditions
     var topoDrag = false;
     var noclick = false;
     var hoverhold = false;
+    var suffix = 'eth0';
     
     function setUpSelects()
     {
@@ -493,6 +494,14 @@ block headerAdditions
       {
         noclick = false;
       }
+    }
+    
+    function changeTab(e)
+    {
+      var evt = (e ? e : window.event);
+      var source = evt.target || evt.srcElement;
+      $topology = $(source);
+      appendTopoListeners($topology);
     }
     
     function deleteCanvasEleClick(e, source)
@@ -1247,6 +1256,185 @@ block headerAdditions
       }
     }
     
+    function appendTopoListeners(topo)
+    {
+      var droppableOptions = {accept:'.ui-draggable'};
+      topo
+        .css('width', '1')
+        .selectable({appendTo:topo.attr('id'),
+                     distance:30,
+                     cancel:'.canvasElement',
+                     filter:'.canvasElement'})
+        .on('selectablestart', function(e, ui){
+          e.preventDefault();
+          $('.canvasElement').off('mouseenter');
+        })
+        .on('selectableselecting', function(e, ui){
+          selected.push(ui.selecting);
+          $(ui.selecting).css('border', '1px ridge red');
+        })
+        .on('selectableunselecting', function(e, ui){
+          for(var i in selected)
+          {
+            if(selected[i] == ui.unselecting)
+            {
+              delete selected[i];
+            }
+          }
+          $(ui.unselecting).css('border', '');
+        })
+        .on('selectablestop', function(e, ui){
+          $('.canvasElement').on('mouseenter', function(e){
+            e.stopImmediatePropagation();
+            handleCanvasEleHover(e);
+          });
+        })
+        .mousewheel(function(e, delta){
+          $('.canvasElement').each(function(){
+            var d = parseInt(delta);
+            var bWidth = isNaN(parseInt($(this).css('border-width'))) ? 0 
+              : parseInt($(this).css('border-width'));
+            if(((parseInt($(this).outerWidth()) <= parseInt(33 + bWidth)) && (d < 0))
+            || ((parseInt($(this).outerWidth()) >= parseInt(75 + bWidth)) && (d > 0)))
+            {
+              return;
+            }
+            else
+            {
+              var width = parseInt($(this).outerWidth()) + parseInt(delta) - 2;
+              var height = parseInt($(this).outerHeight()) + parseInt(delta) - 2;
+              zoom = {width:width, height:height};
+              $(this).css(zoom);
+            }
+          });
+        })
+        .mousedown(function(e){
+          var evt = (e ? e : window.event);
+          var source = evt.target || evt.srcElement;
+          if(e.which == 2)
+          {
+            topoDrag = true;
+            $topology.css('cursor', 'move');
+            oldX = e.clientX;
+            oldY = e.clientY;
+            $topology.off('mouseenter');
+          }
+          else if((e.which == 1) && !$hoverInfo.is(':hidden') 
+          && ($(source).attr('class') != undefined) 
+          && ($(source).attr('class').indexOf('canvasElement') == -1))
+          {
+            $hoverInfo.stop().fadeOut(100);
+            $('.ui-selected').each(function(){
+              $(this).removeClass('ui-selected').css('border', '');
+            });
+          }
+          return false;
+        })
+        .mouseup(function(e){
+          if(e.which == 2)
+          {
+            topoDrag = false;
+            $topology.css('cursor', '');
+            $topology.on('mouseenter', function(){
+              e.stopImmediatePropagation();
+              handleCanvasEleHover(e);
+            });
+            $('.canvasElement').each(function(){
+              nodeTopology[$(this).attr('id')].coordinates.x = parseInt($(this).css('left'));
+              nodeTopology[$(this).attr('id')].coordinates.y = parseInt($(this).css('top'));
+            });
+          }
+        })
+        .mouseout(function(e){
+          if(e.which == 2)
+          {
+            topoDrag = false;
+            $topology.css('cursor', '');
+            $topology.on('mouseenter', function(){
+              e.stopImmediatePropagation();
+              handleCanvasEleHover(e);
+            });
+          }
+        })
+        .mousemove(function(e){
+          if(topoDrag)
+          {
+            $('.canvasElement').each(function(){
+              var newPos = {left:parseInt($(this).css('left')) + parseInt(e.clientX - oldX),
+                            top:parseInt($(this).css('top')) + parseInt(e.clientY - oldY)};
+              $(this).css(newPos);
+            });
+            handleOffscreenIndicators();
+            oldX = e.clientX;
+            oldY = e.clientY;
+          }
+        })
+        .droppable(droppableOptions)
+        .on('dropover', function(event, ui){
+          $topology.addClass('over');
+        })
+        .on('dropout', function(event, ui){
+          $topology.removeClass('over');
+        })
+        .on('drop', function(event, ui){
+          noclick = true;
+          $topology.removeClass('over');
+          $dragMe.draggable('disable');
+          placeBackgroundImage($dragMe);
+          var dragMeCss = {border:'2px dashed black',
+                           opacity:'0.4'};
+          $dragMe.css(dragMeCss);
+          
+          if(ui.draggable.attr('class').indexOf('canvasElement') == -1 
+          && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
+          {
+            var nodeObj = {};
+            nodeObj.selectedProfile = selectedProfile;
+            nodeObj.count = $('#nodeNumber').val();
+            
+            clearProfileSelected();
+            
+            var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
+            var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
+            addNodeToCanvas(nodeObj, 'drop', x, y);
+          }
+          else if(ui.draggable.attr('class').indexOf('canvasElement') != -1 
+          && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
+          {
+            var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
+            var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
+            var index = ui.draggable.attr('id');
+            nodeTopology[index].coordinates = {x:x, y:y};
+          }
+        });
+        
+      var draggableOptions = {helper:'clone',
+                      tolerance: 'pointer',
+                      cursorAt: {top:25,left:15},
+                      cursor: 'move',
+                      containment:topo.attr('id'),
+                      revert: 'invalid'};
+      
+      $dragMe.draggable(draggableOptions)
+        .on('dragstart', function(event, ui){
+          var evt = (event ? event : window.event);
+          var source = evt.target || evt.srcElement;
+          source.style.opacity = '0.4';
+        })
+        .on('dragstop', function(event, ui){
+          var evt = (event ? event : window.event);
+          var source = evt.target || evt.srcElement;
+          var dragMeCss = {border:'2px dashed black',
+                           opacity:'0.4'};
+          $dragMe.css(dragMeCss);
+        })
+        .draggable('disable');
+        
+      var dragMeCss = {border:'2px dashed black',
+                       opacity:'0.4'};
+      $dragMe.css(dragMeCss);
+    }
+    
     function mergeSelected(base)
     {
       var div = theDoc.createElement('div');
@@ -1474,7 +1662,7 @@ block headerAdditions
       $profileInfo.hide();
       $contextMenu = $('#nodeContextMenu');
       $contextMenu.hide();
-      $topology = $('#nodeCanvas');
+      $topology = $('#nodeCanvaseth0');
       $modalSplit = $('#modalDialog');
       $modalSplit.dialog({
         appendTo: '#container',
@@ -1493,189 +1681,13 @@ block headerAdditions
         {
           deleteSelected();
         }
-      });
-      
-      $topology
-        .css('width', '1')
-        .selectable({appendTo:'#nodeCanvas',
-                     distance:30,
-                     cancel:'.canvasElement',
-                     filter:'.canvasElement'})
-        .on('selectablestart', function(e, ui){
-          e.preventDefault();
-          $('.canvasElement').off('mouseenter');
-        })
-        .on('selectableselecting', function(e, ui){
-          selected.push(ui.selecting);
-          $(ui.selecting).css('border', '1px ridge red');
-        })
-        .on('selectableunselecting', function(e, ui){
-          for(var i in selected)
-          {
-            if(selected[i] == ui.unselecting)
-            {
-              delete selected[i];
-            }
-          }
-          $(ui.unselecting).css('border', '');
-        })
-        .on('selectablestop', function(e, ui){
-          $('.canvasElement').on('mouseenter', function(e){
-            e.stopImmediatePropagation();
-            handleCanvasEleHover(e);
-          });
-        })
-        .mousewheel(function(e, delta){
-          $('.canvasElement').each(function(){
-            var d = parseInt(delta);
-            var bWidth = isNaN(parseInt($(this).css('border-width'))) ? 0 
-              : parseInt($(this).css('border-width'));
-            if(((parseInt($(this).outerWidth()) <= parseInt(33 + bWidth)) && (d < 0))
-            || ((parseInt($(this).outerWidth()) >= parseInt(75 + bWidth)) && (d > 0)))
-            {
-              return;
-            }
-            else
-            {
-              var width = parseInt($(this).outerWidth()) + parseInt(delta) - 2;
-              var height = parseInt($(this).outerHeight()) + parseInt(delta) - 2;
-              zoom = {width:width, height:height};
-              $(this).css(zoom);
-            }
-          });
-        })
-        .mousedown(function(e){
-          var evt = (e ? e : window.event);
-          var source = evt.target || evt.srcElement;
-          if(e.which == 2)
-          {
-            topoDrag = true;
-            $topology.css('cursor', 'move');
-            oldX = e.clientX;
-            oldY = e.clientY;
-            $topology.off('mouseenter');
-          }
-          else if((e.which == 1) && !$hoverInfo.is(':hidden') 
-          && ($(source).attr('class') != undefined) 
-          && ($(source).attr('class').indexOf('canvasElement') == -1))
-          {
-            $hoverInfo.stop().fadeOut(100);
-            $('.ui-selected').each(function(){
-              $(this).removeClass('ui-selected').css('border', '');
-            });
-          }
-          return false;
-        })
-        .mouseup(function(e){
-          if(e.which == 2)
-          {
-            topoDrag = false;
-            $topology.css('cursor', '');
-            $topology.on('mouseenter', function(){
-              e.stopImmediatePropagation();
-              handleCanvasEleHover(e);
-            });
-            $('.canvasElement').each(function(){
-              nodeTopology[$(this).attr('id')].coordinates.x = parseInt($(this).css('left'));
-              nodeTopology[$(this).attr('id')].coordinates.y = parseInt($(this).css('top'));
-            });
-          }
-        })
-        .mouseout(function(e){
-          if(e.which == 2)
-          {
-            topoDrag = false;
-            $topology.css('cursor', '');
-            $topology.on('mouseenter', function(){
-              e.stopImmediatePropagation();
-              handleCanvasEleHover(e);
-            });
-          }
-        })
-        .mousemove(function(e){
-          if(topoDrag)
-          {
-            $('.canvasElement').each(function(){
-              var newPos = {left:parseInt($(this).css('left')) + parseInt(e.clientX - oldX),
-                            top:parseInt($(this).css('top')) + parseInt(e.clientY - oldY)};
-              $(this).css(newPos);
-            });
-            handleOffscreenIndicators();
-            oldX = e.clientX;
-            oldY = e.clientY;
-          }
-        });
+      });      
                 
       now.ready(function(){
         setUpSelects();
         updateDragHeader();
         
-        var draggableOptions = {helper:'clone',
-                                tolerance: 'pointer',
-                                cursorAt: {top:25,left:15},
-                                cursor: 'move',
-                                containment:'#nodeCanvas',
-                                revert: 'invalid'};
-        
-        $dragMe.draggable(draggableOptions)
-          .on('dragstart', function(event, ui){
-            var evt = (event ? event : window.event);
-            var source = evt.target || evt.srcElement;
-            source.style.opacity = '0.4';
-          })
-          .on('dragstop', function(event, ui){
-            var evt = (event ? event : window.event);
-            var source = evt.target || evt.srcElement;
-            var dragMeCss = {border:'2px dashed black',
-                             opacity:'0.4'};
-            $dragMe.css(dragMeCss);
-          })
-          .draggable('disable');
-          
-        var dragMeCss = {border:'2px dashed black',
-                         opacity:'0.4'};
-        $dragMe.css(dragMeCss);
-        
-        var droppableOptions = {accept:'.ui-draggable'};
-        
-        $topology.droppable(droppableOptions)
-          .on('dropover', function(event, ui){
-            $topology.addClass('over');
-          })
-          .on('dropout', function(event, ui){
-            $topology.removeClass('over');
-          })
-          .on('drop', function(event, ui){
-            noclick = true;
-            $topology.removeClass('over');
-            $dragMe.draggable('disable');
-            placeBackgroundImage($dragMe);
-            var dragMeCss = {border:'2px dashed black',
-                             opacity:'0.4'};
-            $dragMe.css(dragMeCss);
-            
-            if(ui.draggable.attr('class').indexOf('canvasElement') == -1 
-            && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
-            {
-              var nodeObj = {};
-              nodeObj.selectedProfile = selectedProfile;
-              nodeObj.count = $('#nodeNumber').val();
-              
-              clearProfileSelected();
-              
-              var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
-              var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
-              addNodeToCanvas(nodeObj, 'drop', x, y);
-            }
-            else if(ui.draggable.attr('class').indexOf('canvasElement') != -1 
-            && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
-            {
-              var x = ui.helper.offset().left - $('#nodeCanvas').offset().left;
-              var y = ui.helper.offset().top - $('#nodeCanvas').offset().top;
-              var index = ui.draggable.attr('id');
-              nodeTopology[index].coordinates = {x:x, y:y};
-            }
-          });
+        appendTopoListeners($topology);
               
         repopulateNodeCanvas(function(){
           prepopulateCanvasWithNodes();
@@ -1843,11 +1855,12 @@ block content
         br
         div#dragMe(class='notDraggableYet')
           header#setNumNodes
-      div#nodeCanvas(class='sameHeight', onclick='clearSelectedCanvas()')
-        div#nodeContextMenu
-          div#deleteNodes Delete Selected
-          div#mergeNodes Merge Selected
-          div#splitNodes Split Selected
+      div.tabDiv#eth0tab(class='sameHeight', onclick='clearSelectedCanvas()')
+        div#nodeCanvaseth0
+          div#nodeContextMenu
+            div#deleteNodes Delete Selected
+            div#mergeNodes Merge Selected
+            div#splitNodes Split Selected
       div#hoverInfo
         div#pres
           label#hoverName

@@ -1357,6 +1357,29 @@ app.get('/configWhitelist', function(req, res)
     })
 });
 
+app.get('/wysiwyg', function(req, res){
+  var nodeNames = NovaCommon.honeydConfig.GetNodeMACs();
+  var nodeList = [];
+  
+  for (var i = 0; i < nodeNames.length; i++)
+  {
+    var node = NovaCommon.honeydConfig.GetNode(nodeNames[i]);
+    var push = NovaCommon.cNodeToJs(node);
+    nodeList.push(push);
+  }
+  
+  var interfaces = NovaCommon.config.ListInterfaces().sort();
+  
+  res.render('wysiwyg.jade', {
+    locals: {
+      configurations: NovaCommon.honeydConfig.GetConfigurationsList(),
+      current: NovaCommon.config.GetCurrentConfig(),
+      nodes: nodeList,
+      interfaces: interfaces
+    }
+  });
+});
+
 app.get('/editUsers', function(req, res)
 {
     var usernames = new Array();
@@ -1829,12 +1852,15 @@ app.post('/customizeTrainingSave', function(req, res)
      });
 
     for(var uid in uids) {
-        if(req.body[uid] == undefined) {
-            NovaCommon.dbqAddLastTrainingDataSelection.run(uid, 0, function(err) {
+        if(req.body[uid] == undefined) 
+        {
+            NovaCommon.dbqAddLastTrainingDataSelection.run(uid, 0, function(err){
                 if(err) {LOG("ERROR", 'Database error: ' + err);}
             });
-        if(
-            NovaCommon.dbqAddLastTrainingDataSelection.run(uid, 1, function(err) {
+        }
+        else
+        {
+            NovaCommon.dbqAddLastTrainingDataSelection.run(uid, 1, function(err){
                 if(err) {LOG("ERROR", 'Database error: ' + err);}
             });
         }
