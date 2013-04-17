@@ -594,6 +594,7 @@ block headerAdditions
       }
       
       var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
+      var bgSize = zoom.width + 'px ' + zoom.height + 'px';
       $(div).data('profile', nodeObj.selectedProfile)
             .css(prepopCss)
             .css(zoom)
@@ -877,10 +878,15 @@ block headerAdditions
     
     function placeBackgroundImage(ele, profile)
     {
-      var append = ' no-repeat center, #E4F2FF';
+      var cssObj = {'background-repeat':'no-repeat',
+                    'background-origin':'center',
+                    'background-color':'#E4F2FF',
+                    'background-size':(zoom.width + 'px ' + zoom.height + 'px'),
+                    'background-image':''};
       if(profile == undefined)
       {
-        ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append);
+        cssObj['background-image'] = 'url("images/wysiwyg/unknown_75.png")';
+        ele.css(cssObj);
         return;
       }
       if(typeof now.GetProfile == 'function')
@@ -889,29 +895,35 @@ block headerAdditions
           var pers = pfile.personality;
           if(pers.indexOf('Windows') != -1)
           {
-            ele.css('background', 'url("images/wysiwyg/win_75.png")' + append);
+            cssObj['background-image'] = 'url("images/wysiwyg/win_75.png")';
+            ele.css(cssObj);
           }
           else if(pers.indexOf('OpenBSD') != -1)
           {
-            ele.css('background', 'url("images/wysiwyg/openbsd_75.png")' + append);
+            cssObj['background-image'] = 'url("images/wysiwyg/openbsd_75.png")';
+            ele.css(cssObj);
           }
           else if(pers.indexOf('Linux') != -1)
           {
-            ele.css('background', 'url("images/wysiwyg/linux_75.png")' + append);
+            cssObj['background-image'] = 'url("images/wysiwyg/linux_75.png")';
+            ele.css(cssObj);
           }
           else if(pers.indexOf('Mac OS X') != -1)
           {
-            ele.css('background', 'url("images/wysiwyg/macosx_75.png")' + append);
+            cssObj['background-image'] = 'url("images/wysiwyg/macosx_75.png")';
+            ele.css(cssObj);
           }
           else
           {
-            ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append);
+            cssObj['background-image'] = 'url("images/wysiwyg/unknown_75.png")';
+            ele.css(cssObj);
           }
         });
       }
       else
       {
-        ele.css('background', 'url("images/wysiwyg/unknown_75.png")' + append);
+        cssObj['background-image'] = 'url("images/wysiwyg/unknown_75.png")';
+        ele.css(cssObj);
       }
     }
     
@@ -1372,7 +1384,8 @@ block headerAdditions
               var width = parseInt($(this).outerWidth()) + parseInt(delta) - 2;
               var height = parseInt($(this).outerHeight()) + parseInt(delta) - 2;
               zoom = {width:width, height:height};
-              $(this).css(zoom);
+              var bgSize = width + 'px ' + height + 'px';
+              $(this).css(zoom).css('background-size', bgSize);
             }
           });
         })
