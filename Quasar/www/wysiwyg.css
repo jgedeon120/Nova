@@ -129,19 +129,19 @@
 
 #deleteNodes {
   border-bottom: 1px solid rgb(118, 157, 192);
-  border-top-left-radius: 15px;
-  border-top-right-radius: 15px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
 }
 
 .single {
-  border-bottom-left-radius: 15px;
-  border-bottom-right-radius: 15px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
 }
 
 #splitNodes, #mergeNodes {
   border-top: 1px solid rgb(118, 157, 192);
-  border-bottom-left-radius: 15px;
-  border-bottom-right-radius: 15px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
 }
 
 #nodeContextMenu div {

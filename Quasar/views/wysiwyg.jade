@@ -462,7 +462,7 @@ block headerAdditions
       }
       else if(e.type == 'drag')
       {
-        $hoverInfo.stop().fadeOut(150, function(){
+        $hoverInfo.fadeOut(100, function(){
           fadeEleIn = true;
         });
         $contextMenu.fadeOut(100);
@@ -488,6 +488,7 @@ block headerAdditions
       }
       else if(e.type == 'dragstop')
       {
+        hoverhold = false;
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
         var hoverInfoCss = {top:($(source).position().top + $topology.position().top + 5),
@@ -1178,8 +1179,8 @@ block headerAdditions
           $delN.off('click');
         });
         
-        var cmCss = {left: (parseInt(left) + (zoom.width / 2)),
-                     top: (parseInt(top) + (zoom.height / 2))};
+        var cmCss = {left: (parseInt(left) + (zoom.width / 2) + 160),
+                     top: (parseInt(top) + (zoom.height / 2) + 75)};
         $contextMenu.css(cmCss).fadeIn(200);
         cmCss.left += (zoom.width / 2);
         $modalSplit.css(cmCss);
@@ -1253,6 +1254,9 @@ block headerAdditions
           
           $modalSplit.dialog('close');
           $('#splitAccept').off('click');
+          $('.ui-selected').each(function(){
+            $(this).removeClass('ui-selected').css('border', '');
+          });
         });
         $modalSplit.dialog('open');
       }
@@ -1319,11 +1323,11 @@ block headerAdditions
         });
         $modalSplit.dialog('open');
       }
+      $contextMenu.fadeOut(100);
     }
     
     function appendTopoListeners(topo)
     {
-      console.log('topo == ' + topo.attr('id'));
       var droppableOptions = {accept:'.ui-draggable'};
       topo
         .css('width', '1')
@@ -1503,6 +1507,7 @@ block headerAdditions
     
     function mergeSelected(base)
     {
+      $contextMenu.fadeOut(100);
       var div = theDoc.createElement('div');
       var baseProfile = $(base).data('profile');
       var baseMac = $(base).data('mac');
@@ -1759,7 +1764,7 @@ block headerAdditions
           prepopulateCanvasWithNodes();
         });
       });
-      setTimeout(function(){adjustColumns();}, 500);
+      setTimeout(function(){adjustColumns();}, 1000);
       // TODO: Make setInterval interval value configurable
       setInterval(function(){
         if(typeof now.WriteWysiwygTopology == 'function')
