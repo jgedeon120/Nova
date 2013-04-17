@@ -25,8 +25,6 @@ block headerAdditions
       background-color: #AFD9FF;
       border-color: black;
       border-width: 2px;
-      border-left-style: none;
-      border-right-style: none;
       border-bottom-style: none;
       border-radius: 0px;
       border-top-left-radius: 15px;
@@ -1434,6 +1432,12 @@ block headerAdditions
                             top:parseInt($(this).css('top')) + parseInt(e.clientY - oldY)};
               $(this).css(newPos);
             });
+            // shift background while dragging
+            var backgroundShiftLeft = parseInt(e.clientX - oldX) + parseInt($topology.css('background-position').split(' ')[0]);
+            var backgroundShiftTop = parseInt(e.clientY - oldY) + parseInt($topology.css('background-position').split(' ')[1]);
+            var backgroundShift = backgroundShiftLeft + 'px ' + backgroundShiftTop + 'px';
+            $topology.css('background-position', backgroundShift);
+            
             handleOffscreenIndicators();
             oldX = e.clientX;
             oldY = e.clientY;

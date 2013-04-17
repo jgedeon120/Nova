@@ -56,8 +56,9 @@
   overflow: hidden;
   text-align: center;
   vertical-align: middle;
-  border: 1px solid black;
+  border: 2px solid black;
   border-radius: 5px;
+  box-shadow: 5px 5px 5px #E4F2FF;
   width: 50px;
   height: 50px;
   left: 0px;
@@ -269,6 +270,8 @@
   margin-right: 10px;
   margin-bottom: 0px;
   box-shadow: 0px 0px 5px 5px #E4F2FF inset;
+  background:url(data:image/gif;base64,R0lGODlhFAAUAIAAAMDAwP///yH5BAEAAAEALAAAAAAUABQAAAImhI+pwe3vAJxQ0hssnnq/7jVgmJGfGaGiyoyh68GbjNGXTeEcGxQAOw==) fixed;
+  background-position: 0px 0px;
 }
 
 .over {
