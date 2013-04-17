@@ -280,7 +280,6 @@ html(lang="en", onclick='removeContextMenu();')
       div#leftCol.edgePanel(data-dojo-type="dijit.layout.ContentPane", data-dojo-props="region: 'left', splitter: false")
         block buttonPannelAdditions
       
-       
         div.sideBarHeader Status
           a.sideBarButton(href='/suspects', title='View current packet classification and analysis data') Packet Classifier
           a.sideBarButton(href='/newInformation', title='information that's changed since the last visit') New Information
@@ -298,6 +297,7 @@ html(lang="en", onclick='removeContextMenu();')
           a.sideBarButton(href="/customizeTraining", title='Choose training data to use for suspect classification') Classification Training
           a.sideBarButton(href="/interfaceAliases", title='Give ethernet interfaces nicknames') Interface Aliases
           a.sideBarButton(href="/configWhitelist", title='Add IP addresses to the whitelist to be ignored during classification and packet analysis') Whitelist
+          a.sideBarButton(href="/wysiwyg", title='Haystack WYSIWYG Tool') Haystack WYSIWYG
        
         div.sideBarHeader Users
           a.sideBarButton(href="/createNewUser", title='Create a new user for the Quasar login') New User
