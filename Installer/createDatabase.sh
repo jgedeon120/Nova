@@ -20,11 +20,14 @@ INSERT INTO packet_count_types VALUES('tcpSynAck');
 INSERT INTO packet_count_types VALUES('bytes');
 	
 CREATE TABLE packet_counts(
-	ip TEXT REFERENCES suspect(ip),
-	interface TEXT REFERENCES suspect(interface),
+	ip TEXT,
+	interface TEXT,
 
+	type TEXT NOT NULL REFERENCES packet_count_types(type),
 	count INTEGER,
-	type TEXT NOT NULL REFERENCES packet_count_types(type)
+
+	FOREIGN KEY (ip, interface) REFERENCES suspects(ip, interface),
+	PRIMARY KEY(ip, interface, type)
 );
 
 
@@ -48,11 +51,14 @@ INSERT INTO features VALUES(12, 'tcp_percent_synack');
 INSERT INTO features VALUES(13, 'haystack_percent_contacted');
 
 CREATE TABLE suspect_features(
-	ip TEXT REFERENCES suspect(ip),
-	interface TEXT REFERENCES suspect(interface),
+	ip TEXT,
+	interface TEXT,
 
+	name TEXT NOT NULL REFERENCES features(name),
 	value DOUBLE,
-	name TEXT NOT NULL REFERENCES features(name)
+
+	PRIMARY KEY(ip, interface, name),
+	FOREIGN KEY (ip, interface) REFERENCES suspects(ip, interface)
 );
 
 CREATE TABLE suspects (
@@ -72,21 +78,28 @@ CREATE TABLE suspects (
 	PRIMARY KEY(ip, interface)
 );
 
-CREATE TABLE packetSizeTable (
-	ip TEXT REFERENCES suspect(ip),
-	interface TEXT REFERENCES suspect(interface),
+CREATE TABLE packet_sizes (
+	ip TEXT,
+	interface,
 
 	packetSize INTEGER,
-	count INTEGER
+	count INTEGER,
+	
+	PRIMARY KEY(ip, interface, packetSize),
+	FOREIGN KEY (ip, interface) REFERENCES suspects(ip, interface)
 );
 
-CREATE TABLE ipPortTable (
-	ip TEXT REFERENCES suspect(ip),
-	interface TEXT REFERENCES suspect(interface),
+CREATE TABLE ip_port_counts (
+	ip TEXT,
+	interface,
 
+	type TEXT,
 	dstip TEXT,
 	port INTEGER,
-	count INTEGER
+	count INTEGER,
+	
+	FOREIGN KEY (ip, interface) REFERENCES suspects(ip, interface),
+	PRIMARY KEY(ip, interface, type, dstip, port)
 );
 
 "

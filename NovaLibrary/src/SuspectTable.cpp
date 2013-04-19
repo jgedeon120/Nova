@@ -24,6 +24,7 @@
 #include "Config.h"
 #include "Logger.h"
 #include "Lock.h"
+#include "Database.h"
 
 #include <fstream>
 #include <sstream>
@@ -549,7 +550,6 @@ void SuspectTable::SetHaystackNodes(std::vector<uint32_t> nodes)
 			Suspect *suspect = m_suspectTable[m_keys[i]];
 
 			suspect->m_features.SetHaystackNodes(nodes);
-			suspect->m_unsentFeatures.SetHaystackNodes(nodes);
 			SetNeedsClassificationUpdate_noLocking(m_keys[i]);
 		}
 	}

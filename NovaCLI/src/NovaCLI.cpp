@@ -693,7 +693,6 @@ void ReclassifySuspects()
 void ResetPassword()
 {
 	Database::Inst(Config::Inst()->GetPathHome() + "/data/quasarDatabase.db");
-	Database::Inst()->Connect();
 	Database::Inst()->ResetPassword();
 }
 

@@ -28,7 +28,6 @@
 
 enum FeatureMode: bool
 {
-	UNSENT_FEATURES = true,
 	MAIN_FEATURES = false,
 };
 

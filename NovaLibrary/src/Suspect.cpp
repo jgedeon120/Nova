@@ -22,6 +22,7 @@
 #include "Suspect.h"
 #include "Logger.h"
 #include "Config.h"
+#include "Database.h"
 
 #include <errno.h>
 #include <sstream>
@@ -128,13 +129,123 @@ void Suspect::ReadEvidence(Evidence *evidence, bool deleteEvidence)
 	{
 		m_id.set_m_ip(evidence->m_evidencePacket.ip_src);
 		m_id.set_m_ifname(evidence->m_evidencePacket.interface);
+
+		Database::Inst()->InsertSuspect(this);
 	}
 
 	Evidence *curEvidence = evidence, *tempEv = NULL;
 	while(curEvidence != NULL)
 	{
-		m_unsentFeatures.UpdateEvidence(*curEvidence);
+		// TODO Delete this line (and all of the featureset class)
 		m_features.UpdateEvidence(*curEvidence);
+
+		// Ensure our assumptions about valid packet fields are true
+		if(curEvidence->m_evidencePacket.ip_dst == 0)
+		{
+			LOG(DEBUG, "Got packet with invalid source IP address of 0. Skipping.", "");
+			return;
+		}
+
+		SuspectID_pb dstid;
+		dstid.set_m_ip(curEvidence->m_evidencePacket.ip_dst);
+
+		switch(curEvidence->m_evidencePacket.ip_p)
+		{
+			//If UDP
+			case 17:
+			{
+				Database::Inst()->IncrementPacketCount(m_id, "udp");
+				Database::Inst()->IncrementPortContactedCount(m_id, "udp", Suspect::GetIpString(dstid), curEvidence->m_evidencePacket.dst_port);
+
+				break;
+			}
+			//If TCP
+			case 6:
+			{
+				Database::Inst()->IncrementPacketCount(m_id, "tcp");
+
+				// Only count as an IP/port contacted if it looks like a scan (SYN or NULL packet)
+				if ((curEvidence->m_evidencePacket.tcp_hdr.syn && !curEvidence->m_evidencePacket.tcp_hdr.ack)
+						|| (!curEvidence->m_evidencePacket.tcp_hdr.syn && !curEvidence->m_evidencePacket.tcp_hdr.ack
+								&& !curEvidence->m_evidencePacket.tcp_hdr.rst))
+				{
+
+					Database::Inst()->IncrementPortContactedCount(m_id, "tcp", Suspect::GetIpString(dstid), curEvidence->m_evidencePacket.dst_port);
+
+				}
+
+				if(curEvidence->m_evidencePacket.tcp_hdr.syn && curEvidence->m_evidencePacket.tcp_hdr.ack)
+				{
+					Database::Inst()->IncrementPacketCount(m_id, "tcpSynAck");
+				}
+				else if(curEvidence->m_evidencePacket.tcp_hdr.syn)
+				{
+					Database::Inst()->IncrementPacketCount(m_id, "tcpSyn");
+				}
+				else if(curEvidence->m_evidencePacket.tcp_hdr.ack)
+				{
+					Database::Inst()->IncrementPacketCount(m_id, "tcpAck");
+				}
+
+				if(curEvidence->m_evidencePacket.tcp_hdr.rst)
+				{
+					Database::Inst()->IncrementPacketCount(m_id, "tcpRst");
+				}
+
+				if(curEvidence->m_evidencePacket.tcp_hdr.fin)
+				{
+					Database::Inst()->IncrementPacketCount(m_id, "tcpFin");
+				}
+
+				break;
+			}
+			//If ICMP
+			case 1:
+			{
+				Database::Inst()->IncrementPacketCount(m_id, "icmp");
+				Database::Inst()->IncrementPortContactedCount(m_id, "icmp", Suspect::GetIpString(dstid), 0);
+
+				break;
+			}
+			//If untracked IP protocol or error case ignore it
+			default:
+			{
+				Database::Inst()->IncrementPacketCount(m_id, "other");
+				Database::Inst()->IncrementPortContactedCount(m_id, "other", Suspect::GetIpString(dstid), 0);
+				break;
+			}
+		}
+
+		Database::Inst()->IncrementPacketCount(m_id, "total");
+		Database::Inst()->IncrementPacketSizeCount(m_id, curEvidence->m_evidencePacket.ip_len);
+
+		// TODO DTC
+//		Database::Inst()->IncrementPacketCount(m_id, 'bytes');
+//		m_bytesTotal += curEvidence->m_evidencePacket.ip_len;
+//
+//		if(m_HaystackIPTable.keyExists(curEvidence->m_evidencePacket.ip_dst))
+//		{
+//			if (m_HaystackIPTable[curEvidence->m_evidencePacket.ip_dst] == 0)
+//			{
+//				m_numberOfHaystackNodesContacted++;
+//				m_HaystackIPTable[curEvidence->m_evidencePacket.ip_dst]++;
+//			}
+//		}
+//
+//		m_lastTime = curEvidence->m_evidencePacket.ts;
+//
+//		//Accumulate to find the lowest Start time and biggest end time.
+//		if(curEvidence->m_evidencePacket.ts < m_startTime)
+//		{
+//			m_startTime = curEvidence->m_evidencePacket.ts;
+//		}
+//		if(curEvidence->m_evidencePacket.ts > m_endTime)
+//		{
+//			m_endTime =  curEvidence->m_evidencePacket.ts;
+//			CalculateTimeInterval();
+//		}
+
+
 		m_id.set_m_ifname(curEvidence->m_evidencePacket.interface);
 
 		if(m_lastPacketTime < evidence->m_evidencePacket.ts)
@@ -186,15 +297,6 @@ uint32_t Suspect::Serialize(u_char *buf, uint32_t bufferSize, SuspectFeatureMode
 	offset += m_features.SerializeFeatureSet(buf+offset, bufferSize - offset);
 	switch(whichFeatures)
 	{
-		case UNSENT_FEATURE_DATA:
-		{
-			if(offset + m_unsentFeatures.GetFeatureDataLength() >= SANITY_CHECK)
-			{
-				return 0;
-			}
-			offset += m_unsentFeatures.SerializeFeatureData(buf + offset, bufferSize - offset);
-			break;
-		}
 		case MAIN_FEATURE_DATA:
 		{
 			if(offset + m_features.GetFeatureDataLength() >= SANITY_CHECK)
@@ -211,11 +313,6 @@ uint32_t Suspect::Serialize(u_char *buf, uint32_t bufferSize, SuspectFeatureMode
 				return 0;
 			}
 			offset += m_features.SerializeFeatureData(buf + offset, bufferSize - offset);
-			if(offset + m_unsentFeatures.GetFeatureDataLength() >= SANITY_CHECK)
-			{
-				return 0;
-			}
-			offset += m_unsentFeatures.SerializeFeatureData(buf + offset, bufferSize - offset);
 			break;
 		}
 		case NO_FEATURE_DATA:
@@ -266,11 +363,6 @@ uint32_t Suspect::GetSerializeLength(SuspectFeatureMode whichFeatures)
 	}
 	switch(whichFeatures)
 	{
-		case UNSENT_FEATURE_DATA:
-		{
-			messageSize += m_unsentFeatures.GetFeatureDataLength();
-			break;
-		}
 		case MAIN_FEATURE_DATA:
 		{
 			messageSize += m_features.GetFeatureDataLength();
@@ -279,7 +371,6 @@ uint32_t Suspect::GetSerializeLength(SuspectFeatureMode whichFeatures)
 		case ALL_FEATURE_DATA:
 		{
 			messageSize += m_features.GetFeatureDataLength();
-			messageSize += m_unsentFeatures.GetFeatureDataLength();
 			break;
 		}
 		case NO_FEATURE_DATA:
@@ -334,14 +425,6 @@ uint32_t Suspect::Deserialize(u_char *buf, uint32_t bufferSize, SuspectFeatureMo
 
 	switch(whichFeatures)
 	{
-		case UNSENT_FEATURE_DATA:
-		{
-			FeatureSet deserializedFs;
-
-			offset += deserializedFs.DeserializeFeatureData(buf+offset, bufferSize - offset);
-			m_unsentFeatures += deserializedFs;
-			break;
-		}
 		case MAIN_FEATURE_DATA:
 		{
 			FeatureSet deserializedFs;
@@ -358,8 +441,6 @@ uint32_t Suspect::Deserialize(u_char *buf, uint32_t bufferSize, SuspectFeatureMo
 			offset += deserializedFs.DeserializeFeatureData(buf+offset, bufferSize - offset);
 			m_features += deserializedFs;
 
-			offset += deserializedUnsentFs.DeserializeFeatureData(buf+offset, bufferSize - offset);
-			m_unsentFeatures += deserializedUnsentFs;
 			break;
 		}
 		case NO_FEATURE_DATA:
@@ -468,11 +549,6 @@ FeatureSet Suspect::GetFeatureSet(FeatureMode whichFeatures)
 			return m_features;
 			break;
 		}
-		case UNSENT_FEATURES:
-		{
-			return m_unsentFeatures;
-			break;
-		}
 	}
 }
 
@@ -487,11 +563,6 @@ void Suspect::SetFeatureSet(FeatureSet *fs, FeatureMode whichFeatures)
 			m_features.operator =(*fs);
 			break;
 		}
-		case UNSENT_FEATURES:
-		{
-			m_unsentFeatures.operator =(*fs);
-			break;
-		}
 	}
 }
 
@@ -504,11 +575,6 @@ void Suspect::AddFeatureSet(FeatureSet *fs, FeatureMode whichFeatures)
 		case MAIN_FEATURES:
 		{
 			m_features += *fs;
-			break;
-		}
-		case UNSENT_FEATURES:
-		{
-			m_unsentFeatures += *fs;
 			break;
 		}
 	}
@@ -564,7 +630,6 @@ Suspect Suspect::GetShallowCopy()
 Suspect& Suspect::operator=(const Suspect &rhs)
 {
 	m_features = rhs.m_features;
-	m_unsentFeatures = rhs.m_unsentFeatures;
 	m_lastPacketTime = rhs.m_lastPacketTime;
 	for(uint i = 0; i < DIM; i++)
 	{
@@ -637,7 +702,6 @@ bool Suspect::operator !=(const Suspect &rhs) const
 Suspect::Suspect(const Suspect &rhs)
 {
 	m_features = rhs.m_features;
-	m_unsentFeatures = rhs.m_unsentFeatures;
 	m_lastPacketTime = rhs.m_lastPacketTime;
 
 	for(uint i = 0; i < DIM; i++)

@@ -35,6 +35,13 @@ if (res != val ) \
 	return;\
 }
 
+// Same as above macro, but returns false instead of no return value
+#define expectReturnValueAndFail(val) \
+if (res != val) {\
+	LOG(ERROR, "SQL error: " + string(sqlite3_errmsg(db)), "");\
+	return false;\
+}
+
 
 using namespace std;
 
@@ -57,12 +64,14 @@ Database *Database::Inst(std::string databaseFile)
 	if(m_instance == NULL)
 	{
 		m_instance = new Database(databaseFile);
+		m_instance->Connect();
 	}
 	return m_instance;
 }
 
 Database::Database(std::string databaseFile)
 {
+	pthread_mutex_init(&this->m_lock, NULL);
 	if (databaseFile == "")
 	{
 		databaseFile = Config::Inst()->GetPathHome() + "/data/novadDatabase.db";
@@ -80,45 +89,56 @@ bool Database::Connect()
 	LOG(DEBUG, "Opening database " + m_databaseFile, "");
 	int res;
 	res = sqlite3_open(m_databaseFile.c_str(), &db);
+	expectReturnValueAndFail(SQLITE_OK);
 
-	if (res)
-	{
-		throw DatabaseException(string(sqlite3_errmsg(db)));
+	// Enable foreign keys
+	char *err = NULL;
+	sqlite3_exec(db, "PRAGMA foreign_keys = ON", NULL, NULL, &err);
+	if (err != NULL) {
+		LOG(ERROR, "Error when trying to enable foreign database keys: " + string(err), "");
 	}
-	else
-	{
-		return true;
-	}
+
+
+	// Set up all our prepared queries
+	res = sqlite3_prepare_v2(db,
+		"INSERT OR IGNORE INTO packet_counts VALUES(?1, ?2, ?3, 0);",
+		-1, &insertPacketCount,  NULL);
+	expectReturnValueAndFail(SQLITE_OK);
 
 	res = sqlite3_prepare_v2(db,
-	  "INSERT OR REPLACE INTO suspects (ip, "
-			"interface, "
-			"startTime, "
-			"endTime, "
-			"lastTime, "
-			"classification, "
-			"hostileNeighbors, "
-			"isHostile, "
-			"classificationNotes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-	  -1, &insertSuspect,  NULL);
+		"UPDATE packet_counts SET count = count + 1 WHERE ip = ?1 AND interface = ?2 AND type = ?3;",
+		-1, &incrementPacketCount,  NULL);
+	expectReturnValueAndFail(SQLITE_OK);
 
-	if (res != SQLITE_OK) {
-		LOG(ERROR, "SQL error: " + string(sqlite3_errmsg(db)), "");
-		return false;
-	}
+	res = sqlite3_prepare_v2(db,
+		"INSERT OR REPLACE INTO suspects (ip, interface, startTime, endTime, lastTime, classification, hostileNeighbors, isHostile, classificationNotes) "
+		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		-1, &insertSuspect,  NULL);
+	expectReturnValueAndFail(SQLITE_OK);
+
+	res = sqlite3_prepare_v2(db,
+		"INSERT OR IGNORE INTO ip_port_counts VALUES(?1, ?2, ?3, ?4, ?5, 0)",
+		-1, &insertPortContacted, NULL);
+	expectReturnValueAndFail(SQLITE_OK);
+
+	res = sqlite3_prepare_v2(db,
+			"UPDATE ip_port_counts SET count = count + 1 WHERE ip = ?1 AND interface = ?2 AND type = ?3 AND dstip = ?4 AND port = ?5",
+			-1, &incrementPortContacted, NULL);
+	expectReturnValueAndFail(SQLITE_OK);
 
 
 	res = sqlite3_prepare_v2(db,
-	  "INSERT OR IGNORE INTO  packet_counts VALUES(?1, ?2, ?3, 0);"
-			"UPDATE packet_counts SET count = count + 1 WHERE ip = ?1 AND interface = ?2;",
-	  -1, &insertPacketCount,  NULL);
+		"INSERT OR IGNORE INTO packet_sizes VALUES(?1, ?2, ?3, 0);",
+		-1, &insertPacketSize,  NULL);
+	expectReturnValueAndFail(SQLITE_OK);
 
-	if (res != SQLITE_OK) {
-		LOG(ERROR, "SQL error: " + string(sqlite3_errmsg(db)), "");
-		return false;
-	}
+	res = sqlite3_prepare_v2(db,
+		"UPDATE packet_sizes SET count = count + 1 WHERE ip = ?1 AND interface = ?2 AND packetSize = ?3;",
+		-1, &incrementPacketSize,  NULL);
+	expectReturnValueAndFail(SQLITE_OK);
 
 
+	return true;
 }
 
 bool Database::Disconnect()
@@ -127,6 +147,28 @@ bool Database::Disconnect()
 	{
 		LOG(ERROR, "Unable to finalize sql statement: " + string(sqlite3_errmsg(db)), "");
 	}
+	if (sqlite3_finalize(insertPacketCount) != SQLITE_OK)
+	{
+		LOG(ERROR, "Unable to finalize sql statement: " + string(sqlite3_errmsg(db)), "");
+	}
+	if (sqlite3_finalize(insertPortContacted) != SQLITE_OK)
+	{
+		LOG(ERROR, "Unable to finalize sql statement: " + string(sqlite3_errmsg(db)), "");
+	}
+	if (sqlite3_finalize(incrementPacketCount) != SQLITE_OK)
+	{
+		LOG(ERROR, "Unable to finalize sql statement: " + string(sqlite3_errmsg(db)), "");
+	}
+	if (sqlite3_finalize(incrementPortContacted) != SQLITE_OK)
+	{
+		LOG(ERROR, "Unable to finalize sql statement: " + string(sqlite3_errmsg(db)), "");
+	}
+
+	if (sqlite3_close(db) != SQLITE_OK)
+	{
+		LOG(ERROR, "Unable to finalize sql statement: " + string(sqlite3_errmsg(db)), "");
+	}
+
 	return true;
 }
 
@@ -147,6 +189,7 @@ void Database::ResetPassword()
 
 void Database::InsertSuspect(Suspect *suspect)
 {
+	Lock(&this->m_lock);
 	int res;
 
 	res = sqlite3_bind_text(insertSuspect, 1, suspect->GetIpString().c_str(), -1, SQLITE_TRANSIENT);
@@ -177,21 +220,119 @@ void Database::InsertSuspect(Suspect *suspect)
 
 void Database::IncrementPacketCount(SuspectID_pb id, std::string type)
 {
+	Lock(&this->m_lock);
 	int res;
 
-	res = sqlite3_bind_text(insertPacketCount, 1, Suspect::GetIpString(id).c_str(), -1, SQLITE_TRANSIENT);
+
+	string ipString = Suspect::GetIpString(id);
+	string intString = id.m_ifname();
+
+	res = sqlite3_bind_text(insertPacketCount, 1, ipString.c_str(), -1, SQLITE_TRANSIENT);
 	expectReturnValue(SQLITE_OK);
-	res = sqlite3_bind_text(insertPacketCount, 2, id.m_ifname().c_str(), -1, SQLITE_TRANSIENT);
+	res = sqlite3_bind_text(incrementPacketCount, 1, ipString.c_str(), -1, SQLITE_TRANSIENT);
 	expectReturnValue(SQLITE_OK);
+
+	res = sqlite3_bind_text(insertPacketCount, 2, intString.c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_text(incrementPacketCount, 2, intString.c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+
 	res = sqlite3_bind_text(insertPacketCount, 3, type.c_str(), -1, SQLITE_TRANSIENT);
 	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_text(incrementPacketCount, 3, type.c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+
 
 	res = sqlite3_step(insertPacketCount);
 	expectReturnValue(SQLITE_DONE);
 
 	res = sqlite3_reset(insertPacketCount);
 	expectReturnValue(SQLITE_OK);
+
+	res = sqlite3_step(incrementPacketCount);
+	expectReturnValue(SQLITE_DONE);
+
+	res = sqlite3_reset(incrementPacketCount);
+	expectReturnValue(SQLITE_OK);
 }
+
+void Database::IncrementPacketSizeCount(SuspectID_pb id, uint16_t size)
+{
+	Lock(&this->m_lock);
+	int res;
+
+
+	string ipString = Suspect::GetIpString(id);
+	string intString = id.m_ifname();
+
+	res = sqlite3_bind_text(insertPacketSize, 1, ipString.c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_text(incrementPacketSize, 1, ipString.c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+
+	res = sqlite3_bind_text(insertPacketSize, 2, intString.c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_text(incrementPacketSize, 2, intString.c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+
+	res = sqlite3_bind_int(insertPacketSize, 3, size);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_int(incrementPacketSize, 3, size);
+	expectReturnValue(SQLITE_OK);
+
+
+	res = sqlite3_step(insertPacketSize);
+	expectReturnValue(SQLITE_DONE);
+
+	res = sqlite3_reset(insertPacketSize);
+	expectReturnValue(SQLITE_OK);
+
+	res = sqlite3_step(incrementPacketSize);
+	expectReturnValue(SQLITE_DONE);
+
+	res = sqlite3_reset(incrementPacketSize);
+	expectReturnValue(SQLITE_OK);
+}
+
+void Database::IncrementPortContactedCount(SuspectID_pb id, string protocol, string dstip, int port)
+{
+	Lock(&this->m_lock);
+	int res;
+
+	res = sqlite3_bind_text(insertPortContacted, 1, Suspect::GetIpString(id).c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_text(incrementPortContacted, 1, Suspect::GetIpString(id).c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_text(insertPortContacted, 2, id.m_ifname().c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_text(incrementPortContacted, 2, id.m_ifname().c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_text(insertPortContacted, 3, protocol.c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_text(incrementPortContacted, 3, protocol.c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_text(insertPortContacted, 4, dstip.c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_text(incrementPortContacted, 4, dstip.c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_int(insertPortContacted, 5, port);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_int(incrementPortContacted, 5, port);
+	expectReturnValue(SQLITE_OK);
+
+	res = sqlite3_step(insertPortContacted);
+	expectReturnValue(SQLITE_DONE);
+	res = sqlite3_reset(insertPortContacted);
+	expectReturnValue(SQLITE_OK);
+
+	res = sqlite3_step(incrementPortContacted);
+	expectReturnValue(SQLITE_DONE);
+	res = sqlite3_reset(incrementPortContacted);
+	expectReturnValue(SQLITE_OK);
+}
+
+
+
 
 void Database::InsertSuspectHostileAlert(Suspect *suspect)
 {

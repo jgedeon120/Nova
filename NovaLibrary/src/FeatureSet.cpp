@@ -21,6 +21,7 @@
 #include "FeatureSet.h"
 #include "Logger.h"
 #include "Config.h"
+#include "Database.h"
 
 #include <time.h>
 #include <math.h>

@@ -22,6 +22,7 @@
 #include "Suspect.h"
 #include "FeatureSet.h"
 
+#include <Lock.h>
 #include <string>
 #include <sqlite3.h>
 #include <stdexcept>
@@ -48,6 +49,8 @@ public:
 
 	void InsertSuspectHostileAlert(Suspect *suspect);
 	void IncrementPacketCount(SuspectID_pb id, std::string type);
+	void IncrementPacketSizeCount(SuspectID_pb, uint16_t size);
+	void IncrementPortContactedCount(SuspectID_pb id, std::string protocol, std::string dstip, int port);
 
 	void InsertSuspect(Suspect *suspect);
 	void ResetPassword();
@@ -58,6 +61,8 @@ public:
 private:
 	Database(std::string databaseFile = "");
 
+	pthread_mutex_t m_lock;
+
 	std::string m_databaseFile;
 
 	static Database * m_instance;
@@ -65,7 +70,15 @@ private:
 	sqlite3 *db;
 
 	sqlite3_stmt *insertSuspect;
+
 	sqlite3_stmt *insertPacketCount;
+	sqlite3_stmt *incrementPacketCount;
+
+	sqlite3_stmt *insertPortContacted;
+	sqlite3_stmt *incrementPortContacted;
+
+	sqlite3_stmt *insertPacketSize;
+	sqlite3_stmt *incrementPacketSize;
 };
 
 } /* namespace Nova */

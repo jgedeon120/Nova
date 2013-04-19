@@ -178,6 +178,7 @@ int RunNovaD()
 	dhcpListFile = Config::Inst()->GetIpListPath();
 	Logger::Inst();
 	HoneydConfiguration::Inst();
+	Database::Inst();
 
 	if(!LockNovad())
 	{
@@ -191,14 +192,6 @@ int RunNovaD()
 	}
 
 	pthread_mutex_init(&packetCapturesLock, NULL);
-
-	try
-	{
-		Database::Inst()->Connect();
-	} catch (Nova::DatabaseException &e)
-	{
-		LOG(ERROR, "Unable to connect to SQL database. " + string(e.what()), "");
-	}
 
 	lastLoadTime = lastSaveTime = startTime = time(NULL);
 	if(lastLoadTime == ((time_t)-1))
