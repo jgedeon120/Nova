@@ -27,6 +27,9 @@
 #include <errno.h>
 #include <sstream>
 
+#include <sys/time.h>
+#include <unistd.h>
+
 using namespace std;
 
 namespace Nova
@@ -125,6 +128,7 @@ string Suspect::ToString()
 //Just like Consume but doesn't deallocate
 void Suspect::ReadEvidence(Evidence *evidence, bool deleteEvidence)
 {
+
 	if(m_id.m_ip() == 0)
 	{
 		m_id.set_m_ip(evidence->m_evidencePacket.ip_src);
@@ -245,13 +249,13 @@ void Suspect::ReadEvidence(Evidence *evidence, bool deleteEvidence)
 //			CalculateTimeInterval();
 //		}
 
-
 		m_id.set_m_ifname(curEvidence->m_evidencePacket.interface);
 
 		if(m_lastPacketTime < evidence->m_evidencePacket.ts)
 		{
 			m_lastPacketTime = evidence->m_evidencePacket.ts;
 		}
+
 
 		tempEv = curEvidence;
 		curEvidence = tempEv->m_next;
@@ -261,12 +265,31 @@ void Suspect::ReadEvidence(Evidence *evidence, bool deleteEvidence)
 			delete tempEv;
 		}
 	}
+
 }
 
 //Calculates the suspect's features based on it's feature set
 void Suspect::CalculateFeatures()
 {
 	m_features.CalculateAll();
+
+	// TODO DTC this is just bolted on here for testing/dev purposes
+	Database::Inst()->StartTransaction();
+	Database::Inst()->SetFeatureSetValue(m_id, "ip_traffic_distribution", m_features.m_features[IP_TRAFFIC_DISTRIBUTION]);
+	Database::Inst()->SetFeatureSetValue(m_id, "port_traffic_distribution", m_features.m_features[PORT_TRAFFIC_DISTRIBUTION]);
+	Database::Inst()->SetFeatureSetValue(m_id, "packet_size_mean", m_features.m_features[PACKET_SIZE_MEAN]);
+	Database::Inst()->SetFeatureSetValue(m_id, "packet_size_deviation", m_features.m_features[PACKET_SIZE_DEVIATION]);
+	Database::Inst()->SetFeatureSetValue(m_id, "distinct_ips", m_features.m_features[DISTINCT_IPS]);
+	Database::Inst()->SetFeatureSetValue(m_id, "distinct_tcp_ports", m_features.m_features[DISTINCT_TCP_PORTS]);
+	Database::Inst()->SetFeatureSetValue(m_id, "distinct_udp_ports", m_features.m_features[DISTINCT_UDP_PORTS]);
+	Database::Inst()->SetFeatureSetValue(m_id, "avg_tcp_ports_per_host", m_features.m_features[AVG_TCP_PORTS_PER_HOST]);
+	Database::Inst()->SetFeatureSetValue(m_id, "avg_udp_ports_per_host", m_features.m_features[AVG_UDP_PORTS_PER_HOST]);
+	Database::Inst()->SetFeatureSetValue(m_id, "tcp_percent_syn", m_features.m_features[TCP_PERCENT_SYN]);
+	Database::Inst()->SetFeatureSetValue(m_id, "tcp_percent_fin", m_features.m_features[TCP_PERCENT_FIN]);
+	Database::Inst()->SetFeatureSetValue(m_id, "tcp_percent_rst", m_features.m_features[TCP_PERCENT_RST]);
+	Database::Inst()->SetFeatureSetValue(m_id, "tcp_percent_synack", m_features.m_features[TCP_PERCENT_SYNACK]);
+	Database::Inst()->SetFeatureSetValue(m_id, "haystack_percent_contacted", m_features.m_features[HAYSTACK_PERCENT_CONTACTED]);
+	Database::Inst()->StopTransaction();
 }
 
 // Stores the Suspect information into the buffer, retrieved using deserializeSuspect

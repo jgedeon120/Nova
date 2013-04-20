@@ -32,8 +32,10 @@ CREATE TABLE packet_counts(
 
 
 CREATE TABLE features(
-	id INTEGER PRIMARY KEY,
-	name TEXT NOT NULL
+	id INTEGER,
+	name TEXT NOT NULL,
+
+	PRIMARY KEY(name)
 );
 INSERT INTO features VALUES(0, 'ip_traffic_distribution');
 INSERT INTO features VALUES(1, 'port_traffic_distribution');

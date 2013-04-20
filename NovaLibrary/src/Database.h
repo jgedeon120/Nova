@@ -47,12 +47,20 @@ public:
 	bool Connect();
 	bool Disconnect();
 
+	void StartTransaction();
+	void StopTransaction();
+
+	void InsertSuspect(Suspect *suspect);
+
 	void InsertSuspectHostileAlert(Suspect *suspect);
 	void IncrementPacketCount(SuspectID_pb id, std::string type);
+
 	void IncrementPacketSizeCount(SuspectID_pb, uint16_t size);
 	void IncrementPortContactedCount(SuspectID_pb id, std::string protocol, std::string dstip, int port);
 
-	void InsertSuspect(Suspect *suspect);
+
+	void SetFeatureSetValue(SuspectID_pb id, std::string featureName, double value);
+
 	void ResetPassword();
 
 	static int callback(void *NotUsed, int argc, char **argv, char **azColName);
@@ -79,6 +87,8 @@ private:
 
 	sqlite3_stmt *insertPacketSize;
 	sqlite3_stmt *incrementPacketSize;
+
+	sqlite3_stmt *setFeatureValue;
 };
 
 } /* namespace Nova */

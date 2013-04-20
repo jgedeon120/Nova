@@ -63,7 +63,6 @@ void HandleExitRequest(Message *incoming)
 void HandleClearAllRequest(Message *incoming)
 {
 	suspects.EraseAllSuspects();
-	suspectsSinceLastSave.EraseAllSuspects();
 	boost::filesystem::path delString = Config::Inst()->GetPathCESaveFile();
 	bool successResult = true;
 	try
@@ -99,12 +98,7 @@ void HandleClearSuspectRequest(Message *incoming)
 {
 	Suspect messageSuspect = suspects.GetSuspect(incoming->m_contents.m_suspectid());
 	bool result = suspects.Erase(incoming->m_contents.m_suspectid());
-	if(!result)
-	{
-		LOG(DEBUG, "Failed to Erase suspect from the main suspect table.", "");
-	}
 
-	result = suspectsSinceLastSave.Erase(incoming->m_contents.m_suspectid());
 	if(!result)
 	{
 		LOG(DEBUG, "Failed to Erase suspect from the unsaved suspect table.", "");

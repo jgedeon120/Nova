@@ -33,6 +33,7 @@
 #include "Point.h"
 #include "Novad.h"
 #include "Lock.h"
+#include "Database.h"
 
 #include <vector>
 #include <math.h>
@@ -91,6 +92,12 @@ namespace Nova
 void *ClassificationLoop(void *ptr)
 {
 	MaskKillSignals();
+
+	// TODO DTC enable the CE loop again when suspect table isn't causing deadlocks
+	do
+	{
+		sleep(1);
+	} while (true);
 
 	//Classification Loop
 	do
@@ -277,11 +284,24 @@ void *ConsumerLoop(void *ptr)
 		//Blocks on a mutex/condition if there's no evidence to process
 		Evidence *cur = suspectEvidence.GetEvidence();
 
-		//Do not deallocate evidence, we still need it
-		suspectsSinceLastSave.ProcessEvidence(cur, true);
+		Database::Inst()->StartTransaction();
+
+		// TODO DTC Remove when done timing things
+		struct timeval start, end;
+		long mtime, seconds, useconds;
+		gettimeofday(&start, NULL);
+
 
 		//Consume evidence
 		suspects.ProcessEvidence(cur, false);
+		Database::Inst()->StopTransaction();
+
+		gettimeofday(&end, NULL);
+		seconds  = end.tv_sec  - start.tv_sec;
+		useconds = end.tv_usec - start.tv_usec;
+		mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
+		cout << "Elapsed time in milliseconds: " << mtime << endl;
+
 	}
 	return NULL;
 }

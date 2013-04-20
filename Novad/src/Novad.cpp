@@ -65,8 +65,6 @@ using namespace Nova;
 
 // Maintains a list of suspects and information on network activity
 SuspectTable suspects;
-// Suspects not yet written to the state file
-SuspectTable suspectsSinceLastSave;
 //Contains packet evidence yet to be included in a suspect
 EvidenceTable suspectEvidence;
 
@@ -436,7 +434,6 @@ void Packet_Handler(u_char *index,const struct pcap_pkthdr *pkthdr,const u_char 
 			else
 			{
 				// If reading from pcap file no Consumer threads, so process the evidence right away
-				suspectsSinceLastSave.ProcessEvidence(evidencePacket, true);
 				suspects.ProcessEvidence(evidencePacket, false);
 			}
 			return;
@@ -584,7 +581,9 @@ void UpdateAndClassify(SuspectID_pb key)
 	}
 
 	// Add to the db
+	Database::Inst()->StartTransaction();
 	Database::Inst()->InsertSuspect(&suspectCopy);
+	Database::Inst()->StopTransaction();
 
 	if(suspectCopy.GetIsHostile() && (!oldIsHostile || Config::Inst()->GetClearAfterHostile()))
 	{
@@ -601,11 +600,6 @@ void UpdateAndClassify(SuspectID_pb key)
 			stringstream ss;
 			ss << "Main suspect Erase returned: " << suspects.Erase(key);
 			LOG(DEBUG, ss.str(), "");
-
-
-			stringstream ss2;
-			ss2 << "LastSave suspect Erase returned: " << suspectsSinceLastSave.Erase(key);
-			LOG(DEBUG, ss2.str(), "");
 
 			Message *msg = new Message(UPDATE_SUSPECT_CLEARED);
 			msg->m_contents.mutable_m_suspectid()->CopyFrom(suspectCopy.GetIdentifier());

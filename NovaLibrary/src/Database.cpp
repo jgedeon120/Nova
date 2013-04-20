@@ -84,6 +84,18 @@ Database::~Database()
 	Disconnect();
 }
 
+void Database::StartTransaction()
+{
+	pthread_mutex_lock(&m_lock);
+	sqlite3_exec(db, "BEGIN", 0, 0, 0);
+}
+
+void Database::StopTransaction()
+{
+	sqlite3_exec(db, "COMMIT", 0, 0, 0);
+	pthread_mutex_unlock(&m_lock);
+}
+
 bool Database::Connect()
 {
 	LOG(DEBUG, "Opening database " + m_databaseFile, "");
@@ -135,6 +147,11 @@ bool Database::Connect()
 	res = sqlite3_prepare_v2(db,
 		"UPDATE packet_sizes SET count = count + 1 WHERE ip = ?1 AND interface = ?2 AND packetSize = ?3;",
 		-1, &incrementPacketSize,  NULL);
+	expectReturnValueAndFail(SQLITE_OK);
+
+	res = sqlite3_prepare_v2(db,
+		"INSERT OR REPLACE INTO suspect_features VALUES(?1, ?2, ?3, ?4)",
+		-1, &setFeatureValue, NULL);
 	expectReturnValueAndFail(SQLITE_OK);
 
 
@@ -189,7 +206,6 @@ void Database::ResetPassword()
 
 void Database::InsertSuspect(Suspect *suspect)
 {
-	Lock(&this->m_lock);
 	int res;
 
 	res = sqlite3_bind_text(insertSuspect, 1, suspect->GetIpString().c_str(), -1, SQLITE_TRANSIENT);
@@ -220,7 +236,6 @@ void Database::InsertSuspect(Suspect *suspect)
 
 void Database::IncrementPacketCount(SuspectID_pb id, std::string type)
 {
-	Lock(&this->m_lock);
 	int res;
 
 
@@ -258,7 +273,6 @@ void Database::IncrementPacketCount(SuspectID_pb id, std::string type)
 
 void Database::IncrementPacketSizeCount(SuspectID_pb id, uint16_t size)
 {
-	Lock(&this->m_lock);
 	int res;
 
 
@@ -296,7 +310,6 @@ void Database::IncrementPacketSizeCount(SuspectID_pb id, uint16_t size)
 
 void Database::IncrementPortContactedCount(SuspectID_pb id, string protocol, string dstip, int port)
 {
-	Lock(&this->m_lock);
 	int res;
 
 	res = sqlite3_bind_text(insertPortContacted, 1, Suspect::GetIpString(id).c_str(), -1, SQLITE_TRANSIENT);
@@ -331,7 +344,24 @@ void Database::IncrementPortContactedCount(SuspectID_pb id, string protocol, str
 	expectReturnValue(SQLITE_OK);
 }
 
+void Database::SetFeatureSetValue(SuspectID_pb id, std::string featureName, double value)
+{
+	int res;
 
+	res = sqlite3_bind_text(setFeatureValue, 1, Suspect::GetIpString(id).c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_text(setFeatureValue, 2, id.m_ifname().c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_text(setFeatureValue, 3, featureName.c_str(), -1, SQLITE_TRANSIENT);
+	expectReturnValue(SQLITE_OK);
+	res = sqlite3_bind_double(setFeatureValue, 4, value);
+	expectReturnValue(SQLITE_OK);
+
+	res = sqlite3_step(setFeatureValue);
+	expectReturnValue(SQLITE_DONE);
+	res = sqlite3_reset(setFeatureValue);
+	expectReturnValue(SQLITE_OK);
+}
 
 
 void Database::InsertSuspectHostileAlert(Suspect *suspect)
@@ -364,5 +394,6 @@ void Database::InsertSuspectHostileAlert(Suspect *suspect)
 		throw DatabaseException(string(errorMessage));
 	}
 }
+
 
 }/* namespace Nova */
