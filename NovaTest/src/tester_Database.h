@@ -35,6 +35,41 @@ protected:
 	}
 };
 
+
+TEST_F(DatabaseTest, testInsertSuspect)
+{
+	SuspectID_pb m_id;
+	m_id.set_m_ip(42);
+	m_id.set_m_ifname("test");
+	Suspect s;
+	s.SetIdentifier(m_id);
+
+	Database::Inst()->StartTransaction();
+	Database::Inst()->InsertSuspect(&s);
+	Database::Inst()->StopTransaction();
+
+	struct timeval start, end;
+	long mtime, seconds, useconds;
+	gettimeofday(&start, NULL);
+
+	Database::Inst()->StartTransaction();
+	for (int i = 0; i < 65535; i++)
+	{
+		Database::Inst()->IncrementPacketCount(m_id, "tcp");
+		Database::Inst()->IncrementPacketCount(m_id, "tcpSyn");
+		Database::Inst()->IncrementPacketCount(m_id, "total");
+		Database::Inst()->IncrementPacketSizeCount(m_id, 120);
+		Database::Inst()->IncrementPortContactedCount(m_id, "tcp", "192.168.42.42", i);
+	}
+	Database::Inst()->StopTransaction();
+
+	gettimeofday(&end, NULL);
+	seconds  = end.tv_sec  - start.tv_sec;
+	useconds = end.tv_usec - start.tv_usec;
+	mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
+	cout << "Elapsed time in milliseconds: " << mtime << endl;
+}
+
 // Tests go here. Multiple small tests are better than one large test, as each test
 // will get a pass/fail and debugging information associated with it.
 
