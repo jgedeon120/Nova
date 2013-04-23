@@ -44,6 +44,8 @@ TEST_F(DatabaseTest, testInsertSuspect)
 	Suspect s;
 	s.SetIdentifier(m_id);
 
+	std::string ip = Suspect::GetIpString(m_id);
+
 	Database::Inst()->StartTransaction();
 	Database::Inst()->InsertSuspect(&s);
 	Database::Inst()->StopTransaction();
@@ -52,14 +54,15 @@ TEST_F(DatabaseTest, testInsertSuspect)
 	long mtime, seconds, useconds;
 	gettimeofday(&start, NULL);
 
+	// Something that looks about like a port scan
 	Database::Inst()->StartTransaction();
 	for (int i = 0; i < 65535; i++)
 	{
-		Database::Inst()->IncrementPacketCount(m_id, "tcp");
-		Database::Inst()->IncrementPacketCount(m_id, "tcpSyn");
-		Database::Inst()->IncrementPacketCount(m_id, "total");
-		Database::Inst()->IncrementPacketSizeCount(m_id, 120);
-		Database::Inst()->IncrementPortContactedCount(m_id, "tcp", "192.168.42.42", i);
+		Database::Inst()->IncrementPacketCount(ip, "test", "tcp");
+		Database::Inst()->IncrementPacketCount(ip, "test", "tcpSyn");
+		Database::Inst()->IncrementPacketCount(ip, "test", "total");
+		Database::Inst()->IncrementPacketSizeCount(ip, "test", 120);
+		Database::Inst()->IncrementPortContactedCount(ip, "test", "tcp", "192.168.42.42", i);
 	}
 	Database::Inst()->StopTransaction();
 

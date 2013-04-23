@@ -307,7 +307,6 @@ void Reload()
 	// Reload the configuration file
 	Config::Inst()->LoadConfig();
 	engine->Reload();
-	suspects.SetEveryoneNeedsClassificationUpdate();
 }
 
 void StartCapture()
@@ -560,30 +559,23 @@ string ConstructFilterString(string captureIdentifier)
 
 void UpdateAndClassify(SuspectID_pb key)
 {
+
+	// TODO DTC need to refactor this to work with SQL database
+	Suspect suspectCopy;
+	return;
+
+
 	//Check for a valid suspect
-	Suspect suspectCopy = suspects.GetShallowSuspect(key);
-	if(suspects.IsEmptySuspect(&suspectCopy))
-	{
-		return;
-	}
+	//Suspect suspectCopy = suspects.GetShallowSuspect(key);
 
 	//Get the old hostility bool
 	bool oldIsHostile = suspectCopy.GetIsHostile();
 
 	//Classify
-	suspects.ClassifySuspect(key);
+	//suspects.ClassifySuspect(key);
 
 	//Check that we updated correctly
-	suspectCopy = suspects.GetShallowSuspect(key);
-	if(suspects.IsEmptySuspect(&suspectCopy))
-	{
-		return;
-	}
-
-	// Add to the db
-	Database::Inst()->StartTransaction();
-	Database::Inst()->InsertSuspect(&suspectCopy);
-	Database::Inst()->StopTransaction();
+	//suspectCopy = suspects.GetShallowSuspect(key);
 
 	if(suspectCopy.GetIsHostile() && (!oldIsHostile || Config::Inst()->GetClearAfterHostile()))
 	{
@@ -597,6 +589,7 @@ void UpdateAndClassify(SuspectID_pb key)
 
 		if(Config::Inst()->GetClearAfterHostile())
 		{
+			/* TODO DTC borked because of the suspect table -> sql conversion
 			stringstream ss;
 			ss << "Main suspect Erase returned: " << suspects.Erase(key);
 			LOG(DEBUG, ss.str(), "");
@@ -605,6 +598,7 @@ void UpdateAndClassify(SuspectID_pb key)
 			msg->m_contents.mutable_m_suspectid()->CopyFrom(suspectCopy.GetIdentifier());
 			MessageManager::Instance().WriteMessage(msg, 0);
 			delete msg;
+			*/
 		}
 		else
 		{
@@ -666,7 +660,9 @@ void UpdateHaystackFeatures()
 	ss2 << "Currently monitoring " << haystackDhcpAddresses.size() << " DHCP honeypot IP addresses";
 	LOG(DEBUG, ss2.str(), "");
 
-	suspects.SetHaystackNodes(haystackNodes);
+
+	// TODO DTC put this in the database
+	//suspects.SetHaystackNodes(haystackNodes);
 }
 
 }

@@ -53,19 +53,21 @@ public:
 	void InsertSuspect(Suspect *suspect);
 
 	void InsertSuspectHostileAlert(Suspect *suspect);
-	void IncrementPacketCount(SuspectID_pb id, std::string type);
 
-	void IncrementPacketSizeCount(SuspectID_pb, uint16_t size);
-	void IncrementPortContactedCount(SuspectID_pb id, std::string protocol, std::string dstip, int port);
+	void IncrementPacketCount(std::string ip, std::string interface, std::string type, uint64_t increment = 1);
+	void IncrementPacketSizeCount(std::string ip, std::string interface, uint16_t size, uint64_t increment = 1);
+	void IncrementPortContactedCount(std::string ip, std::string interface, std::string protocol, std::string dstip, int port, uint64_t increment = 1);
 
 
-	void SetFeatureSetValue(SuspectID_pb id, std::string featureName, double value);
+	void SetFeatureSetValue(std::string ip, std::string interface, std::string featureName, double value);
 
 	void ResetPassword();
 
 	static int callback(void *NotUsed, int argc, char **argv, char **azColName);
 
 
+	// This is just for debugging performance issues
+	int m_count;
 private:
 	Database(std::string databaseFile = "");
 

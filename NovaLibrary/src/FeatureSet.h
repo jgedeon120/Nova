@@ -117,7 +117,7 @@ struct IpPortCombinationEquals
 };
 
 
-typedef Nova::HashMap<IpPortCombination, uint8_t, std::hash<IpPortCombination>, IpPortCombinationEquals> IpPortTable;
+typedef Nova::HashMap<IpPortCombination, uint64_t, std::hash<IpPortCombination>, IpPortCombinationEquals> IpPortTable;
 
 namespace Nova
 {
@@ -208,7 +208,6 @@ public:
 	time_t m_endTime;
 	time_t m_lastTime;
 
-private:
 	//Temporary variables used to calculate Features
 
 	//Table of Packet sizes and counts for variance calc

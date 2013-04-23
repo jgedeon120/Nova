@@ -28,8 +28,6 @@
 #include "Suspect.h"
 #include "protobuf/marshalled_classes.pb.h"
 
-#define EMPTY_SUSPECT_CLASSIFICATION -1337
-
 namespace std
 {
 	template<>
@@ -82,69 +80,9 @@ public:
 	SuspectTable();
 	~SuspectTable();
 
-	// Adds the Suspect pointed to in 'suspect' into the table using suspect->GetIPAddress() as the key;
-	// 		suspect: pointer to the Suspect you wish to add
-	// Returns true on Success, and false if the suspect already exists
-	bool AddNewSuspect(Suspect *suspect);
-
-	// Adds the Suspect pointed to in 'suspect' into the table using the source of the evidence as the key;
-	// 		evidence: copy of the packet you whish to create a suspect from
-	// Returns true on Success, and false if the suspect already exists
-	//bool AddNewSuspect(const Evidence& evidence);
-
-	bool ClassifySuspect(Nova::SuspectID_pb key);
-
-	void UpdateAllSuspects();
-
-	void SetHaystackNodes(std::vector<uint32_t> nodes);
-
-
-	// Lookup and get an Asynchronous copy of the Suspect
-	// 		key: IP address of the suspect as a uint value (host byte order)
-	// Returns an empty suspect on failure
-	// Note: To modify or lock a suspect use CheckOut();
-	// Note: This is the same as GetSuspectStatus except it copies the feature set object which can grow very large.
-	Suspect GetSuspect(Nova::SuspectID_pb key);
-	Suspect GetShallowSuspect(Nova::SuspectID_pb key);
-
-	//Erases a suspect from the table if it is not locked
-	// 		key: IP address of the suspect as a uint value (host byte order)
-	// Returns (true) on success, (false) if the suspect does not exist (key is invalid)
-	bool Erase(Nova::SuspectID_pb key);
-
-	// Clears the Suspect Table of all entries
-	// Note: Locks may still persist until all threads unlock or return from blocking on them.
-	void EraseAllSuspects();
-
-	// This function returns a vector of suspects keys the caller can iterate over to access the table.
-	// Returns a std::vector of every suspect currently in the table
-	std::vector<SuspectID_pb> GetAllKeys();
-
-	// This function returns a vector of suspects keys the caller can iterate over to access the table.
-	// Returns a std::vector containing all hostile suspect keys
-	std::vector<SuspectID_pb> GetKeys_of_HostileSuspects();
-
-	// This function returns a vector of suspects keys the caller can iterate over to access the table.
-	// Returns a std::vector containing all benign suspect keys
-	std::vector<SuspectID_pb> GetKeys_of_BenignSuspects();
-
 	// This function returns a vector of suspects keys the caller can iterate over to access the table.
 	// Returns a std::vector containing the keys of all suspects that need a classification update.
 	std::vector<SuspectID_pb> GetKeys_of_ModifiedSuspects();
-
-	// Get the size of the Suspect Table
-	// Returns the size of the Table
-	uint Size();
-
-	// Saves suspectTable to a human readable text file
-	void SaveSuspectsToFile(std::string filename);
-
-	// Checks the validity of the key - public thread-safe version
-	// 		key: IP address of the suspect as a uint value (host byte order)
-	// Returns true if there is a suspect associated with the given key, false otherwise
-	bool IsValidKey(Nova::SuspectID_pb key);
-
-	bool IsEmptySuspect(Suspect *suspect);
 
 	//Consumes the linked list of evidence objects, extracting their information and inserting them into the Suspects.
 	// evidence: Evidence object, if consuming more than one piece of evidence this is the start
@@ -153,50 +91,15 @@ public:
 	//		this is a specialized function designed only for use by Consumer threads.
 	void ProcessEvidence(Evidence *evidence, bool readOnly = false);
 
-	// Mark all suspects to be reclassified next classification cycle
-	void SetEveryoneNeedsClassificationUpdate();
-
-	Suspect m_emptySuspect;
-
+	void WriteToDatabase();
 private:
 
 	// Hashmap used for constant time key lookups
 	SuspectHashTable m_suspectTable;
 	std::vector<Nova::SuspectID_pb> m_suspectsNeedingUpdate;
-	SuspectLockTable m_lockTable;
-
-	// List of haystack nodes, cached in the suspectTable
-	// and passed to featureSets when a new suspect is created
-	std::vector<uint32_t> m_haystackNodesCached;
 
 	// Lock used to maintain concurrency between threads
 	pthread_rwlock_t m_lock;
-	pthread_mutex_t m_needsUpdateLock;
-
-	std::vector<Nova::SuspectID_pb> m_keys;
-
-	// Marks a suspect to be reclassified at some point
-	void SetNeedsClassificationUpdate(Nova::SuspectID_pb key);
-	void SetNeedsClassificationUpdate_noLocking(Nova::SuspectID_pb key);
-
-	// Checks the validity of the key - private use non-locking version
-	// 		key: IP address of the suspect as a uint value (host byte order)
-	// Returns true if there is a suspect associated with the given key, false otherwise
-	// *Note: Assumes you have already locked the table
-	bool IsValidKey_NonBlocking(Nova::SuspectID_pb key);
-
-	//Used by threads about to block on a suspect
-	// 		key: IP address of the suspect as a uint value (host byte order)
-	// Note: lock won't be deleted until the ref count is 0, but the Suspect can still be.
-	bool LockSuspect(Nova::SuspectID_pb key);
-
-	//Used by threads done blocking on a suspect
-	// 		key: IP address of the suspect as a uint value (host byte order)
-	// Returns (true) if the Lock could be unlocked and still exists and
-	// (false) if the Suspect has been deleted or could not be unlocked.
-	// Note: automatically deletes the lock if the suspect has been deleted and the ref count is 0
-	bool UnlockSuspect(Nova::SuspectID_pb key);
-
 };
 
 }

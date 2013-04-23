@@ -133,8 +133,6 @@ void Suspect::ReadEvidence(Evidence *evidence, bool deleteEvidence)
 	{
 		m_id.set_m_ip(evidence->m_evidencePacket.ip_src);
 		m_id.set_m_ifname(evidence->m_evidencePacket.interface);
-
-		Database::Inst()->InsertSuspect(this);
 	}
 
 	Evidence *curEvidence = evidence, *tempEv = NULL;
@@ -143,87 +141,6 @@ void Suspect::ReadEvidence(Evidence *evidence, bool deleteEvidence)
 		// TODO Delete this line (and all of the featureset class)
 		m_features.UpdateEvidence(*curEvidence);
 
-		// Ensure our assumptions about valid packet fields are true
-		if(curEvidence->m_evidencePacket.ip_dst == 0)
-		{
-			LOG(DEBUG, "Got packet with invalid source IP address of 0. Skipping.", "");
-			return;
-		}
-
-		SuspectID_pb dstid;
-		dstid.set_m_ip(curEvidence->m_evidencePacket.ip_dst);
-
-		switch(curEvidence->m_evidencePacket.ip_p)
-		{
-			//If UDP
-			case 17:
-			{
-				Database::Inst()->IncrementPacketCount(m_id, "udp");
-				Database::Inst()->IncrementPortContactedCount(m_id, "udp", Suspect::GetIpString(dstid), curEvidence->m_evidencePacket.dst_port);
-
-				break;
-			}
-			//If TCP
-			case 6:
-			{
-				Database::Inst()->IncrementPacketCount(m_id, "tcp");
-
-				// Only count as an IP/port contacted if it looks like a scan (SYN or NULL packet)
-				if ((curEvidence->m_evidencePacket.tcp_hdr.syn && !curEvidence->m_evidencePacket.tcp_hdr.ack)
-						|| (!curEvidence->m_evidencePacket.tcp_hdr.syn && !curEvidence->m_evidencePacket.tcp_hdr.ack
-								&& !curEvidence->m_evidencePacket.tcp_hdr.rst))
-				{
-
-					Database::Inst()->IncrementPortContactedCount(m_id, "tcp", Suspect::GetIpString(dstid), curEvidence->m_evidencePacket.dst_port);
-
-				}
-
-				if(curEvidence->m_evidencePacket.tcp_hdr.syn && curEvidence->m_evidencePacket.tcp_hdr.ack)
-				{
-					Database::Inst()->IncrementPacketCount(m_id, "tcpSynAck");
-				}
-				else if(curEvidence->m_evidencePacket.tcp_hdr.syn)
-				{
-					Database::Inst()->IncrementPacketCount(m_id, "tcpSyn");
-				}
-				else if(curEvidence->m_evidencePacket.tcp_hdr.ack)
-				{
-					Database::Inst()->IncrementPacketCount(m_id, "tcpAck");
-				}
-
-				if(curEvidence->m_evidencePacket.tcp_hdr.rst)
-				{
-					Database::Inst()->IncrementPacketCount(m_id, "tcpRst");
-				}
-
-				if(curEvidence->m_evidencePacket.tcp_hdr.fin)
-				{
-					Database::Inst()->IncrementPacketCount(m_id, "tcpFin");
-				}
-
-				break;
-			}
-			//If ICMP
-			case 1:
-			{
-				Database::Inst()->IncrementPacketCount(m_id, "icmp");
-				Database::Inst()->IncrementPortContactedCount(m_id, "icmp", Suspect::GetIpString(dstid), 0);
-
-				break;
-			}
-			//If untracked IP protocol or error case ignore it
-			default:
-			{
-				Database::Inst()->IncrementPacketCount(m_id, "other");
-				Database::Inst()->IncrementPortContactedCount(m_id, "other", Suspect::GetIpString(dstid), 0);
-				break;
-			}
-		}
-
-		Database::Inst()->IncrementPacketCount(m_id, "total");
-		Database::Inst()->IncrementPacketSizeCount(m_id, curEvidence->m_evidencePacket.ip_len);
-
-		// TODO DTC
 //		Database::Inst()->IncrementPacketCount(m_id, 'bytes');
 //		m_bytesTotal += curEvidence->m_evidencePacket.ip_len;
 //
@@ -274,6 +191,7 @@ void Suspect::CalculateFeatures()
 	m_features.CalculateAll();
 
 	// TODO DTC this is just bolted on here for testing/dev purposes
+	/*
 	Database::Inst()->StartTransaction();
 	Database::Inst()->SetFeatureSetValue(m_id, "ip_traffic_distribution", m_features.m_features[IP_TRAFFIC_DISTRIBUTION]);
 	Database::Inst()->SetFeatureSetValue(m_id, "port_traffic_distribution", m_features.m_features[PORT_TRAFFIC_DISTRIBUTION]);
@@ -290,6 +208,7 @@ void Suspect::CalculateFeatures()
 	Database::Inst()->SetFeatureSetValue(m_id, "tcp_percent_synack", m_features.m_features[TCP_PERCENT_SYNACK]);
 	Database::Inst()->SetFeatureSetValue(m_id, "haystack_percent_contacted", m_features.m_features[HAYSTACK_PERCENT_CONTACTED]);
 	Database::Inst()->StopTransaction();
+	*/
 }
 
 // Stores the Suspect information into the buffer, retrieved using deserializeSuspect

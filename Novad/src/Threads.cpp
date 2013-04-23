@@ -96,6 +96,25 @@ void *ClassificationLoop(void *ptr)
 	// TODO DTC enable the CE loop again when suspect table isn't causing deadlocks
 	do
 	{
+		struct timeval start, end;
+		long mtime, seconds, useconds;
+		gettimeofday(&start, NULL);
+
+		Database::Inst()->m_count = 0;
+		suspects.WriteToDatabase();
+
+
+		gettimeofday(&end, NULL);
+		seconds  = end.tv_sec  - start.tv_sec;
+		useconds = end.tv_usec - start.tv_usec;
+		mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
+		cout << "Elapsed time in milliseconds: " << mtime << endl;
+		cout << "Total queries: " << Database::Inst()->m_count << endl;
+		if (mtime != 0)
+		{
+			cout << "Queries per second: " << 1000*((double)Database::Inst()->m_count / (double)mtime) << endl;
+		}
+
 		sleep(1);
 	} while (true);
 
@@ -239,6 +258,9 @@ void *UpdateWhitelistIPFilter(void *ptr)
 				}
 
 
+
+				// TODO DTC borked because of the suspect table -> sql conversion
+				/*
 				// Clear any suspects that were whitelisted from the GUIs
 				vector<SuspectID_pb> all = suspects.GetAllKeys();
 				for(uint i = 0; i < whitelistIpAddresses.size(); i++)
@@ -253,6 +275,7 @@ void *UpdateWhitelistIPFilter(void *ptr)
 						doop.sin_addr.s_addr = ntohl(all[j].m_ip());
 						inet_ntop(AF_INET, &(doop.sin_addr), str, INET_ADDRSTRLEN);
 
+
 						if(!whitelistUse.compare(string(str)) && suspects.Erase(all[j]))
 						{
 							Message msg;
@@ -262,6 +285,7 @@ void *UpdateWhitelistIPFilter(void *ptr)
 						}
 					}
 				}
+				*/
 			}
 		}
 		else
@@ -284,24 +308,7 @@ void *ConsumerLoop(void *ptr)
 		//Blocks on a mutex/condition if there's no evidence to process
 		Evidence *cur = suspectEvidence.GetEvidence();
 
-		Database::Inst()->StartTransaction();
-
-		// TODO DTC Remove when done timing things
-		struct timeval start, end;
-		long mtime, seconds, useconds;
-		gettimeofday(&start, NULL);
-
-
-		//Consume evidence
 		suspects.ProcessEvidence(cur, false);
-		Database::Inst()->StopTransaction();
-
-		gettimeofday(&end, NULL);
-		seconds  = end.tv_sec  - start.tv_sec;
-		useconds = end.tv_usec - start.tv_usec;
-		mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
-		cout << "Elapsed time in milliseconds: " << mtime << endl;
-
 	}
 	return NULL;
 }
@@ -328,29 +335,9 @@ void *MessageWorker(void *ptr)
 				HandleClearSuspectRequest(message);
 				break;
 			}
-			case CONTROL_SAVE_SUSPECTS_REQUEST:
-			{
-				HandleSaveSuspectsRequest(message);
-				break;
-			}
 			case CONTROL_RECLASSIFY_ALL_REQUEST:
 			{
 				HandleReclassifyAllRequest(message);
-				break;
-			}
-			case REQUEST_SUSPECTLIST:
-			{
-				HandleRequestSuspectList(message);
-				break;
-			}
-			case REQUEST_SUSPECT:
-			{
-				HandleRequestSuspect(message);
-				break;
-			}
-			case REQUEST_ALL_SUSPECTS:
-			{
-				HandleRequestAllSuspects(message);
 				break;
 			}
 			case REQUEST_UPTIME:

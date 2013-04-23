@@ -5,7 +5,6 @@
 #include "tester_EvidenceTable.h"
 #include "tester_FeatureSet.h"
 #include "tester_Suspect.h"
-#include "tester_SuspectTable.h"
 #include "tester_ClassificationEngine.h"
 #include "tester_RequestMessage.h"
 #include "tester_VendorMacDb.h"

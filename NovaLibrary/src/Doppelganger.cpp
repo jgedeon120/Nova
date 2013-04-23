@@ -55,8 +55,12 @@ void Doppelganger::UpdateDoppelganger()
 	{
 		InitDoppelganger();
 	}
+
+	vector<SuspectID_pb> keys;
+
+	// TODO DTC borked in the suspect table -> sqlite conversion
 	//Get latest list of hostile suspects
-	vector<SuspectID_pb> keys = m_suspectTable.GetKeys_of_HostileSuspects();
+	// keys = m_suspectTable.GetKeys_of_HostileSuspects();
 	vector<SuspectID_pb> keysCopy = keys;
 
 	//A few variable declarations
@@ -249,7 +253,9 @@ void Doppelganger::ResetDoppelganger()
 		LOG(DEBUG, "Unable to flush Doppelganger rules.", "Command '"+commandLine+"' was unsuccessful.");
 	}
 	m_suspectKeys.clear();
-	m_suspectKeys = m_suspectTable.GetKeys_of_HostileSuspects();
+
+	// TODO DTC borked in the suspecttable -> sqlite conversion
+	//m_suspectKeys = m_suspectTable.GetKeys_of_HostileSuspects();
 
 	prefix = "sudo iptables -t nat -I DOPP -s ";
 	string suffix = " -j DNAT --to-destination " + Config::Inst()->GetDoppelIp();

@@ -546,12 +546,12 @@ FeatureSet& FeatureSet::operator+=(FeatureSet &rhs)
 
 	for (IpPortTable::iterator it = rhs.m_hasTcpPortIpBeenContacted.begin(); it != rhs.m_hasTcpPortIpBeenContacted.end(); it++)
 	{
-		m_hasTcpPortIpBeenContacted[it->first] = true;
+		m_hasTcpPortIpBeenContacted[it->first]++;
 	}
 
 	for (IpPortTable::iterator it = rhs.m_hasUdpPortIpBeenContacted.begin(); it != rhs.m_hasUdpPortIpBeenContacted.end(); it++)
 	{
-		m_hasUdpPortIpBeenContacted[it->first] = true;
+		m_hasUdpPortIpBeenContacted[it->first]++;
 	}
 
 	m_HaystackIPTable.clear();
@@ -648,8 +648,8 @@ uint32_t FeatureSet::SerializeFeatureData(u_char *buf, uint32_t bufferSize)
 
 	SerializeHashTable<IP_Table, uint32_t, uint64_t>  (buf, offset, m_tcpPortsContactedForIP, bufferSize);
 	SerializeHashTable<IP_Table, uint32_t, uint64_t>  (buf, offset, m_udpPortsContactedForIP, bufferSize);
-	SerializeHashTable<IpPortTable, IpPortCombination, uint8_t>  (buf, offset, m_hasTcpPortIpBeenContacted, bufferSize);
-	SerializeHashTable<IpPortTable, IpPortCombination, uint8_t>  (buf, offset, m_hasUdpPortIpBeenContacted,bufferSize);
+	SerializeHashTable<IpPortTable, IpPortCombination, uint64_t>  (buf, offset, m_hasTcpPortIpBeenContacted, bufferSize);
+	SerializeHashTable<IpPortTable, IpPortCombination, uint64_t>  (buf, offset, m_hasUdpPortIpBeenContacted,bufferSize);
 
 	return offset;
 }
@@ -684,8 +684,8 @@ uint32_t FeatureSet::GetFeatureDataLength()
 	out += GetSerializeHashTableLength<Port_Table, in_port_t, uint64_t>  (m_PortUDPTable);
 	out += GetSerializeHashTableLength<IP_Table, uint32_t, uint64_t> (m_tcpPortsContactedForIP);
 	out += GetSerializeHashTableLength<IP_Table, uint32_t, uint64_t> (m_udpPortsContactedForIP);
-	out += GetSerializeHashTableLength<IpPortTable, IpPortCombination, uint8_t> (m_hasTcpPortIpBeenContacted);
-	out += GetSerializeHashTableLength<IpPortTable, IpPortCombination, uint8_t> (m_hasUdpPortIpBeenContacted);
+	out += GetSerializeHashTableLength<IpPortTable, IpPortCombination, uint64_t> (m_hasTcpPortIpBeenContacted);
+	out += GetSerializeHashTableLength<IpPortTable, IpPortCombination, uint64_t> (m_hasUdpPortIpBeenContacted);
 
 	return out;
 }
@@ -746,8 +746,8 @@ uint32_t FeatureSet::DeserializeFeatureData(u_char *buf, uint32_t bufferSize)
 
 	DeserializeHashTable<IP_Table, uint32_t, uint64_t>  (buf, offset, m_tcpPortsContactedForIP, bufferSize);
 	DeserializeHashTable<IP_Table, uint32_t, uint64_t>  (buf, offset, m_udpPortsContactedForIP, bufferSize);
-	DeserializeHashTable<IpPortTable, IpPortCombination, uint8_t>  (buf, offset, m_hasTcpPortIpBeenContacted, bufferSize);
-	DeserializeHashTable<IpPortTable, IpPortCombination, uint8_t>  (buf, offset, m_hasUdpPortIpBeenContacted, bufferSize);
+	DeserializeHashTable<IpPortTable, IpPortCombination, uint64_t>  (buf, offset, m_hasTcpPortIpBeenContacted, bufferSize);
+	DeserializeHashTable<IpPortTable, IpPortCombination, uint64_t>  (buf, offset, m_hasUdpPortIpBeenContacted, bufferSize);
 
 	return offset;
 }

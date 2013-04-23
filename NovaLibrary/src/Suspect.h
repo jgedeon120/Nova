@@ -172,8 +172,6 @@ public:
 
 	// The main FeatureSet for this Suspect
 	FeatureSet m_features;
-	// FeatureSet containing data not yet sent through a SA
-	FeatureSet m_unsentFeatures;
 
 	std::string m_classificationNotes;
 

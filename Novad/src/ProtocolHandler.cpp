@@ -62,6 +62,7 @@ void HandleExitRequest(Message *incoming)
 
 void HandleClearAllRequest(Message *incoming)
 {
+	/* TODO DTC borked from the suspecttable -> sql conversion
 	suspects.EraseAllSuspects();
 	boost::filesystem::path delString = Config::Inst()->GetPathCESaveFile();
 	bool successResult = true;
@@ -92,10 +93,15 @@ void HandleClearAllRequest(Message *incoming)
 		updateMessage.m_contents.clear_m_messageid();
 		MessageManager::Instance().WriteMessageExcept(&updateMessage, incoming->m_contents.m_sessionindex());
 	}
+	*/
 }
 
 void HandleClearSuspectRequest(Message *incoming)
 {
+	// TODO DTC
+	// This needs work because of the database switch
+
+	/*
 	Suspect messageSuspect = suspects.GetSuspect(incoming->m_contents.m_suspectid());
 	bool result = suspects.Erase(incoming->m_contents.m_suspectid());
 
@@ -138,21 +144,7 @@ void HandleClearSuspectRequest(Message *incoming)
 	//Now send a generic message to the rest of the clients
 	updateMessage.m_contents.clear_m_messageid();
 	MessageManager::Instance().WriteMessageExcept(&updateMessage, incoming->m_contents.m_sessionindex());
-}
-
-void HandleSaveSuspectsRequest(Message *incoming)
-{
-	if(incoming->m_contents.m_filepath().length() == 0)
-	{
-		suspects.SaveSuspectsToFile(string("save.txt"));
-	}
-	else
-	{
-		suspects.SaveSuspectsToFile(string(incoming->m_contents.m_filepath()));
-	}
-
-	LOG(DEBUG, "Saved suspects to file due to UI request",
-		"Got a CONTROL_SAVE_SUSPECTS_REQUEST, saved all suspects.");
+	*/
 }
 
 void HandleReclassifyAllRequest(Message *incoming)
@@ -171,153 +163,6 @@ void HandleStartCaptureRequest(Message *incoming)
 void HandleStopCaptureRequest(Message *incoming)
 {
 	StopCapture();
-}
-
-void HandleRequestSuspectList(Message *incoming)
-{
-	Message reply;
-	reply.m_contents.set_m_type(REQUEST_SUSPECTLIST_REPLY);
-	reply.m_contents.set_m_listtype(incoming->m_contents.m_listtype());
-	if(incoming->m_contents.has_m_messageid())
-	{
-		reply.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
-	}
-
-	switch(incoming->m_contents.m_listtype())
-	{
-		case SUSPECTLIST_ALL:
-		{
-			vector<SuspectID_pb> benign = suspects.GetKeys_of_BenignSuspects();
-			for(uint i = 0; i < benign.size(); i++)
-			{
-				SuspectID_pb *temp = reply.m_contents.add_m_suspectids();
-				temp->CopyFrom(benign.at(i));
-			}
-
-			vector<SuspectID_pb> hostile = suspects.GetKeys_of_HostileSuspects();
-			for(uint i = 0; i < hostile.size(); i++)
-			{
-				SuspectID_pb *temp = reply.m_contents.add_m_suspectids();
-				temp->CopyFrom(hostile.at(i));
-			}
-			break;
-		}
-		case SUSPECTLIST_HOSTILE:
-		{
-			vector<SuspectID_pb> hostile = suspects.GetKeys_of_HostileSuspects();
-			for(uint i = 0; i < hostile.size(); i++)
-			{
-				SuspectID_pb *temp = reply.m_contents.add_m_suspectids();
-				temp->CopyFrom(hostile.at(i));
-			}
-			break;
-		}
-		case SUSPECTLIST_BENIGN:
-		{
-			vector<SuspectID_pb> benign = suspects.GetKeys_of_BenignSuspects();
-			for(uint i = 0; i < benign.size(); i++)
-			{
-				SuspectID_pb *temp = reply.m_contents.add_m_suspectids();
-				temp->CopyFrom(benign.at(i));
-			}
-			break;
-		}
-		default:
-		{
-			LOG(DEBUG, "UI sent us an invalid message", "Got an unexpected RequestMessage type");
-			break;
-		}
-	}
-
-	MessageManager::Instance().WriteMessage(&reply, incoming->m_contents.m_sessionindex());
-}
-
-void HandleRequestSuspect(Message *incoming)
-{
-	Message reply;
-	reply.m_contents.set_m_type(REQUEST_SUSPECT_REPLY);
-	if(incoming->m_contents.has_m_messageid())
-	{
-		reply.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
-	}
-
-	Suspect tempSuspect;
-
-	//If there was no requested suspect, then return an empty suspect (failure)
-	if(incoming->m_contents.has_m_suspectid())
-	{
-		if(reply.m_contents.m_featuremode() == NO_FEATURE_DATA)
-		{
-			tempSuspect = suspects.GetShallowSuspect(incoming->m_contents.m_suspectid());
-		}
-		else
-		{
-			tempSuspect = suspects.GetSuspect(incoming->m_contents.m_suspectid());
-		}
-	}
-
-	if(!suspects.IsEmptySuspect(&tempSuspect))
-	{
-		reply.m_suspects.push_back(&tempSuspect);
-		reply.m_contents.set_m_success(true);
-	}
-	else
-	{
-		reply.m_contents.set_m_success(false);
-	}
-
-	MessageManager::Instance().WriteMessage(&reply, incoming->m_contents.m_sessionindex());
-}
-
-void HandleRequestAllSuspects(Message *incoming)
-{
-	Message reply;
-	reply.m_contents.set_m_type(REQUEST_ALL_SUSPECTS_REPLY);
-	if(incoming->m_contents.has_m_messageid())
-	{
-		reply.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
-	}
-
-	vector<SuspectID_pb> keys;
-
-	switch(incoming->m_contents.m_listtype())
-	{
-		case SUSPECTLIST_ALL:
-		{
-			keys = suspects.GetAllKeys();
-			break;
-		}
-		case SUSPECTLIST_HOSTILE:
-		{
-			keys = suspects.GetKeys_of_HostileSuspects();
-			break;
-		}
-		case SUSPECTLIST_BENIGN:
-		{
-			keys = suspects.GetKeys_of_BenignSuspects();
-			break;
-		}
-		default:
-		{
-			LOG(DEBUG, "UI sent us an invalid message", "Got an unexpected RequestMessage type");
-			break;
-		}
-	}
-
-	//Get copies of the suspects
-	vector<Suspect> suspectCopies;
-	for(uint i = 0; i < keys.size(); i++)
-	{
-		suspectCopies.push_back(suspects.GetSuspect(keys[i]));
-	}
-
-	//Populate the message
-	for(uint i = 0; i < suspectCopies.size(); i++)
-	{
-		reply.m_suspects.push_back(&suspectCopies[i]);
-	}
-
-	MessageManager::Instance().WriteMessage(&reply, incoming->m_contents.m_sessionindex());
 }
 
 void HandleRequestUptime(Message *incoming)
