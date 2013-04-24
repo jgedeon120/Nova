@@ -32,8 +32,6 @@
 //dimension
 #define DIM 14
 
-#define SANITY_CHECK 268435456 // 2 ^ 28
-
 //Table of IP destinations and a count;
 typedef Nova::HashMap<uint32_t, uint64_t, std::hash<time_t>, eqtime > IP_Table;
 //Table of destination ports and a count;
@@ -52,13 +50,6 @@ struct IpPortCombination
 		m_ip = 0;
 		m_port = 0;
 		m_internal = 0;
-	}
-
-	static IpPortCombination GetEmptyKey()
-	{
-		IpPortCombination empty;
-		empty.m_internal = 1;
-		return empty;
 	}
 
 	bool operator ==(const IpPortCombination &rhs) const
@@ -151,51 +142,10 @@ public:
 	bool operator ==(const FeatureSet &rhs) const;
 	bool operator !=(const FeatureSet &rhs) const;
 
-	// Calculates all features in the feature set
-	//		featuresEnabled - Bitmask of which features are enabled, e.g. 0b111 would enable the first 3
-	void CalculateAll();
-
-	// Calculates the local time interval for time-dependent features using the latest time stamps
-	void CalculateTimeInterval();
-
-	// Calculates a feature's value
-	//		featureDimension: feature to calculate, e.g. PACKET_INTERVAL_DEVIATION
-	// Note: this will update the global 'features' array for the given featureDimension index
-	void Calculate(const uint& featureDimension);
 
 	// Processes incoming evidence before calculating the features
 	//		packet - packet headers of new packet
 	void UpdateEvidence(const Evidence &evidence);
-
-	// Serializes the contents of the global 'features' array
-	//		buf - Pointer to buffer where serialized feature set is to be stored
-	// Returns: number of bytes set in the buffer
-	uint32_t SerializeFeatureSet(u_char *buf, uint32_t bufferSize);
-
-	// Deserializes the buffer into the contents of the global 'features' array
-	//		buf - Pointer to buffer where serialized feature set resides
-	// Returns: number of bytes read from the buffer
-	uint32_t DeserializeFeatureSet(u_char *buf, uint32_t bufferSize);
-
-	// Reads the feature set data from a buffer originally populated by serializeFeatureData
-	// and stores it in broadcast data (the second member of uint pairs)
-	//		buf - Pointer to buffer where the serialized Feature data broadcast resides
-	// Returns: number of bytes read from the buffer
-	uint32_t DeserializeFeatureData(u_char *buf, uint32_t bufferSize);
-
-	// Stores the feature set data into the buffer, retrieved using deserializeFeatureData
-	// This function doesn't keep data once serialized. Used by the LocalTrafficMonitor and Haystack for sending suspect information
-	//		buf - Pointer to buffer to store serialized data in
-	// Returns: number of bytes set in the buffer
-	uint32_t SerializeFeatureData(u_char *buf, uint32_t bufferSize);
-
-	// Method that will return the sizeof of all values in the given feature set;
-	// for use in SerializeSuspect
-	// Returns: sum of the sizeof of all elements in the feature data
-	// 			that would be serialized
-	uint32_t GetFeatureDataLength();
-
-	void SetHaystackNodes(std::vector<uint32_t> nodes);
 
 	// For some TCP flag ratios and statistics
 	uint64_t m_rstCount;
@@ -225,7 +175,6 @@ public:
 
 	//Table of IP addresses and associated packet counts
 	IP_Table m_IPTable;
-	IP_Table m_HaystackIPTable;
 
 	// Maps IP to number of ports contacted on that IP
 	IP_Table m_tcpPortsContactedForIP;
@@ -234,8 +183,6 @@ public:
 	// Maps IP/port to a bool, used for checking if m_portContactedPerIP needs incrementing for this IP
 	IpPortTable m_hasTcpPortIpBeenContacted;
 	IpPortTable m_hasUdpPortIpBeenContacted;
-
-	uint32_t m_numberOfHaystackNodesContacted;
 };
 }
 

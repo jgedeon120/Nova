@@ -65,9 +65,6 @@ public:
 	// Destructor. Has to delete the FeatureSet object within.
 	~Suspect();
 
-	// This gets a copy of the suspect without the featureset hash tables being copied for performance reasons
-	Suspect GetShallowCopy();
-
 	SuspectID_pb GetIdentifier();
 	void SetIdentifier(SuspectID_pb id);
 
@@ -83,26 +80,6 @@ public:
 
 	// Proccesses a packet in m_evidence and puts them into the suspects unsent FeatureSet data
 	void ReadEvidence(Evidence *evidence, bool deleteEvidence);
-
-	// Calculates the feature set for this suspect
-	void CalculateFeatures();
-
-	// Stores the Suspect information into the buffer, retrieved using deserializeSuspect
-	//		buf - Pointer to buffer where serialized data will be stored
-	// Returns: number of bytes set in the buffer
-	uint32_t Serialize(u_char *buf, uint32_t bufferSize, SuspectFeatureMode whichFeatures);
-
-	// Returns an unsigned, 32 bit integer that represents the length of the
-	// Suspect to be serialized (in bytes).
-	//      GetData - If true, include the FeatureSetData length in this calculation;
-	//                if false, don't.
-	// Returns: number of bytes to allocate to serialization buffer
-	uint32_t GetSerializeLength(SuspectFeatureMode whichFeatures);
-
-	// Reads Suspect information from a buffer originally populated by serializeSuspect
-	//		buf - Pointer to buffer where the serialized suspect is
-	// Returns: number of bytes read from the buffer
-	uint32_t Deserialize(u_char *buf, uint32_t bufferSize, SuspectFeatureMode whichFeatures);
 
 
 	//Returns a copy of the suspects in_addr
@@ -129,12 +106,6 @@ public:
 
 	//Returns a copy of the suspects FeatureSet
 	FeatureSet GetFeatureSet(FeatureMode whichFeatures = MAIN_FEATURES);
-	//Sets or overwrites the suspects FeatureSet
-	void SetFeatureSet(FeatureSet *fs, FeatureMode whichFeatures = MAIN_FEATURES);
-
-	//Adds the feature set 'fs' to the suspect's feature set
-	void AddFeatureSet(FeatureSet *fs, FeatureMode whichFeatures = MAIN_FEATURES);
-
 
 	//Returns the accuracy double of the feature using featureIndex 'fi'
 	// 	fi: featureIndex enum of the feature you wish to set, (see FeatureSet.h for values)
@@ -148,13 +119,6 @@ public:
 
 	// Get the last time we saw this suspect
 	long int GetLastPacketTime();
-
-	Suspect& operator=(const Suspect &rhs);
-	Suspect(const Suspect &rhs);
-
-	// Equality operator, mainly used for test cases
-	bool operator==(const Suspect &rhs) const;
-	bool operator!=(const Suspect &rhs) const;
 
 	// Just used for the web UI
 	uint64_t GetRstCount() {return m_features.m_rstCount;}
