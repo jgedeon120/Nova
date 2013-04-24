@@ -38,32 +38,42 @@ protected:
 
 TEST_F(DatabaseTest, testInsertSuspect)
 {
-	SuspectID_pb m_id;
-	m_id.set_m_ip(42);
-	m_id.set_m_ifname("test");
-	Suspect s;
-	s.SetIdentifier(m_id);
-
-	std::string ip = Suspect::GetIpString(m_id);
-
-	Database::Inst()->StartTransaction();
-	Database::Inst()->InsertSuspect(&s);
-	Database::Inst()->StopTransaction();
 
 	struct timeval start, end;
 	long mtime, seconds, useconds;
 	gettimeofday(&start, NULL);
 
-	// Something that looks about like a port scan
 	Database::Inst()->StartTransaction();
-	for (int i = 0; i < 65535; i++)
+
+	for (uint32_t iip = 1; iip < 20; iip++)
 	{
-		Database::Inst()->IncrementPacketCount(ip, "test", "tcp");
-		Database::Inst()->IncrementPacketCount(ip, "test", "tcpSyn");
-		Database::Inst()->IncrementPacketCount(ip, "test", "total");
-		Database::Inst()->IncrementPacketSizeCount(ip, "test", 120);
-		Database::Inst()->IncrementPortContactedCount(ip, "test", "tcp", "192.168.42.42", i);
+		in_addr iiip;
+		iiip.s_addr = htonl(iip);
+		string ip(inet_ntoa(iiip));
+
+		SuspectID_pb m_id;
+		m_id.set_m_ip(iip);
+		m_id.set_m_ifname("test");
+		Suspect s;
+		s.SetIdentifier(m_id);
+
+		Database::Inst()->InsertSuspect(&s);
+
+		// Something that looks about like a port scan
+		Database::Inst()->IncrementPacketCount(ip, "test", "tcp", 65535);
+		Database::Inst()->IncrementPacketCount(ip, "test", "tcpSyn", 65535);
+		Database::Inst()->IncrementPacketCount(ip, "test", "total", 65535);
+		Database::Inst()->IncrementPacketSizeCount(ip, "test", 120, 65535);
+
+		for (int i = 0; i < 65535; i++)
+		{
+			Database::Inst()->IncrementPortContactedCount(ip, "test", "tcp", "192.168.42.42", i);
+		}
+
+		vector<double> featureset = Database::Inst()->ComputeFeatures(ip, "test");
+		Database::Inst()->WriteClassification(&s);
 	}
+
 	Database::Inst()->StopTransaction();
 
 	gettimeofday(&end, NULL);
