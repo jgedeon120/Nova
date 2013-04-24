@@ -72,22 +72,6 @@ void NovaNode::NovaCallbackHandling(eio_req*)
 
 		switch(message->m_contents.m_type())
 		{
-			case UPDATE_SUSPECT:
-			{
-				if(!message->m_suspects.empty())
-				{
-					HandleNewSuspect(message->m_suspects[0]);
-				}
-				break;
-			}
-			case REQUEST_ALL_SUSPECTS_REPLY:
-			{
-				for(uint i = 0; i < message->m_suspects.size(); i++)
-				{
-					HandleNewSuspect(message->m_suspects[i]);
-				}
-				break;
-			}
 			case REQUEST_SUSPECT_REPLY:
 			{
 				break;
@@ -151,32 +135,6 @@ int NovaNode::AfterNovaCallbackHandling(eio_req*)
 	return 0;
 }
 
-void NovaNode::HandleNewSuspect(Suspect* suspect)
-{
-	eio_nop(EIO_PRI_DEFAULT, NovaNode::HandleNewSuspectOnV8Thread, suspect);
-}
-
-// Sends a copy of the suspect from the C++ side to the server side Javascript side
-// Note: Only call this from inside the v8 thread. Provides no locking.
-void NovaNode::SendSuspect(Suspect* suspect)
-{
-	// Do we have anyplace to actually send the suspect?
-	if(m_CallbackRegistered)
-	{
-		// Make a copy of it so we can safely delete the one in the suspect table when updates come in
-		Suspect *suspectCopy = new Suspect((*suspect));
-
-		// Wrap it in Javascript voodoo so main.js can handle it
-		v8::Persistent<Value> weak_handle = Persistent<Value>::New(SuspectJs::WrapSuspect(suspectCopy));
-
-		// When JS is done with it, call DoneWithSuspectCallback to clean it up
-		weak_handle.MakeWeak(suspectCopy, &DoneWithSuspectCallback);
-
-		// Send it off to the callback in main.js
-		m_CallbackFunction->Call(m_CallbackFunction, 1, &weak_handle);
-	}
-}
-
 void NovaNode::HandleSuspectCleared(Suspect *suspect)
 {
 	eio_nop( EIO_PRI_DEFAULT, NovaNode::HandleSuspectClearedOnV8Thread, suspect);
@@ -185,29 +143,6 @@ void NovaNode::HandleSuspectCleared(Suspect *suspect)
 void NovaNode::HandleAllSuspectsCleared()
 {
 	eio_nop( EIO_PRI_DEFAULT, NovaNode::HandleAllClearedOnV8Thread, NULL);
-}
-
-int NovaNode::HandleNewSuspectOnV8Thread(eio_req* req)
-{
-	HandleScope scope;
-	
-	Suspect* suspect = static_cast<Suspect*>(req->data);
-		
-	if(suspect != NULL)
-	{
-		if(m_suspects.keyExists(suspect->GetIdentifier()))
-		{
-			delete m_suspects[suspect->GetIdentifier()];
-		}
-		
-		m_suspects[suspect->GetIdentifier()] = suspect;
-		SendSuspect(suspect);
-	}
-	else
-	{
-		LOG(DEBUG, "HandleNewSuspectOnV8Thread got a NULL suspect pointer. Ignoring.", "");
-	}
-	return 0;
 }
 
 void NovaNode::DoneWithSuspectCallback(Persistent<Value> suspect, void *paramater)
@@ -229,11 +164,12 @@ int NovaNode::HandleSuspectClearedOnV8Thread(eio_req* req)
 	}
 	m_suspects.erase(suspect->GetIdentifier());
 
+	/* TODO DTC this is terrible, why are we sending an entire suspect in the "suspect s was cleared" message?
 	v8::Persistent<Value> weak_handle = Persistent<Value>::New(SuspectJs::WrapSuspect(suspect));
 	weak_handle.MakeWeak(suspect, &DoneWithSuspectCallback);
 	Persistent<Value> argv[1] = { weak_handle };	
 	m_SuspectClearedCallback->Call(m_SuspectClearedCallback, 1, argv);
-	
+	*/
 	return 0;
 }
 
@@ -287,8 +223,6 @@ void NovaNode::Init(Handle<Object> target)
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "GetDIM", GetDIM);
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "GetSupportedEngines", GetSupportedEngines);
 
-	NODE_SET_PROTOTYPE_METHOD(s_ct, "sendSuspect", sendCachedSuspect);
-	NODE_SET_PROTOTYPE_METHOD(s_ct, "sendSuspectList", sendSuspectList);
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "RequestSuspectCallback", RequestSuspectCallback);
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "ClearAllSuspects", ClearAllSuspects);
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "registerOnNewSuspect", registerOnNewSuspect );
@@ -476,63 +410,6 @@ Handle<Value> NovaNode::RequestSuspectCallback(const Arguments& args)
 	RequestSuspect(id, messageID);
 	
 	return scope.Close(Null());
-}
-
-
-Handle<Value> NovaNode::sendCachedSuspect(const Arguments& args)
-{
-	HandleScope scope;
-
- 	string suspectIp = cvv8::CastFromJS<string>(args[0]);
- 	string suspectInterface = cvv8::CastFromJS<string>(args[1]);
-	Local<Function> callbackFunction = Local<Function>::Cast(args[2]);
-
- 	struct in_addr address;
- 	inet_pton(AF_INET, suspectIp.c_str(), &address);
-
- 	SuspectID_pb id;
- 	id.set_m_ifname(suspectInterface);
- 	id.set_m_ip(htonl(address.s_addr));
-
-	if (!m_suspects.keyExists(id)) {
-		Local<Boolean> result = Local<Boolean>::New( Boolean::New(false) );
-		return scope.Close(result);
-	}
-
-	Nova::Suspect *suspect = new Suspect();
-	(*suspect) = *m_suspects[id];
-
-	v8::Persistent<Value> weak_handle = Persistent<Value>::New(SuspectJs::WrapSuspect(suspect));
-	weak_handle.MakeWeak(suspect, &DoneWithSuspectCallback);
-	return scope.Close(weak_handle);
-}
-
-
-Handle<Value> NovaNode::sendSuspectList(const Arguments& args)
-{
-	HandleScope scope;
-
-	LOG(DEBUG, "Triggered sendSuspectList", "");
-
-	if(!args[0]->IsFunction())
-	{
-		LOG(DEBUG, "Attempted to register OnNewSuspect with non-function, excepting","");
-		return ThrowException(Exception::TypeError(String::New("Argument must be a function")));
-	}
-
-	Local<Function> callbackFunction;
-	callbackFunction = Local<Function>::New(args[0].As<Function>());
-
-	if(m_CallbackRegistered)
-	{
-		for(SuspectHashTable::iterator it = m_suspects.begin(); it != m_suspects.end(); it++)
-		{
-			SendSuspect((*it).second);
-		}
-	}
-
-	Local<Boolean> result = Local<Boolean>::New(Boolean::New(true));
-	return scope.Close(result);
 }
 
 Handle<Value> NovaNode::registerOnNewSuspect(const Arguments& args)

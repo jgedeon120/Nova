@@ -34,7 +34,7 @@ class ClassificationEngine
 public:
 	virtual ~ClassificationEngine();
 
-	// Classify a suspect, returns the classification and also sets the suspect's classification
+	// Classify a suspect, returns the classification
 	virtual double Classify(Suspect *suspect) = 0;
 
 	// (Re)loads any configuration settings needed. Must be called before classification.

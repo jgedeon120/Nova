@@ -111,7 +111,7 @@ void SuspectTable::WriteToDatabase()
 
 	for(SuspectHashTable::iterator it = m_suspectTable.begin(); it != m_suspectTable.end(); it++)
 	{
-		Suspect *s = m_suspectTable[it->first];
+		Suspect *s = it->second;
 
 		Database::Inst()->InsertSuspect(s);
 
@@ -143,20 +143,28 @@ void SuspectTable::WriteToDatabase()
 			Database::Inst()->IncrementPortContactedCount(ip, interface, "tcp", Suspect::GetIpString(dst), it->first.m_port, it->second);
 		}
 
-		m_suspectTable[it->first] = NULL;
-		delete s;
 	}
-
-	//Database::Inst()->StopTransaction();
-
 
 
 	// Update all of the featuresets
-	//Database::Inst()->StartTransaction();
 	for(SuspectHashTable::iterator it = m_suspectTable.begin(); it != m_suspectTable.end(); it++)
 	{
-		Database::Inst()->ComputeFeatures(Suspect::GetIpString(it->first), it->first.m_ifname());
+		Suspect *s = it->second;
+
+		vector<double> featureset = Database::Inst()->ComputeFeatures(Suspect::GetIpString(it->first), it->first.m_ifname());
+		copy(featureset.begin(), featureset.begin() + DIM, it->second->m_features.m_features);
+
+		// Classify the suspect with the new featureset we computed
+		engine->Classify(it->second);
+
+		// Store result back into database
+		Database::Inst()->WriteClassification(s);
+
+		m_suspectTable[it->first] = NULL;
+		delete s;
+
 	}
+
 
 	Database::Inst()->StopTransaction();
 

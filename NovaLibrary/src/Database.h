@@ -54,12 +54,13 @@ public:
 	void InsertHoneypotIp(std::string ip);
 
 	void InsertSuspectHostileAlert(Suspect *suspect);
+	void WriteClassification(Suspect *s);
 
 	void IncrementPacketCount(std::string ip, std::string interface, std::string type, uint64_t increment = 1);
 	void IncrementPacketSizeCount(std::string ip, std::string interface, uint16_t size, uint64_t increment = 1);
 	void IncrementPortContactedCount(std::string ip, std::string interface, std::string protocol, std::string dstip, int port, uint64_t increment = 1);
 
-	void ComputeFeatures(std::string ip, std::string interface);
+	std::vector<double> ComputeFeatures(std::string ip, std::string interface);
 
 	void SetFeatureSetValue(std::string ip, std::string interface, std::string featureName, double value);
 
@@ -115,6 +116,8 @@ private:
 
 	sqlite3_stmt *computeHoneypotsContacted;
 	sqlite3_stmt *insertHoneypotIp;
+
+	sqlite3_stmt *updateClassification;
 
 };
 

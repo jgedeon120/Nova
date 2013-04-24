@@ -58,11 +58,7 @@ class Suspect
 {
 
 public:
-
-	// Default Constructor
 	Suspect();
-
-	// Destructor. Has to delete the FeatureSet object within.
 	~Suspect();
 
 	SuspectID_pb GetIdentifier();
@@ -70,9 +66,6 @@ public:
 
 	static std::string GetIpString(const SuspectID_pb &id);
 
-	// Converts suspect into a human readable std::string
-	//		featureEnabled: Array of size DIM that specifies which features to return in the std::string
-	// Returns: Human readable std::string of the given feature
 	std::string ToString();
 	std::string GetIdString();
 	std::string GetIpString();
@@ -120,21 +113,9 @@ public:
 	// Get the last time we saw this suspect
 	long int GetLastPacketTime();
 
-	// Just used for the web UI
-	uint64_t GetRstCount() {return m_features.m_rstCount;}
-	uint64_t GetAckCount() {return m_features.m_ackCount;}
-	uint64_t GetSynCount() {return m_features.m_synCount;}
-	uint64_t GetFinCount() {return m_features.m_finCount;}
-	uint64_t GetSynAckCount() {return m_features.m_synAckCount;}
-
-	uint64_t GetTcpPacketCount() {return m_features.m_tcpPacketCount;}
-	uint64_t GetUdpPacketCount() {return m_features.m_udpPacketCount;}
-	uint64_t GetIcmpPacketCount() {return m_features.m_icmpPacketCount;}
-	uint64_t GetOtherPacketCount() {return m_features.m_otherPacketCount;}
 
 	bool m_needsClassificationUpdate;
 
-	// The main FeatureSet for this Suspect
 	FeatureSet m_features;
 
 	std::string m_classificationNotes;
@@ -149,8 +130,10 @@ private:
 	//	0-1, where 0 is almost surely benign, and 1 is almost surely hostile.
 	//	-1 indicates no classification or error.
 	double m_classification;
+
 	//The number of datapoints flagged as hostile that were matched to the suspect (max val == k in the config)
 	int32_t m_hostileNeighbors;
+
 	// Is the classification above the current threshold? IE: What conclusion has the CE come to?
 	bool m_isHostile;
 

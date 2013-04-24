@@ -33,7 +33,6 @@ res = stmt; \
 if (res != val ) \
 {\
 	LOG(ERROR, "SQL error: " + string(sqlite3_errmsg(db)), "");\
-	return;\
 }
 
 using namespace std;
@@ -192,15 +191,37 @@ void Database::Connect()
 		" FROM honeypots, ip_port_counts "
 		" WHERE ip_port_counts.ip = ?1 AND interface = ?2 AND honeypots.ip = ip_port_counts.dstip) / (1.0*(SELECT COUNT(ip) FROM honeypots));",
 		-1, &computeHoneypotsContacted, NULL));
+
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
+		"UPDATE suspects "
+		" SET classification = ?3, classificationNotes = ?4, hostileNeighbors = ?5, isHostile = ?6 "
+		" WHERE ip = ?1 AND interface = ?2",
+		-1, &updateClassification, NULL));
+
 }
 
-void Database::ComputeFeatures(std::string ip, std::string interface)
+void Database::WriteClassification(Suspect *s)
+{
+	int res;
+
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(updateClassification, 1, s->GetIpString().c_str(), -1, SQLITE_TRANSIENT));
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(updateClassification, 2, s->GetInterface().c_str(), -1, SQLITE_TRANSIENT));
+	SQL_RUN(SQLITE_OK, sqlite3_bind_double(updateClassification, 3, s->GetClassification()));
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(updateClassification, 4, s->m_classificationNotes.c_str(), -1, SQLITE_TRANSIENT));
+	SQL_RUN(SQLITE_OK, sqlite3_bind_int(updateClassification, 5, s->GetHostileNeighbors()));
+	SQL_RUN(SQLITE_OK, sqlite3_bind_int(updateClassification, 6, s->GetIsHostile()));
+
+	m_count++;
+	SQL_RUN(SQLITE_DONE,sqlite3_step(updateClassification));
+	SQL_RUN(SQLITE_OK, sqlite3_reset(updateClassification));
+}
+
+vector<double> Database::ComputeFeatures(std::string ip, std::string interface)
 {
 	int res;
 
 	// Create someplace to store our computed results
-	double featureValues[DIM];
-	fill(featureValues, featureValues + DIM, 0);
+	vector<double> featureValues(DIM, 0);
 
 	// Compute the packet size mean
 	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computePacketSizeMean, 1, ip.c_str(), -1, SQLITE_STATIC));
@@ -391,6 +412,8 @@ void Database::ComputeFeatures(std::string ip, std::string interface)
 		SetFeatureSetValue(ip, interface, FeatureSet::m_featureNames[i], featureValues[i]);
 	}
 
+	return featureValues;
+
 }
 
 bool Database::Disconnect()
@@ -414,6 +437,7 @@ bool Database::Disconnect()
 	sqlite3_finalize(computeMaxPacketsToPort);
 	sqlite3_finalize(computeHoneypotsContacted);
 	sqlite3_finalize(insertHoneypotIp);
+	sqlite3_finalize(updateClassification);
 
 	if (sqlite3_close(db) != SQLITE_OK)
 	{

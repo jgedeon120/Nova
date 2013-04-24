@@ -1403,6 +1403,9 @@ everyone.now.DeleteHostname = function(hostname, cb) {
 };
 
 
+// TODO
+// Suspect related queries?
+
 
 }
 

@@ -30,7 +30,6 @@
 #include "Logger.h"
 
 /* NovaNode headers */
-#include "SuspectJs.h"
 #include "v8Helper.h"
 #include "SuspectTable.h"
 
@@ -59,11 +58,8 @@ private:
 
 	static void NovaCallbackHandling(eio_req __attribute__((__unused__)) *req);
 	static int AfterNovaCallbackHandling(eio_req __attribute__((__unused__)) *req);
-	static void HandleNewSuspect(Suspect *suspect);
-	static void SendSuspect(Suspect *suspect);
 	static void HandleAllSuspectsCleared();
 	static void HandleSuspectCleared(Suspect *);
-	static int HandleNewSuspectOnV8Thread(eio_req *req);
 	static int HandleAllClearedOnV8Thread(eio_req *);
 	static int HandleMessageWithIDOnV8Thread(eio_req *);
 	static int HandleSuspectClearedOnV8Thread(eio_req *);
@@ -86,8 +82,6 @@ public:
 	static Handle<Value> GetFeatureNames(const Arguments& args);
 	static Handle<Value> GetDIM(const Arguments& args);
 	static Handle<Value> GetSupportedEngines(const Arguments& args);
-	static Handle<Value> sendCachedSuspect(const Arguments& args);
-	static Handle<Value> sendSuspectList(const Arguments& args);
 	static Handle<Value> RequestSuspectCallback(const Arguments& args);
 	static Handle<Value> ClearAllSuspects(const Arguments& args);
 	static Handle<Value> registerOnNewSuspect(const Arguments& args);

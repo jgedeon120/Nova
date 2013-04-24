@@ -93,35 +93,6 @@ void *ClassificationLoop(void *ptr)
 {
 	MaskKillSignals();
 
-	// TODO DTC enable the CE loop again when suspect table isn't causing deadlocks
-	do
-	{
-		struct timeval start, end;
-		long mtime, seconds, useconds;
-		gettimeofday(&start, NULL);
-
-		Database::Inst()->m_count = 0;
-		suspects.WriteToDatabase();
-
-
-		gettimeofday(&end, NULL);
-		seconds  = end.tv_sec  - start.tv_sec;
-		useconds = end.tv_usec - start.tv_usec;
-		mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
-		cout << "Elapsed time in milliseconds: " << mtime << endl;
-		cout << "Total queries: " << Database::Inst()->m_count << endl;
-		if (mtime != 0)
-		{
-			cout << "Queries per second: " << 1000*((double)Database::Inst()->m_count / (double)mtime) << endl;
-		}
-		cout << endl;
-
-		// Calculate features
-
-
-		sleep(1);
-	} while (true);
-
 	//Classification Loop
 	do
 	{
@@ -152,13 +123,26 @@ void *ClassificationLoop(void *ptr)
 
 		CheckForDroppedPackets();
 
-		//Calculate the "true" Feature Set for each Suspect
-		vector<SuspectID_pb> updateKeys = suspects.GetKeys_of_ModifiedSuspects();
-		for(uint i = 0; i < updateKeys.size(); i++)
+		struct timeval start, end;
+		long mtime, seconds, useconds;
+		gettimeofday(&start, NULL);
+
+		Database::Inst()->m_count = 0;
+		suspects.WriteToDatabase();
+
+
+		gettimeofday(&end, NULL);
+		seconds  = end.tv_sec  - start.tv_sec;
+		useconds = end.tv_usec - start.tv_usec;
+		mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
+		cout << "Elapsed time in milliseconds: " << mtime << endl;
+		cout << "Total queries: " << Database::Inst()->m_count << endl;
+		if (mtime != 0)
 		{
-			UpdateAndClassify(updateKeys[i]);
+			cout << "Queries per second: " << 1000*((double)Database::Inst()->m_count / (double)mtime) << endl;
 		}
-		doppel->UpdateDoppelganger();
+		cout << endl;
+
 
 	}while(Config::Inst()->GetClassificationTimeout() && !Config::Inst()->GetReadPcap());
 

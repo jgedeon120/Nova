@@ -113,9 +113,7 @@ typedef Nova::HashMap<IpPortCombination, uint64_t, std::hash<IpPortCombination>,
 namespace Nova
 {
 
-///A Feature Set represents a point in N dimensional space, which the Classification Engine uses to
-///	determine a classification. Each member of the FeatureSet class represents one of these dimensions.
-///	Each member must therefore be either a double or int type.
+
 class FeatureSet
 {
 
