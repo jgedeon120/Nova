@@ -643,19 +643,27 @@ void CheckForDroppedPackets()
 
 void UpdateHaystackFeatures()
 {
+	Database::Inst()->StartTransaction();
+
 	vector<uint32_t> haystackNodes;
 	for(uint i = 0; i < haystackAddresses.size(); i++)
 	{
+		Database::Inst()->InsertHoneypotIp(haystackAddresses[i]);
 		haystackNodes.push_back(htonl(inet_addr(haystackAddresses[i].c_str())));
 	}
+
+	for(uint i = 0; i < haystackDhcpAddresses.size(); i++)
+	{
+		Database::Inst()->InsertHoneypotIp(haystackDhcpAddresses[i]);
+		haystackNodes.push_back(htonl(inet_addr(haystackDhcpAddresses[i].c_str())));
+	}
+
+	Database::Inst()->StopTransaction();
+
 	stringstream ss;
 	ss << "Currently monitoring " << haystackAddresses.size() << " static honeypot IP addresses";
 	LOG(DEBUG, ss.str(), "");
 
-	for(uint i = 0; i < haystackDhcpAddresses.size(); i++)
-	{
-		haystackNodes.push_back(htonl(inet_addr(haystackDhcpAddresses[i].c_str())));
-	}
 	stringstream ss2;
 	ss2 << "Currently monitoring " << haystackDhcpAddresses.size() << " DHCP honeypot IP addresses";
 	LOG(DEBUG, ss2.str(), "");

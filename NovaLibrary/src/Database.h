@@ -44,13 +44,14 @@ public:
 	static Database *Inst(std::string = "");
 	~Database();
 
-	bool Connect();
+	void Connect();
 	bool Disconnect();
 
 	void StartTransaction();
 	void StopTransaction();
 
 	void InsertSuspect(Suspect *suspect);
+	void InsertHoneypotIp(std::string ip);
 
 	void InsertSuspectHostileAlert(Suspect *suspect);
 
@@ -111,6 +112,9 @@ private:
 	// This gets the max packets sent to any one IP or port
 	sqlite3_stmt *computeMaxPacketsToIp;
 	sqlite3_stmt *computeMaxPacketsToPort;
+
+	sqlite3_stmt *computeHoneypotsContacted;
+	sqlite3_stmt *insertHoneypotIp;
 
 };
 

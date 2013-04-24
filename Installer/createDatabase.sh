@@ -105,6 +105,12 @@ CREATE TABLE ip_port_counts (
 	PRIMARY KEY(ip, interface, type, dstip, port)
 );
 
+
+CREATE TABLE honeypots (
+	ip TEXT,
+	PRIMARY KEY (ip)
+);
+
 "
 
 novadDbFilePath="$DESTDIR/usr/share/nova/userFiles/data/novadDatabase.db"

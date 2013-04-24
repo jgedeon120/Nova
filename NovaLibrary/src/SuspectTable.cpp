@@ -147,12 +147,12 @@ void SuspectTable::WriteToDatabase()
 		delete s;
 	}
 
-	Database::Inst()->StopTransaction();
+	//Database::Inst()->StopTransaction();
 
 
 
 	// Update all of the featuresets
-	Database::Inst()->StartTransaction();
+	//Database::Inst()->StartTransaction();
 	for(SuspectHashTable::iterator it = m_suspectTable.begin(); it != m_suspectTable.end(); it++)
 	{
 		Database::Inst()->ComputeFeatures(Suspect::GetIpString(it->first), it->first.m_ifname());

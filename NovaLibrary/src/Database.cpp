@@ -28,14 +28,6 @@
 #include <string>
 
 // Quick error checking macro so we don't have to copy/paste this over and over
-#define expectReturn(val) \
-if (res != val ) \
-{\
-	LOG(ERROR, "SQL error: " + string(sqlite3_errmsg(db)), "");\
-	return;\
-}
-
-// Quick error checking macro so we don't have to copy/paste this over and over
 #define SQL_RUN(val, stmt) \
 res = stmt; \
 if (res != val ) \
@@ -43,14 +35,6 @@ if (res != val ) \
 	LOG(ERROR, "SQL error: " + string(sqlite3_errmsg(db)), "");\
 	return;\
 }
-
-// Same as above macro, but returns false instead of no return value
-#define expectReturnAndFail(val) \
-if (res != val) {\
-	LOG(ERROR, "SQL error: " + string(sqlite3_errmsg(db)), "");\
-	return false;\
-}
-
 
 using namespace std;
 
@@ -106,12 +90,11 @@ void Database::StopTransaction()
 	pthread_mutex_unlock(&m_lock);
 }
 
-bool Database::Connect()
+void Database::Connect()
 {
 	LOG(DEBUG, "Opening database " + m_databaseFile, "");
 	int res;
-	res = sqlite3_open(m_databaseFile.c_str(), &db);
-	expectReturnAndFail(SQLITE_OK);
+	SQL_RUN(SQLITE_OK, sqlite3_open(m_databaseFile.c_str(), &db));
 
 	// Enable foreign keys (useful for keeping database consistency)
 	char *err = NULL;
@@ -123,105 +106,92 @@ bool Database::Connect()
 	}
 
 	// Set up all our prepared queries
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"INSERT INTO packet_counts VALUES(?1, ?2, ?3, ?4);",
-		-1, &insertPacketCount,  NULL);
-	expectReturnAndFail(SQLITE_OK);
+		-1, &insertPacketCount,  NULL));
 
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"UPDATE packet_counts SET count = count + ?4 WHERE ip = ?1 AND interface = ?2 AND type = ?3;",
-		-1, &incrementPacketCount,  NULL);
-	expectReturnAndFail(SQLITE_OK);
+		-1, &incrementPacketCount,  NULL));
 
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"INSERT OR REPLACE INTO suspects (ip, interface, startTime, endTime, lastTime, classification, hostileNeighbors, isHostile, classificationNotes) "
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		-1, &insertSuspect,  NULL);
-	expectReturnAndFail(SQLITE_OK);
+		-1, &insertSuspect,  NULL));
 
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"INSERT INTO ip_port_counts VALUES(?1, ?2, ?3, ?4, ?5, 1)",
-		-1, &insertPortContacted, NULL);
-	expectReturnAndFail(SQLITE_OK);
+		-1, &insertPortContacted, NULL));
 
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 			"UPDATE ip_port_counts SET count = count + ?6 WHERE ip = ?1 AND interface = ?2 AND type = ?3 AND dstip = ?4 AND port = ?5",
-			-1, &incrementPortContacted, NULL);
-	expectReturnAndFail(SQLITE_OK);
+			-1, &incrementPortContacted, NULL));
 
-
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"INSERT INTO packet_sizes VALUES(?1, ?2, ?3, 1);",
-		-1, &insertPacketSize,  NULL);
-	expectReturnAndFail(SQLITE_OK);
+		-1, &insertPacketSize,  NULL));
 
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"UPDATE packet_sizes SET count = count + ?4 WHERE ip = ?1 AND interface = ?2 AND packetSize = ?3;",
-		-1, &incrementPacketSize,  NULL);
-	expectReturnAndFail(SQLITE_OK);
+		-1, &incrementPacketSize,  NULL));
 
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"INSERT OR REPLACE INTO suspect_features VALUES(?1, ?2, ?3, ?4)",
-		-1, &setFeatureValue, NULL);
-	expectReturnAndFail(SQLITE_OK);
-
+		-1, &setFeatureValue, NULL));
 
 
 	// Queries for featureset computation
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"SELECT (1.0*packet_counts.count) / (1.0*SUM(packet_sizes.count))"
 		" FROM packet_counts INNER JOIN packet_sizes"
 		" ON packet_counts.ip = packet_sizes.ip AND packet_counts.interface = packet_sizes.interface"
 		" WHERE packet_counts.type = 'bytes'"
 		" AND packet_counts.ip = ?1"
 		" AND packet_counts.interface = ?2;",
-		-1, &computePacketSizeMean, NULL);
-	expectReturnAndFail(SQLITE_OK);
+		-1, &computePacketSizeMean, NULL));
 
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"SELECT SUM((packet_sizes.count)*(packet_sizes.packetSize-?3)*(packet_sizes.packetSize-?3))/(1.0*packet_counts.count)"
 		" FROM packet_counts INNER JOIN packet_sizes"
 		" ON packet_counts.ip = packet_sizes.ip AND packet_counts.interface = packet_sizes.interface"
 		" WHERE packet_counts.type = 'total'"
 		" AND packet_counts.ip = ?1"
 		" AND packet_counts.interface = ?2",
-		-1, &computePacketSizeVariance, NULL);
-	expectReturnAndFail(SQLITE_OK);
+		-1, &computePacketSizeVariance, NULL));
 
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"SELECT COUNT(DISTINCT dstip) FROM ip_port_counts WHERE ip = ?1 AND interface = ?2",
-		-1, &computeDistinctIps, NULL);
-	expectReturnAndFail(SQLITE_OK);
+		-1, &computeDistinctIps, NULL));
 
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"SELECT COUNT(DISTINCT port) FROM ip_port_counts WHERE ip = ?1 AND interface = ?2 AND type = ?3",
-		-1, &computeDistinctPorts, NULL);
-	expectReturnAndFail(SQLITE_OK);
+		-1, &computeDistinctPorts, NULL));
 
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"SELECT COUNT(*) FROM (SELECT DISTINCT port, dstip FROM ip_port_counts WHERE ip = ?1 AND interface = ?2 AND type = ?3);",
-		-1, &computeDistinctIpPorts, NULL);
-	expectReturnAndFail(SQLITE_OK);
+		-1, &computeDistinctIpPorts, NULL));
 
-
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"SELECT type, count FROM packet_counts WHERE ip = ?1 AND interface = ?2;",
-		-1, &selectPacketCounts, NULL);
-	expectReturnAndFail(SQLITE_OK);
+		-1, &selectPacketCounts, NULL));
 
-
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		" SELECT MAX(t) FROM (SELECT dstip, SUM(count) AS t FROM ip_port_counts WHERE ip = ?1 AND interface = ?2 AND TYPE = ?3 GROUP BY dstip);",
-		-1, &computeMaxPacketsToIp, NULL);
-	expectReturnAndFail(SQLITE_OK);
+		-1, &computeMaxPacketsToIp, NULL));
 
-	res = sqlite3_prepare_v2(db,
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		" SELECT MAX(t) FROM (SELECT port, SUM(count) AS t FROM ip_port_counts WHERE ip = ?1 AND interface = ?2 AND TYPE = ?3 GROUP BY port);",
-		-1, &computeMaxPacketsToPort, NULL);
-	expectReturnAndFail(SQLITE_OK);
+		-1, &computeMaxPacketsToPort, NULL));
 
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
+		"INSERT INTO honeypots VALUES(?1)",
+		-1, &insertHoneypotIp, NULL));
 
-	return true;
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
+		"SELECT 1.0*(SELECT COUNT(DISTINCT honeypots.ip)"
+		" FROM honeypots, ip_port_counts "
+		" WHERE ip_port_counts.ip = ?1 AND interface = ?2 AND honeypots.ip = ip_port_counts.dstip) / (1.0*(SELECT COUNT(ip) FROM honeypots));",
+		-1, &computeHoneypotsContacted, NULL));
 }
 
 void Database::ComputeFeatures(std::string ip, std::string interface)
@@ -408,6 +378,13 @@ void Database::ComputeFeatures(std::string ip, std::string interface)
 	}
 
 
+	// Compute the haystack percent contacted
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeHoneypotsContacted, 1, ip.c_str(), -1, SQLITE_STATIC));
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeHoneypotsContacted, 2, interface.c_str(), -1, SQLITE_STATIC));
+	SQL_RUN(SQLITE_ROW, sqlite3_step(computeHoneypotsContacted));
+	featureValues[HAYSTACK_PERCENT_CONTACTED] = sqlite3_column_double(computeHoneypotsContacted, 0);
+	SQL_RUN(SQLITE_OK, sqlite3_reset(computeHoneypotsContacted));
+
 	// Dump all of our results back into the database
 	for (int i = 0; i < DIM; i++)
 	{
@@ -418,7 +395,6 @@ void Database::ComputeFeatures(std::string ip, std::string interface)
 
 bool Database::Disconnect()
 {
-	// TODO: Should probably check return values. Oh the joys of C style APIs with no exceptions...
 	sqlite3_finalize(insertSuspect);
 	sqlite3_finalize(insertPacketCount);
 	sqlite3_finalize(incrementPacketCount);
@@ -436,6 +412,8 @@ bool Database::Disconnect()
 	sqlite3_finalize(selectPacketCounts);
 	sqlite3_finalize(computeMaxPacketsToIp);
 	sqlite3_finalize(computeMaxPacketsToPort);
+	sqlite3_finalize(computeHoneypotsContacted);
+	sqlite3_finalize(insertHoneypotIp);
 
 	if (sqlite3_close(db) != SQLITE_OK)
 	{
@@ -570,6 +548,18 @@ void Database::IncrementPortContactedCount(std::string ip, std::string interface
 		SQL_RUN(SQLITE_DONE, sqlite3_step(insertPortContacted));
 		SQL_RUN(SQLITE_OK, sqlite3_reset(insertPortContacted));
 	}
+}
+
+void Database::InsertHoneypotIp(std::string ip)
+{
+	int res;
+
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(insertHoneypotIp, 1, ip.c_str(), -1, SQLITE_STATIC));
+
+	m_count++;
+	SQL_RUN(SQLITE_DONE, sqlite3_step(insertHoneypotIp));
+	SQL_RUN(SQLITE_OK, sqlite3_reset(insertHoneypotIp));
+
 }
 
 void Database::SetFeatureSetValue(std::string ip, std::string interface, std::string featureName, double value)
