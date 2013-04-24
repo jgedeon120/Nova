@@ -114,6 +114,10 @@ void *ClassificationLoop(void *ptr)
 		{
 			cout << "Queries per second: " << 1000*((double)Database::Inst()->m_count / (double)mtime) << endl;
 		}
+		cout << endl;
+
+		// Calculate features
+
 
 		sleep(1);
 	} while (true);

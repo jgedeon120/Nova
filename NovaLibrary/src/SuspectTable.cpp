@@ -143,10 +143,23 @@ void SuspectTable::WriteToDatabase()
 			Database::Inst()->IncrementPortContactedCount(ip, interface, "tcp", Suspect::GetIpString(dst), it->first.m_port, it->second);
 		}
 
+		m_suspectTable[it->first] = NULL;
 		delete s;
 	}
 
 	Database::Inst()->StopTransaction();
+
+
+
+	// Update all of the featuresets
+	Database::Inst()->StartTransaction();
+	for(SuspectHashTable::iterator it = m_suspectTable.begin(); it != m_suspectTable.end(); it++)
+	{
+		Database::Inst()->ComputeFeatures(Suspect::GetIpString(it->first), it->first.m_ifname());
+	}
+
+	Database::Inst()->StopTransaction();
+
 
 	m_suspectTable.clear();
 }

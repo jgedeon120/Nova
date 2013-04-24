@@ -58,10 +58,13 @@ public:
 	void IncrementPacketSizeCount(std::string ip, std::string interface, uint16_t size, uint64_t increment = 1);
 	void IncrementPortContactedCount(std::string ip, std::string interface, std::string protocol, std::string dstip, int port, uint64_t increment = 1);
 
+	void ComputeFeatures(std::string ip, std::string interface);
 
 	void SetFeatureSetValue(std::string ip, std::string interface, std::string featureName, double value);
 
 	void ResetPassword();
+
+
 
 	static int callback(void *NotUsed, int argc, char **argv, char **azColName);
 
@@ -91,6 +94,24 @@ private:
 	sqlite3_stmt *incrementPacketSize;
 
 	sqlite3_stmt *setFeatureValue;
+
+	// Query to populate a featureset
+	sqlite3_stmt *insertFeatureValue;
+
+	// Queries to compute featuresets;
+	sqlite3_stmt *computePacketSizeMean;
+	sqlite3_stmt *computePacketSizeVariance;
+
+	sqlite3_stmt *computeDistinctIps;
+	sqlite3_stmt *computeDistinctPorts;
+
+	sqlite3_stmt *computeDistinctIpPorts;
+	sqlite3_stmt *selectPacketCounts;
+
+	// This gets the max packets sent to any one IP or port
+	sqlite3_stmt *computeMaxPacketsToIp;
+	sqlite3_stmt *computeMaxPacketsToPort;
+
 };
 
 } /* namespace Nova */

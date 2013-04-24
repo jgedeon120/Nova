@@ -71,7 +71,7 @@ public:
 	SuspectID_pb GetIdentifier();
 	void SetIdentifier(SuspectID_pb id);
 
-	static std::string GetIpString(SuspectID_pb &id);
+	static std::string GetIpString(const SuspectID_pb &id);
 
 	// Converts suspect into a human readable std::string
 	//		featureEnabled: Array of size DIM that specifies which features to return in the std::string

@@ -3,6 +3,7 @@
 QUERY1="
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
+PRAGMA synchronous = NORMAL;
 
 CREATE TABLE packet_count_types(
 	type TEXT PRIMARY KEY NOT NULL
@@ -37,20 +38,20 @@ CREATE TABLE features(
 
 	PRIMARY KEY(name)
 );
-INSERT INTO features VALUES(0, 'ip_traffic_distribution');
-INSERT INTO features VALUES(1, 'port_traffic_distribution');
-INSERT INTO features VALUES(2, 'packet_size_mean');
-INSERT INTO features VALUES(3, 'packet_size_deviation');
-INSERT INTO features VALUES(4, 'distinct_ips');
-INSERT INTO features VALUES(5, 'distinct_tcp_ports');
-INSERT INTO features VALUES(6, 'distinct_udp_ports');
-INSERT INTO features VALUES(7, 'avg_tcp_ports_per_host');
-INSERT INTO features VALUES(8, 'avg_udp_ports_per_host');
-INSERT INTO features VALUES(9, 'tcp_percent_syn');
-INSERT INTO features VALUES(10, 'tcp_percent_fin');
-INSERT INTO features VALUES(11, 'tcp_percent_rst');
-INSERT INTO features VALUES(12, 'tcp_percent_synack');
-INSERT INTO features VALUES(13, 'haystack_percent_contacted');
+INSERT INTO features VALUES(0, 'IP Traffic Distribution');
+INSERT INTO features VALUES(1, 'Port Traffic Distribution');
+INSERT INTO features VALUES(2, 'Packet Size Mean');
+INSERT INTO features VALUES(3, 'Packet Size Deviation');
+INSERT INTO features VALUES(4, 'Protected IPs Contacted');
+INSERT INTO features VALUES(5, 'Distinct TCP Ports Contacted');
+INSERT INTO features VALUES(6, 'Distinct UDP Ports Contacted');
+INSERT INTO features VALUES(7, 'Average TCP Ports Per Host');
+INSERT INTO features VALUES(8, 'Average UDP Ports Per Host');
+INSERT INTO features VALUES(9, 'TCP Percent SYN');
+INSERT INTO features VALUES(10, 'TCP Percent FIN');
+INSERT INTO features VALUES(11, 'TCP Percent RST');
+INSERT INTO features VALUES(12, 'TCP Percent SYN ACK');
+INSERT INTO features VALUES(13, 'Haystack Percent Contacted');
 
 CREATE TABLE suspect_features(
 	ip TEXT,

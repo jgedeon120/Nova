@@ -59,7 +59,7 @@ string Suspect::GetIpString()
 	return Suspect::GetIpString(this->m_id);
 }
 
-string Suspect::GetIpString(SuspectID_pb &id)
+string Suspect::GetIpString(const SuspectID_pb &id)
 {
 	stringstream ss;
 	ss << ((id.m_ip() & 0xFF000000) >> 24) << ".";
