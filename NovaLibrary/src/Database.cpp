@@ -193,7 +193,7 @@ void Database::Connect()
 		-1, &selectPacketCounts, NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
-		" SELECT MAX(t) FROM (SELECT dstip, SUM(count) AS t FROM ip_port_counts WHERE ip = ?1 AND interface = ?2 AND TYPE = ?3 GROUP BY dstip);",
+		" SELECT MAX(t) FROM (SELECT dstip, SUM(count) AS t FROM ip_port_counts WHERE ip = ?1 AND interface = ?2 GROUP BY dstip);",
 		-1, &computeMaxPacketsToIp, NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
@@ -381,48 +381,49 @@ vector<double> Database::ComputeFeatures(std::string ip, std::string interface)
 	featureValues[TCP_PERCENT_SYNACK] = synAckPackets.second / (totalTcpPackets.second + 1);
 
 
-	// Compute the "ip traffic distribution", which is basically just (TotalSuspectPackets/TotalSuspectDstIps)/maxPacketsToSingleDstIp
-	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToIp, 1, ip.c_str(), -1, SQLITE_STATIC));
-	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToIp, 2, interface.c_str(), -1, SQLITE_STATIC));
-	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToIp, 3, "tcp", -1, SQLITE_STATIC));
+	if (featureValues[DISTINCT_IPS] > 0) {
+		// Compute the "ip traffic distribution", which is basically just (TotalSuspectPackets/TotalSuspectDstIps)/maxPacketsToSingleDstIp
+		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToIp, 1, ip.c_str(), -1, SQLITE_STATIC));
+		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToIp, 2, interface.c_str(), -1, SQLITE_STATIC));
 
-	SQL_RUN(SQLITE_ROW, sqlite3_step(computeMaxPacketsToIp));
-	featureValues[IP_TRAFFIC_DISTRIBUTION] = totalPackets.second / featureValues[DISTINCT_IPS] / sqlite3_column_double(computeMaxPacketsToIp, 0);
+		SQL_RUN(SQLITE_ROW, sqlite3_step(computeMaxPacketsToIp));
+		featureValues[IP_TRAFFIC_DISTRIBUTION] = totalPackets.second / featureValues[DISTINCT_IPS] / sqlite3_column_double(computeMaxPacketsToIp, 0);
 
-	SQL_RUN(SQLITE_OK, sqlite3_reset(computeMaxPacketsToIp));
+		SQL_RUN(SQLITE_OK, sqlite3_reset(computeMaxPacketsToIp));
+
+		if ((featureValues[DISTINCT_TCP_PORTS] + featureValues[DISTINCT_UDP_PORTS]) > 0)
+		{
+			// Compute the "port traffic distribution", which is basically just (TotalSuspectPackets/TotalSuspectDstPorts)/maxPacketsToSingleDstPort
+			SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 1, ip.c_str(), -1, SQLITE_STATIC));
+			SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 2, interface.c_str(), -1, SQLITE_STATIC));
+			SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 3, "tcp", -1, SQLITE_STATIC));
+
+			SQL_RUN(SQLITE_ROW, sqlite3_step(computeMaxPacketsToPort));
+			double maxPacketsToTcpPort = sqlite3_column_double(computeMaxPacketsToPort, 0);
+			SQL_RUN(SQLITE_OK, sqlite3_reset(computeMaxPacketsToPort));
+
+			SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 1, ip.c_str(), -1, SQLITE_STATIC));
+			SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 2, interface.c_str(), -1, SQLITE_STATIC));
+			SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 3, "udp", -1, SQLITE_STATIC));
+
+			SQL_RUN(SQLITE_ROW, sqlite3_step(computeMaxPacketsToPort));
+			double maxPacketsToUdpPort = sqlite3_column_double(computeMaxPacketsToPort, 0);
+			SQL_RUN(SQLITE_OK, sqlite3_reset(computeMaxPacketsToPort));
+
+			featureValues[PORT_TRAFFIC_DISTRIBUTION] = totalPackets.second
+					/ (featureValues[DISTINCT_TCP_PORTS] + featureValues[DISTINCT_UDP_PORTS])
+					/ max(maxPacketsToTcpPort, maxPacketsToUdpPort);
+		}
 
 
-	if ((featureValues[DISTINCT_TCP_PORTS] + featureValues[DISTINCT_UDP_PORTS]) > 0)
-	{
-		// Compute the "port traffic distribution", which is basically just (TotalSuspectPackets/TotalSuspectDstPorts)/maxPacketsToSingleDstPort
-		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 1, ip.c_str(), -1, SQLITE_STATIC));
-		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 2, interface.c_str(), -1, SQLITE_STATIC));
-		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 3, "tcp", -1, SQLITE_STATIC));
-
-		SQL_RUN(SQLITE_ROW, sqlite3_step(computeMaxPacketsToPort));
-		double maxPacketsToTcpPort = sqlite3_column_double(computeMaxPacketsToPort, 0);
-		SQL_RUN(SQLITE_OK, sqlite3_reset(computeMaxPacketsToPort));
-
-		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 1, ip.c_str(), -1, SQLITE_STATIC));
-		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 2, interface.c_str(), -1, SQLITE_STATIC));
-		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 3, "udp", -1, SQLITE_STATIC));
-
-		SQL_RUN(SQLITE_ROW, sqlite3_step(computeMaxPacketsToPort));
-		double maxPacketsToUdpPort = sqlite3_column_double(computeMaxPacketsToPort, 0);
-		SQL_RUN(SQLITE_OK, sqlite3_reset(computeMaxPacketsToPort));
-
-		featureValues[PORT_TRAFFIC_DISTRIBUTION] = totalPackets.second
-				/ (featureValues[DISTINCT_TCP_PORTS] + featureValues[DISTINCT_UDP_PORTS])
-				/ max(maxPacketsToTcpPort, maxPacketsToUdpPort);
+		// Compute the haystack percent contacted
+		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeHoneypotsContacted, 1, ip.c_str(), -1, SQLITE_STATIC));
+		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeHoneypotsContacted, 2, interface.c_str(), -1, SQLITE_STATIC));
+		SQL_RUN(SQLITE_ROW, sqlite3_step(computeHoneypotsContacted));
+		featureValues[HAYSTACK_PERCENT_CONTACTED] = sqlite3_column_double(computeHoneypotsContacted, 0);
+		SQL_RUN(SQLITE_OK, sqlite3_reset(computeHoneypotsContacted));
 	}
 
-
-	// Compute the haystack percent contacted
-	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeHoneypotsContacted, 1, ip.c_str(), -1, SQLITE_STATIC));
-	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeHoneypotsContacted, 2, interface.c_str(), -1, SQLITE_STATIC));
-	SQL_RUN(SQLITE_ROW, sqlite3_step(computeHoneypotsContacted));
-	featureValues[HAYSTACK_PERCENT_CONTACTED] = sqlite3_column_double(computeHoneypotsContacted, 0);
-	SQL_RUN(SQLITE_OK, sqlite3_reset(computeHoneypotsContacted));
 
 	// Dump all of our results back into the database
 	SetFeatureSetValue(ip, interface, featureValues);

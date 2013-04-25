@@ -56,7 +56,6 @@ FeatureSet::FeatureSet()
 	//Temp variables
 	m_startTime = 2147483647; //2^31 - 1 (IE: Y2.038K bug) (IE: The largest standard Unix time value)
 	m_endTime = 0;
-	m_totalInterval = 0;
 
 	m_rstCount = 0;
 	m_ackCount = 0;
@@ -106,29 +105,6 @@ string FeatureSet::toString()
 	ss << "TCP SYN ACK Packets: " << m_synAckCount << endl;
 	ss << endl;
 
-	ss << "IPs contacted and number of packets to IP: " << endl;
-	for (IP_Table::iterator it = m_IPTable.begin(); it != m_IPTable.end(); it++)
-	{
-		in_addr t;
-		t.s_addr = ntohl(it->first);
-		ss << "    " << inet_ntoa(t) << "    " << it->second << endl;
-	}
-	ss << endl;
-
-	ss << "TCP Ports contacted and number of packets to port: " << endl;
-	for (Port_Table::iterator it = m_PortTCPTable.begin(); it != m_PortTCPTable.end(); it++)
-	{
-		ss << "    " << it->first << "    " << it->second << endl;
-	}
-	ss << endl;
-
-	ss << "UDP Ports contacted and number of packets to port: " << endl;
-	for (Port_Table::iterator it = m_PortUDPTable.begin(); it != m_PortUDPTable.end(); it++)
-	{
-		ss << "    " << it->first << "    " << it->second << endl;
-	}
-	ss << endl;
-
 	return ss.str();
 }
 
@@ -147,25 +123,19 @@ void FeatureSet::UpdateEvidence(const Evidence &evidence)
 		case 17:
 		{
 			m_udpPacketCount++;
-			m_PortUDPTable[evidence.m_evidencePacket.dst_port]++;
 
 			IpPortCombination t;
 			t.m_ip = evidence.m_evidencePacket.ip_dst;
 			t.m_port = evidence.m_evidencePacket.dst_port;
 			if (!m_hasUdpPortIpBeenContacted.keyExists(t))
 			{
-				m_hasUdpPortIpBeenContacted[t] = true;
-				if (m_udpPortsContactedForIP.keyExists(t.m_ip))
-				{
-					m_udpPortsContactedForIP[t.m_ip]++;
-				}
-				else
-				{
-					m_udpPortsContactedForIP[t.m_ip] = 1;
-				}
+				m_hasUdpPortIpBeenContacted[t] = 1;
+			}
+			else
+			{
+				m_hasUdpPortIpBeenContacted[t]++;
 			}
 
-			m_IPTable[evidence.m_evidencePacket.ip_dst]++;
 			break;
 		}
 		//If TCP
@@ -178,24 +148,16 @@ void FeatureSet::UpdateEvidence(const Evidence &evidence)
 					|| (!evidence.m_evidencePacket.tcp_hdr.syn && !evidence.m_evidencePacket.tcp_hdr.ack
 							&& !evidence.m_evidencePacket.tcp_hdr.rst))
 			{
-				m_IPTable[evidence.m_evidencePacket.ip_dst]++;
-
-				m_PortTCPTable[evidence.m_evidencePacket.dst_port]++;
-
 				IpPortCombination t;
 				t.m_ip = evidence.m_evidencePacket.ip_dst;
 				t.m_port = evidence.m_evidencePacket.dst_port;
 				if (!m_hasTcpPortIpBeenContacted.keyExists(t))
 				{
-					m_hasTcpPortIpBeenContacted[t] = true;
-					if (m_tcpPortsContactedForIP.keyExists(t.m_ip))
-					{
-						m_tcpPortsContactedForIP[t.m_ip]++;
-					}
-					else
-					{
-						m_tcpPortsContactedForIP[t.m_ip] = 1;
-					}
+					m_hasTcpPortIpBeenContacted[t] = 1;
+				}
+				else
+				{
+					m_hasTcpPortIpBeenContacted[t]++;
 				}
 			}
 

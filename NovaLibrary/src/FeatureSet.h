@@ -156,27 +156,18 @@ public:
 	time_t m_endTime;
 	time_t m_lastTime;
 
-	//Temporary variables used to calculate Features
-
 	//Table of Packet sizes and counts for variance calc
 	Packet_Table m_packTable;
-
-	//Table of Ports and associated packet counts
-	Port_Table m_PortTCPTable;
-	Port_Table m_PortUDPTable;
-
 
 	time_t m_totalInterval;
 
 	//Total number of bytes in all packets
 	uint64_t m_bytesTotal;
 
-	//Table of IP addresses and associated packet counts
-	IP_Table m_IPTable;
 
-	// Maps IP to number of ports contacted on that IP
-	IP_Table m_tcpPortsContactedForIP;
-	IP_Table m_udpPortsContactedForIP;
+	// Tracks ICMP/misc packets
+	// TODO refactor this into an ICMP specific hashmap that tracks types/codes and a generic one that tracks raw counts from 'other' protocols
+	IP_Table m_IPTable;
 
 	// Maps IP/port to a bool, used for checking if m_portContactedPerIP needs incrementing for this IP
 	IpPortTable m_hasTcpPortIpBeenContacted;
