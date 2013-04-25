@@ -1405,6 +1405,12 @@ everyone.now.DeleteHostname = function(hostname, cb) {
 
 // TODO
 // Suspect related queries?
+everyone.now.GetSuspects = function(limit, offset, orderBy, cb) {
+	NovaCommon.dbqGetSuspects.all(limit, offset, orderBy, function(err, results) {
+        if (databaseError(err, cb)) {return;}
+        cb && cb(null, results);
+    });	
+};
 
 
 }

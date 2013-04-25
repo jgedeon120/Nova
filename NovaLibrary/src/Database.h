@@ -62,7 +62,7 @@ public:
 
 	std::vector<double> ComputeFeatures(std::string ip, std::string interface);
 
-	void SetFeatureSetValue(std::string ip, std::string interface, std::string featureName, double value);
+	void SetFeatureSetValue(std::string ip, std::string interface, std::vector<double> features);
 
 	void ResetPassword();
 
@@ -95,7 +95,7 @@ private:
 	sqlite3_stmt *insertPacketSize;
 	sqlite3_stmt *incrementPacketSize;
 
-	sqlite3_stmt *setFeatureValue;
+	sqlite3_stmt *setFeatureValues;
 
 	// Query to populate a featureset
 	sqlite3_stmt *insertFeatureValue;

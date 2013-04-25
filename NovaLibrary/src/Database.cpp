@@ -134,9 +134,27 @@ void Database::Connect()
 		"UPDATE packet_sizes SET count = count + ?4 WHERE ip = ?1 AND interface = ?2 AND packetSize = ?3;",
 		-1, &incrementPacketSize,  NULL));
 
+	// Ugh! I hate having features as columns, but trying to do EAV when sqlite doesn't have PIVOT makes the queries a pain (and slow),
+	// and we can't blob them into a single column since we need to be able to sort by them individually. So, we're stuck with binding
+	// 14+ doubles into the prepared statement. Urgh...
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
-		"INSERT OR REPLACE INTO suspect_features VALUES(?1, ?2, ?3, ?4)",
-		-1, &setFeatureValue, NULL));
+		"UPDATE suspects SET"
+		" ip_traffic_distribution = ?1"
+		", port_traffic_distribution = ?2"
+		", packet_size_mean = ?3"
+		", packet_size_deviation = ?4"
+		", distinct_ips = ?5"
+		", distinct_tcp_ports = ?6"
+		", distinct_udp_ports = ?7"
+		", avg_tcp_ports_per_host = ?8"
+		", avg_udp_ports_per_host = ?9"
+		", tcp_percent_syn = ?10"
+	    ", tcp_percent_fin = ?11"
+		", tcp_percent_rst = ?12"
+		", tcp_percent_synack = ?13"
+		", haystack_percent_contacted = ?14"
+		" WHERE ip = ?15 AND interface = ?16",
+		-1, &setFeatureValues, NULL));
 
 
 	// Queries for featureset computation
@@ -407,10 +425,7 @@ vector<double> Database::ComputeFeatures(std::string ip, std::string interface)
 	SQL_RUN(SQLITE_OK, sqlite3_reset(computeHoneypotsContacted));
 
 	// Dump all of our results back into the database
-	for (int i = 0; i < DIM; i++)
-	{
-		SetFeatureSetValue(ip, interface, FeatureSet::m_featureNames[i], featureValues[i]);
-	}
+	SetFeatureSetValue(ip, interface, featureValues);
 
 	return featureValues;
 
@@ -425,7 +440,7 @@ bool Database::Disconnect()
 	sqlite3_finalize(incrementPortContacted);
 	sqlite3_finalize(insertPacketSize);
 	sqlite3_finalize(incrementPacketSize);
-	sqlite3_finalize(setFeatureValue);
+	sqlite3_finalize(setFeatureValues);
 	sqlite3_finalize(insertFeatureValue);
 	sqlite3_finalize(computePacketSizeMean);
 	sqlite3_finalize(computePacketSizeVariance);
@@ -586,18 +601,28 @@ void Database::InsertHoneypotIp(std::string ip)
 
 }
 
-void Database::SetFeatureSetValue(std::string ip, std::string interface, std::string featureName, double value)
+void Database::SetFeatureSetValue(std::string ip, std::string interface, vector<double> features)
 {
 	int res;
 
-	SQL_RUN(SQLITE_OK, sqlite3_bind_text(setFeatureValue, 1, ip.c_str(), -1, SQLITE_STATIC));
-	SQL_RUN(SQLITE_OK, sqlite3_bind_text(setFeatureValue, 2, interface.c_str(), -1, SQLITE_STATIC));
-	SQL_RUN(SQLITE_OK, sqlite3_bind_text(setFeatureValue, 3, featureName.c_str(), -1, SQLITE_STATIC));
-	SQL_RUN(SQLITE_OK, sqlite3_bind_double(setFeatureValue, 4, value));
+	if (features.size() != DIM)
+	{
+		LOG(ERROR, "Features must have DIM entries. This shouldn't happen.", "");
+		return;
+	}
+
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(setFeatureValues, 15, ip.c_str(), -1, SQLITE_STATIC));
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(setFeatureValues, 16, interface.c_str(), -1, SQLITE_STATIC));
+
+
+	for (int i = 0; i < DIM; i++)
+	{
+		SQL_RUN(SQLITE_OK, sqlite3_bind_double(setFeatureValues, i + 1, features[i]));
+	}
 
 	m_count++;
-	SQL_RUN(SQLITE_DONE, sqlite3_step(setFeatureValue));
-	SQL_RUN(SQLITE_OK, sqlite3_reset(setFeatureValue));
+	SQL_RUN(SQLITE_DONE, sqlite3_step(setFeatureValues));
+	SQL_RUN(SQLITE_OK, sqlite3_reset(setFeatureValues));
 }
 
 

@@ -38,31 +38,6 @@ CREATE TABLE features(
 
 	PRIMARY KEY(name)
 );
-INSERT INTO features VALUES(0, 'IP Traffic Distribution');
-INSERT INTO features VALUES(1, 'Port Traffic Distribution');
-INSERT INTO features VALUES(2, 'Packet Size Mean');
-INSERT INTO features VALUES(3, 'Packet Size Deviation');
-INSERT INTO features VALUES(4, 'Protected IPs Contacted');
-INSERT INTO features VALUES(5, 'Distinct TCP Ports Contacted');
-INSERT INTO features VALUES(6, 'Distinct UDP Ports Contacted');
-INSERT INTO features VALUES(7, 'Average TCP Ports Per Host');
-INSERT INTO features VALUES(8, 'Average UDP Ports Per Host');
-INSERT INTO features VALUES(9, 'TCP Percent SYN');
-INSERT INTO features VALUES(10, 'TCP Percent FIN');
-INSERT INTO features VALUES(11, 'TCP Percent RST');
-INSERT INTO features VALUES(12, 'TCP Percent SYN ACK');
-INSERT INTO features VALUES(13, 'Haystack Percent Contacted');
-
-CREATE TABLE suspect_features(
-	ip TEXT,
-	interface TEXT,
-
-	name TEXT NOT NULL REFERENCES features(name),
-	value DOUBLE,
-
-	PRIMARY KEY(ip, interface, name),
-	FOREIGN KEY (ip, interface) REFERENCES suspects(ip, interface)
-);
 
 CREATE TABLE suspects (
 	ip TEXT,
@@ -77,7 +52,22 @@ CREATE TABLE suspects (
 	isHostile INTEGER,
 
 	classificationNotes TEXT,
-	
+
+	ip_traffic_distribution DOUBLE,
+	port_traffic_distribution DOUBLE,
+	packet_size_mean DOUBLE,
+	packet_size_deviation DOUBLE,
+	distinct_ips DOUBLE,
+	distinct_tcp_ports DOUBLE,
+	distinct_udp_ports DOUBLE,
+	avg_tcp_ports_per_host DOUBLE,
+	avg_udp_ports_per_host DOUBLE,
+	tcp_percent_syn DOUBLE,
+	tcp_percent_fin DOUBLE,
+	tcp_percent_rst DOUBLE,
+	tcp_percent_synack DOUBLE,
+	haystack_percent_contacted DOUBLE,
+
 	PRIMARY KEY(ip, interface)
 );
 
