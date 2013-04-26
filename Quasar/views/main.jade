@@ -327,13 +327,34 @@ block headerAdditions
         var offset = suspectGrid.m_currentPage * suspectGrid.m_rowsPerPage;
         var sortOrder = suspectGrid.m_sortDescending ? "DESC" : "ASC";
 
+        // Translate the grid column index to the actual SQL column name we want to sort by
+        var sortBy = "classification";
+        switch(suspectGrid.m_sortByKey) {
+            case 3: sortBy = "classification"; break;
+            case 4: sortBy = "lastTime"; break;
+            case 5: sortBy = "ip_traffic_distribution"; break;
+            case 6: sortBy = "port_traffic_distribution"; break;
+            case 7: sortBy = "packet_size_mean"; break;
+            case 8: sortBy = "packet_size_deviation"; break;
+            case 9: sortBy = "distinct_ips"; break;
+            case 10: sortBy = "distinct_tcp_ports"; break;
+            case 11: sortBy = "distinct_udp_ports"; break;
+            case 12: sortBy = "avg_tcp_ports_per_host"; break;
+            case 13: sortBy = "avg_udp_ports_per_host"; break;
+            case 14: sortBy = "tcp_percent_syn"; break;
+            case 15: sortBy = "tcp_percent_fin"; break;
+            case 16: sortBy = "tcp_percent_rst"; break;
+            case 17: sortBy = "tcp_percent_synack"; break;
+            case 18: sortBy = "haystack_percent_contacted"; break;
+        }
+  
         now.GetNumberOfSuspects(function(err, res) {
             if (err) {return;}
 
             suspectGrid.m_numberOfPages = Math.ceil(res[0].count/suspectGrid.m_rowsPerPage);
         });
 
-        now.GetSuspects(rows, offset, "classification", sortOrder, parseSuspects);
+        now.GetSuspects(rows, offset, sortBy, sortOrder, parseSuspects);
     }
 
     function parseSuspects(err, suspects) {
