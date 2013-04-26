@@ -123,11 +123,11 @@ void Database::Connect()
 		-1, &insertPortContacted, NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
-			"UPDATE ip_port_counts SET count = count + ?6 WHERE ip = ?1 AND interface = ?2 AND type = ?3 AND dstip = ?4 AND port = ?5",
-			-1, &incrementPortContacted, NULL));
+		"UPDATE ip_port_counts SET count = count + ?6 WHERE ip = ?1 AND interface = ?2 AND type = ?3 AND dstip = ?4 AND port = ?5",
+		-1, &incrementPortContacted, NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
-		"INSERT INTO packet_sizes VALUES(?1, ?2, ?3, 1);",
+		"INSERT INTO packet_sizes VALUES(?1, ?2, ?3, ?4);",
 		-1, &insertPacketSize,  NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
@@ -549,6 +549,7 @@ void Database::IncrementPacketSizeCount(std::string ip, std::string interface, u
 		SQL_RUN(SQLITE_OK,sqlite3_bind_text(insertPacketSize, 1, ip.c_str(), -1, SQLITE_STATIC));
 		SQL_RUN(SQLITE_OK,sqlite3_bind_text(insertPacketSize, 2, interface.c_str(), -1, SQLITE_STATIC));
 		SQL_RUN(SQLITE_OK,sqlite3_bind_int(insertPacketSize, 3, size));
+		SQL_RUN(SQLITE_OK, sqlite3_bind_int(insertPacketSize, 4, increment));
 
 		m_count++;
 		SQL_RUN(SQLITE_DONE, sqlite3_step(insertPacketSize));
