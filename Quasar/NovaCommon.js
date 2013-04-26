@@ -115,9 +115,13 @@ var NovaCommon = new function() {
       return scriptBindings;
     }
 
-	var novaDb = new sql.Database(this.config.GetPathHome() + "/data/novadDatabase.db", sql.OPEN_READWRITE, databaseOpenResult);
-	var db = new sql.Database(this.config.GetPathHome() + "/data/quasarDatabase.db", sql.OPEN_READWRITE, databaseOpenResult);
-	var hostNameDb = new sql.Database(this.config.GetPathHome() + "/../honeyd/names", sql.OPEN_READWRITE, databaseOpenResult);
+	this.novaDb = new sql.Database(this.config.GetPathHome() + "/data/novadDatabase.db", sql.OPEN_READWRITE, databaseOpenResult);
+	this.db = new sql.Database(this.config.GetPathHome() + "/data/quasarDatabase.db", sql.OPEN_READWRITE, databaseOpenResult);
+	this.hostNameDb = new sql.Database(this.config.GetPathHome() + "/../honeyd/names", sql.OPEN_READWRITE, databaseOpenResult);
+
+	var db = this.db;
+	var novaDb = this.novaDb;
+	var hostNameDb = this.hostNameDb;
 
 
 	var databaseOpenResult = function(err){

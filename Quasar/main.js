@@ -590,11 +590,13 @@ if(NovaCommon.config.ReadSetting('MASTER_UI_ENABLED') === '1')
               pulsar.sendUTF(JSON.stringify(response));
               break;
             case 'getHostileSuspects':
-              NovaCommon.nova.sendSuspectList(distributeSuspect);
+              // TODO Broken during the suspecttable -> sqlite refactor
+              //NovaCommon.nova.sendSuspectList(distributeSuspect);
               break;
             case 'requestBenign':
               benignRequest = true;
-              NovaCommon.nova.sendSuspectList(distributeSuspect);
+              // TODO broken during the suspecttable -> sqlite refactor
+              //NovaCommon.nova.sendSuspectList(distributeSuspect);
               break;
             case 'cancelRequestBenign':
               benignRequest = false;

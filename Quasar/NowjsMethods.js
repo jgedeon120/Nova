@@ -337,12 +337,6 @@ everyone.now.HardStopNovad = function(passwd)
   catch(err){};
 };
 
-everyone.now.sendAllSuspects = function (cb)
-{
-    NovaCommon.nova.CheckConnection();
-    NovaCommon.nova.sendSuspectList(cb);
-};
-
 everyone.now.sendSuspect = function (ethinterface, ip, cb)
 {
     var suspect = NovaCommon.nova.sendSuspect(ethinterface, ip);
@@ -1405,8 +1399,9 @@ everyone.now.DeleteHostname = function(hostname, cb) {
 
 // TODO
 // Suspect related queries?
-everyone.now.GetSuspects = function(limit, offset, orderBy, cb) {
-	NovaCommon.dbqGetSuspects.all(limit, offset, orderBy, function(err, results) {
+everyone.now.GetSuspects = function(limit, offset, orderBy, direction, cb) {
+	var queryString = "SELECT * FROM suspects ORDER BY " + orderBy + " " + direction + " LIMIT " + limit + " OFFSET " + offset;
+	NovaCommon.novaDb.all(queryString, function(err, results) {
         if (databaseError(err, cb)) {return;}
         cb && cb(null, results);
     });	
