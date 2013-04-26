@@ -25,7 +25,7 @@ block content
         img.buttonIcon(src="images/erase.png")
         span.buttonSpan Clear All Suspects
 
-      // TODO Broken in the suspecttable -> sqlite conversion 
+      // TODO Broken in the suspecttable -> sqlite conversion since novacli isn't working
       //button(onclick="window.location='/novaState.csv'")
       // img.buttonIcon(src="images/save.png")
       //  span.buttonSpan Save as CSV file
@@ -57,7 +57,6 @@ block headerAdditions
   link(rel="stylesheet", type="text/css", href="novagrid.css", media="screen")
   script(type="text/javascript", src="scripts/NovaGrid.js")
   script
-    // Performance boost accessing local var over document lookup
     var suspectGrid;
     var liveUpdate = true;
 
@@ -298,6 +297,7 @@ block headerAdditions
         }
    
         suspectGrid = new NovaGrid(gridStructure, 2, $('#suspectTable')[0], 'suspectGrid', false);
+        suspectGrid.m_remotePaging = true;
         
         suspectGrid.SetRightClickEventListener("replacementContextMenu(event);");
     
@@ -316,16 +316,29 @@ block headerAdditions
            
             var start = new Date().getTime();
             suspectGrid.Render(); 
-            console.log("Time to render grid of size " + suspectGrid.Size() + ": " + (new Date().getTime() - start) + "ms");
+            //console.log("Time to render grid of size " + suspectGrid.Size() + ": " + (new Date().getTime() - start) + "ms");
         };
-        
+       
+        querySuspects();
         setInterval(querySuspects, 3000);
     
     function querySuspects() {
-        now.GetSuspects(-1, 0, "classification", "DESC", parseSuspects);
+        var rows = suspectGrid.m_rowsPerPage;
+        var offset = suspectGrid.m_currentPage * suspectGrid.m_rowsPerPage;
+        var sortOrder = suspectGrid.m_sortDescending ? "DESC" : "ASC";
+
+        now.GetNumberOfSuspects(function(err, res) {
+            if (err) {return;}
+
+            suspectGrid.m_numberOfPages = Math.ceil(res[0].count/suspectGrid.m_rowsPerPage);
+        });
+
+        now.GetSuspects(rows, offset, "classification", sortOrder, parseSuspects);
     }
 
     function parseSuspects(err, suspects) {
+        suspectGrid.Clear();
+        console.log("Got " + suspects.length + " suspects.");
         for (var s in suspects) {
             OnNewSuspect(suspects[s]);
         }

@@ -1407,6 +1407,13 @@ everyone.now.GetSuspects = function(limit, offset, orderBy, direction, cb) {
     });	
 };
 
+everyone.now.GetNumberOfSuspects = function(cb) {
+    var queryString = "SELECT COUNT() as count FROM suspects";
+    NovaCommon.novaDb.all(queryString, function(err, results) {
+        if (databaseError(err, cb)) {return;}
+        cb && cb(null, results);
+    });
+};
 
 }
 

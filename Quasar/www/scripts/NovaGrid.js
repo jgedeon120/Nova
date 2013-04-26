@@ -38,6 +38,11 @@ var NovaGrid = function(columns, keyIndex, tableElement, gridName, selection, ri
     this.m_relativePageNumbersToShow = 2;
     this.m_rowsPerPage = Number.MAX_VALUE;
     this.m_name = gridName;
+
+    this.m_remotePaging = true;
+    this.m_numberOfPages = 1;
+
+
     if(rightclick == undefined)
     {
       this.m_rightClick = false;
@@ -93,7 +98,7 @@ NovaGrid.prototype = {
                } else {
                    this.m_elements[entry[this.m_keyIndex]] = entry;
                    this.m_elements[entry[this.m_keyIndex]]._newRow = true;
-				   
+                   
                }
            }
 
@@ -151,7 +156,11 @@ NovaGrid.prototype = {
            }
 
            , GetNumberOfPages: function() {
-               return Math.ceil(Object.keys(this.m_elements).length/this.m_rowsPerPage);
+               if (!this.m_remotePaging) {
+                    this.m_numberOfPages = Math.ceil(Object.keys(this.m_elements).length/this.m_rowsPerPage);
+               }
+
+               return this.m_numberOfPages;
            }
 
            // Returns the HTML for the table
@@ -182,11 +191,22 @@ NovaGrid.prototype = {
                  }
                });
 
-               if (arrayRep.length < this.m_currentPage * this.m_rowsPerPage) {
-                   return innerTableString; 
+
+               if (!this.m_remotePaging) {
+                    if (arrayRep.length < this.m_currentPage * this.m_rowsPerPage) {
+                        return innerTableString; 
+                    }
                }
 
-               for (var i = this.m_currentPage * this.m_rowsPerPage; (i < arrayRep.length) && (i < (this.m_currentPage + 1)* this.m_rowsPerPage); i++) {
+
+               var i = this.m_currentPage * this.m_rowsPerPage;
+               var maxi = (this.m_currentPage + 1)* this.m_rowsPerPage;
+               if (this.m_remotePaging) {
+                 i = 0;
+                 maxi = this.m_rowsPerPage;
+               }
+
+               for (; (i < arrayRep.length) && i < maxi; i++) {
                    var sub = '';
                    var idx = keys[i].indexOf('>');
                    // All this magic because the grid is keyed to an html
