@@ -1400,11 +1400,11 @@ everyone.now.DeleteHostname = function(hostname, cb) {
 // TODO
 // Suspect related queries?
 everyone.now.GetSuspects = function(limit, offset, orderBy, direction, cb) {
-	var queryString = "SELECT * FROM suspects ORDER BY " + orderBy + " " + direction + " LIMIT " + limit + " OFFSET " + offset;
-	NovaCommon.novaDb.all(queryString, function(err, results) {
+    var queryString = "SELECT * FROM suspects ORDER BY " + orderBy + " " + direction + " LIMIT " + limit + " OFFSET " + offset;
+    NovaCommon.novaDb.all(queryString, function(err, results) {
         if (databaseError(err, cb)) {return;}
         cb && cb(null, results);
-    });	
+    });
 };
 
 everyone.now.GetNumberOfSuspects = function(cb) {
@@ -1412,6 +1412,27 @@ everyone.now.GetNumberOfSuspects = function(cb) {
     NovaCommon.novaDb.all(queryString, function(err, results) {
         if (databaseError(err, cb)) {return;}
         cb && cb(null, results);
+    });
+};
+
+everyone.now.GetSuspect = function(ip, iface, cb) {
+    NovaCommon.dbqGetSuspect.all(ip, iface, function(err, results) {
+        if (databaseError(err, cb)) {return;}
+
+        if (results.length == 0) {
+            cb && cb("No such suspect", null);
+        } else {
+
+            NovaCommon.dbqGetSuspectPacketCounts.all(ip, iface, function(err, counts) {
+                if (databaseError(err, cb)) {return;}
+
+                for (var r in counts) {
+                    results[0]["count_" + counts[r].type] = counts[r].count;
+                }
+                cb && cb(null, results[0]);
+
+            });
+        }
     });
 };
 

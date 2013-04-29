@@ -193,6 +193,9 @@ var NovaCommon = new function() {
 	this.dbqClearHostnameAllocations = hostNameDb.prepare('UPDATE allocs SET IP = NULL');
 	this.dbqDeleteHostname = hostNameDb.prepare('DELETE from allocs WHERE name = ?');
 
+	this.dbqGetSuspect = novaDb.prepare("SELECT * from suspects WHERE ip = ? AND interface = ?");
+	this.dbqGetSuspectPacketCounts = novaDb.prepare("SELECT * from packet_counts WHERE ip = ? AND interface = ?");
+
 
 	this.HashPassword = function (password, salt)
 	{
