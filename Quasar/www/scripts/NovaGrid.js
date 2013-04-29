@@ -21,7 +21,8 @@
 //     Each should contain a "name" attribute and optionally a "formatter"
 //   keyIndex: index of column used as a UID for a row
 //   tableElement: DOM object of the <table> 
-//   selection: boolean. Enable or disable the ability to select table rows
+//   selection (optional): boolean. Enable or disable the ability to select table rows
+//   rightclick (optional): TODO document this
 var NovaGrid = function(columns, keyIndex, tableElement, gridName, selection, rightclick) {
     this.m_columns = columns;
     this.m_keyIndex = keyIndex;
@@ -33,15 +34,22 @@ var NovaGrid = function(columns, keyIndex, tableElement, gridName, selection, ri
     this.m_pagesElement = null;
     this.m_renderCallback = function() {};
     this.m_selected = [];
-    this.m_selection = selection;
     this.m_currentPage = 0;
     this.m_relativePageNumbersToShow = 2;
     this.m_rowsPerPage = Number.MAX_VALUE;
     this.m_name = gridName;
 
-    this.m_remotePaging = true;
+    this.m_remotePaging = false;
     this.m_numberOfPages = 1;
 
+    if (selection == undefined)
+    {
+        this.m_selection = false;
+    }
+    else
+    {
+        this.m_selection = selection;
+    }
 
     if(rightclick == undefined)
     {

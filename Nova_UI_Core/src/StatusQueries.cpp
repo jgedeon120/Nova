@@ -83,18 +83,6 @@ void RequestSuspect(SuspectID_pb address, int32_t messageID)
 	MessageManager::Instance().WriteMessage(&request, 0);
 }
 
-void RequestSuspectWithData(SuspectID_pb address, int32_t messageID)
-{
-	Message request;
-	request.m_contents.set_m_type(REQUEST_SUSPECT);
-	*request.m_contents.mutable_m_suspectid() = address;
-	request.m_contents.set_m_featuremode(MAIN_FEATURE_DATA);
-	if(messageID != -1)
-	{
-		request.m_contents.set_m_messageid(messageID);
-	}
-	MessageManager::Instance().WriteMessage(&request, 0);
-}
 
 void RequestSuspects(enum SuspectListType listType, int32_t messageID)
 {

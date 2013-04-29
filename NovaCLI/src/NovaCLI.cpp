@@ -607,8 +607,9 @@ void PrintSuspectData(in_addr_t address, string interface)
 	id.set_m_ifname(interface);
 	id.set_m_ip(ntohl(address));
 
-	RequestSuspectWithData(id, 1);
-	MonitorCallback(1);
+	// TODO DTC broke with the suspecttable -> sqlite conversion
+	//RequestSuspectWithData(id, 1);
+	//MonitorCallback(1);
 }
 
 void PrintAllSuspects(enum SuspectListType listType, bool csv)

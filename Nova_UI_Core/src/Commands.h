@@ -88,10 +88,6 @@ void RequestSuspectList(enum SuspectListType listType, int32_t messageID = -1);
 // address: IP address of the suspect
 void RequestSuspect(SuspectID_pb address, int32_t messageID = -1);
 
-// Same as GetSuspect but returns all the featureset data
-// address: IP address of the suspect
-void RequestSuspectWithData(SuspectID_pb address, int32_t messageID = -1);
-
 //Request multiple suspects, filtered by listType (all, just hostile, just benign)
 void RequestSuspects(enum SuspectListType listType, int32_t messageID = -1);
 

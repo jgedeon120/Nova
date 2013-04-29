@@ -1120,23 +1120,12 @@ app.get('/getSuspectDetails', function (req, res)
   var suspectIp = req.query['ip'];
   var suspectInterface = req.query['interface'];
   
-  NovaCommon.nova.RequestSuspectDetailsString(suspectIp, suspectInterface, function(suspectString){
-    if(suspectString != '')
-    {
-    	res.render('suspectDetails.jade', {
+    res.render('suspectDetails.jade', {
         locals: {
           suspect: suspectIp
           , interface: suspectInterface
-          , details: suspectString
         }
-    	});
-  	}
-  	else
-  	{
-      RenderError(res, 'The suspect ' + suspectIp + ' does not exist', '/suspects');
-      return;
-  	}
-  });
+    });
 });
 
 app.get('/editHoneydNode', function (req, res)

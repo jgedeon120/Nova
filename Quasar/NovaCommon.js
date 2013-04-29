@@ -194,6 +194,7 @@ var NovaCommon = new function() {
 	this.dbqDeleteHostname = hostNameDb.prepare('DELETE from allocs WHERE name = ?');
 
 	this.dbqGetSuspect = novaDb.prepare("SELECT * from suspects WHERE ip = ? AND interface = ?");
+	this.dbqGetIpPorts = novaDb.prepare("SELECT * from ip_port_counts where ip = ? AND interface = ?");
 	this.dbqGetSuspectPacketCounts = novaDb.prepare("SELECT * from packet_counts WHERE ip = ? AND interface = ?");
 
 

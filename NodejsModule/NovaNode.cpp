@@ -251,37 +251,12 @@ void NovaNode::Init(Handle<Object> target)
 
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "Shutdown", Shutdown );
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "ClearSuspect", ClearSuspect );
-	NODE_SET_PROTOTYPE_METHOD(s_ct, "RequestSuspectDetailsString", RequestSuspectDetailsString );
 
 	// Javascript object constructor
 	target->Set(String::NewSymbol("Instance"), s_ct->GetFunction());
 
 	InitMessaging();
 	InitNovaCallbackProcessing();
-}
-
-Handle<Value> NovaNode::RequestSuspectDetailsString(const Arguments &args)
-{
-	HandleScope scope;
-
-	string suspectIp = cvv8::CastFromJS<string>(args[0]);
-	string suspectInterface = cvv8::CastFromJS<string>(args[1]);
-	Persistent<Function> cb = Persistent<Function>::New(args[2].As<Function>());
-
-	struct in_addr address;
-	inet_pton(AF_INET, suspectIp.c_str(), &address);
-
-	SuspectID_pb id;
-	id.set_m_ip(htonl(address.s_addr));
-	id.set_m_ifname(suspectInterface);
-
-	messageID++;
-
-	jsCallbacks[messageID] = cb;
-
-	RequestSuspectWithData(id, messageID);
-
-	return scope.Close(Null());
 }
 
 // Figure out what the names of features are in the featureset

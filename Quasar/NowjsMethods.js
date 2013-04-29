@@ -1436,6 +1436,13 @@ everyone.now.GetSuspect = function(ip, iface, cb) {
     });
 };
 
+everyone.now.GetIpPortsContacted = function(ip, iface, cb) {
+    NovaCommon.dbqGetIpPorts.all(ip, iface, function(err, results) {
+        if (databaseError(err, cb)) {return;}
+            cb && cb(null, results);
+    });
+};
+
 }
 
 
