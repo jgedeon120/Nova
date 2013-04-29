@@ -105,7 +105,8 @@ NovaGrid.prototype = {
                    throw "Can't push entry of size " + entry.length + " into table of size " + this.m_columns.length
                } else {
                    this.m_elements[entry[this.m_keyIndex]] = entry;
-                   this.m_elements[entry[this.m_keyIndex]]._newRow = true;
+                   // Disabling row blinking for now
+                   //this.m_elements[entry[this.m_keyIndex]]._newRow = true;
                    
                }
            }
