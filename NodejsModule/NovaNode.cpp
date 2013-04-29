@@ -63,12 +63,6 @@ void NovaNode::NovaCallbackHandling(eio_req*)
 	while(true)
 	{
 		Nova::Message *message = DequeueUIMessage();
-		//If this is a callback for a specific operation
-		if(message->m_contents.has_m_messageid())
-		{
-			eio_nop(EIO_PRI_DEFAULT, NovaNode::HandleMessageWithIDOnV8Thread, message);
-			continue;
-		}
 
 		switch(message->m_contents.m_type())
 		{
@@ -107,28 +101,6 @@ void NovaNode::NovaCallbackHandling(eio_req*)
 	}
 }
 
-int NovaNode::HandleMessageWithIDOnV8Thread(eio_req *arg)
-{
-	Nova::Message *message = static_cast<Nova::Message*>(arg->data);
-
-	if(jsCallbacks.count(message->m_contents.m_messageid()) > 0)
-	{
-		HandleScope scope;
-		Persistent<Function> function = jsCallbacks[message->m_contents.m_messageid()];
-		Local<Value> argv[1];
-		if(message->m_contents.m_success())
-		{
-			argv[0] = {Local<Value>::New(String::New((message->m_suspects[0]->ToString() + message->m_suspects[0]->m_features.toString()).c_str()))};
-		}
-		else
-		{
-			argv[0] = {Local<Value>::New(String::New(""))};
-		}
-		function->Call(Context::GetCurrent()->Global(), 1, argv);
-		jsCallbacks.erase(message->m_contents.m_messageid());
-	}
-	return 0;
-}
 
 int NovaNode::AfterNovaCallbackHandling(eio_req*)
 {

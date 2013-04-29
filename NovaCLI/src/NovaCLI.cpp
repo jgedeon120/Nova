@@ -722,63 +722,6 @@ void MonitorCallback(int32_t messageID)
     	{
     		switch(message->m_contents.m_type())
     		{
-    			case UPDATE_SUSPECT:
-    			case REQUEST_ALL_SUSPECTS_REPLY:
-    			{
-    				for(uint i = 0; i < message->m_suspects.size(); i++)
-    				{
-    					if (printCsv)
-    					{
-    						cout << message->m_suspects[i]->GetIpString() << ",";
-    						cout << message->m_suspects[i]->GetIdentifier().m_ifname() << ",";
-    						for(int d = 0; d < DIM; d++)
-    						{
-    							cout << message->m_suspects[i]->GetFeatureSet().m_features[d] << ",";
-    						}
-    						cout << message->m_suspects[i]->GetClassification() << endl;
-    					}
-    					else
-    					{
-    						cout << message->m_suspects[i]->ToString() << endl;
-    					}
-    				}
-    				message->DeleteContents();
-    				break;
-    			}
-    			case REQUEST_SUSPECT_REPLY:
-    			{
-    				if(!message->m_contents.m_success())
-    				{
-    					cout << "Suspect not found" << endl;
-    				}
-    				else if(message->m_suspects.size() == 0)
-					{
-						cout << "No suspects to list" << endl;
-						break;
-					}
-    				else
-    				{
-    					cout << message->m_suspects[0]->ToString() << endl;
-    				}
-    				message->DeleteContents();
-    				break;
-    			}
-    			case REQUEST_SUSPECTLIST_REPLY:
-    			{
-    				if(message->m_contents.m_suspectids_size() == 0)
-    				{
-    					cout << "No suspects to list" << endl;
-    					break;
-    				}
-    				for(int i = 0; i < message->m_contents.m_suspectids_size(); i++)
-    				{
-    					in_addr tmp;
-    					tmp.s_addr = htonl(message->m_contents.m_suspectids(i).m_ip());
-    					char *address = inet_ntoa((tmp));
-    					cout << message->m_contents.m_suspectids(i).m_ifname() << " " << address << endl;
-    				}
-    				break;
-    			}
     			case UPDATE_ALL_SUSPECTS_CLEARED:
     			{
 					cout << "All suspects were cleared" << endl;
@@ -788,11 +731,11 @@ void MonitorCallback(int32_t messageID)
     			{
     				if(message->m_contents.m_success())
     				{
-    					cout << "Suspect " << message->m_suspects[0]->GetIpString() << " was cleared" << endl;
+    					cout << "Suspect " << Suspect::GetIpString(message->m_contents.m_suspectid()) << " was cleared" << endl;
     				}
     				else
     				{
-    					cout << "Failed to clear Suspect " << message->m_suspects[0]->GetIpString() << endl;
+    					cout << "Failed to clear Suspect " << Suspect::GetIpString(message->m_contents.m_suspectid()) << endl;
     				}
     				break;
     			}

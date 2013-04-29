@@ -92,9 +92,6 @@ void Packet_Handler(u_char *useless,const struct pcap_pkthdr *pkthdr,const u_cha
 // sent to the main thread's signal handler.
 void MaskKillSignals();
 
-// Updates data and classification for a suspect
-void UpdateAndClassify(SuspectID_pb key);
-
 //Logs and prints if any packets were dropped since the last time this was called
 void CheckForDroppedPackets();
 

@@ -215,7 +215,6 @@ void Database::Connect()
 		" SET classification = ?3, classificationNotes = ?4, hostileNeighbors = ?5, isHostile = ?6 "
 		" WHERE ip = ?1 AND interface = ?2",
 		-1, &updateClassification, NULL));
-
 }
 
 void Database::WriteClassification(Suspect *s)
@@ -476,6 +475,72 @@ void Database::ResetPassword()
 		sqlite3_free(zErrMsg);
 		throw DatabaseException(string(errorMessage));
 	}
+}
+
+void Database::ClearAllSuspects()
+{
+	 char *szErrMsg = 0;
+
+	  const char *pSQL[6];
+	  pSQL[0] = "DELETE FROM ip_port_counts;";
+	  pSQL[1] = "DELETE FROM packet_sizes;";
+	  pSQL[2] = "DELETE FROM packet_counts;";
+	  pSQL[3] = "DELETE FROM suspects;";
+
+	  for(int i = 0; i < 4; i++)
+	  {
+	    int rc = sqlite3_exec(db, pSQL[i], callback, 0, &szErrMsg);
+	    if(rc != SQLITE_OK)
+	    {
+	      LOG(ERROR, "SQL Error: " + string(szErrMsg), "");
+	      sqlite3_free(szErrMsg);
+	      break;
+	    }
+	  }
+}
+
+void Database::ClearSuspect(string ip, string interface)
+{
+	cout << "Clearing suspect " << ip << " on interface " << interface << endl;
+	int res;
+	sqlite3_stmt *deleteFromIpPortCounts,*deleteFromPacketSizes,*deleteFromPacketCounts,*deleteFromSuspects;
+
+	// Prepare the statements
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,"DELETE FROM ip_port_counts WHERE ip = ? AND interface = ?;",
+		-1, &deleteFromIpPortCounts,  NULL));
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,"DELETE FROM packet_sizes WHERE ip = ? AND interface = ?;",
+		-1, &deleteFromPacketSizes,  NULL));
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,"DELETE FROM packet_counts WHERE ip = ? AND interface = ?;",
+		-1, &deleteFromPacketCounts,  NULL));
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,"DELETE FROM suspects WHERE ip = ? AND interface = ?;",
+		-1, &deleteFromSuspects,  NULL));
+
+	// Bind the IP and interface into the statements
+	SQL_RUN(SQLITE_OK,sqlite3_bind_text(deleteFromIpPortCounts, 1, ip.c_str(), -1, SQLITE_STATIC));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_text(deleteFromPacketSizes, 1, ip.c_str(), -1, SQLITE_STATIC));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_text(deleteFromPacketCounts, 1, ip.c_str(), -1, SQLITE_STATIC));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_text(deleteFromSuspects, 1, ip.c_str(), -1, SQLITE_STATIC));
+
+	SQL_RUN(SQLITE_OK,sqlite3_bind_text(deleteFromIpPortCounts, 2, interface.c_str(), -1, SQLITE_STATIC));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_text(deleteFromPacketSizes, 2, interface.c_str(), -1, SQLITE_STATIC));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_text(deleteFromPacketCounts, 2, interface.c_str(), -1, SQLITE_STATIC));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_text(deleteFromSuspects, 2, interface.c_str(), -1, SQLITE_STATIC));
+
+	// Step and reset them. Make sure we get rid of foreign key references and do suspects table last
+	SQL_RUN(SQLITE_DONE,sqlite3_step(deleteFromIpPortCounts));
+	SQL_RUN(SQLITE_OK, sqlite3_reset(deleteFromIpPortCounts));
+	SQL_RUN(SQLITE_DONE,sqlite3_step(deleteFromPacketSizes));
+	SQL_RUN(SQLITE_OK, sqlite3_reset(deleteFromPacketSizes));
+	SQL_RUN(SQLITE_DONE,sqlite3_step(deleteFromPacketCounts));
+	SQL_RUN(SQLITE_OK, sqlite3_reset(deleteFromPacketCounts));
+	SQL_RUN(SQLITE_DONE,sqlite3_step(deleteFromSuspects));
+	SQL_RUN(SQLITE_OK, sqlite3_reset(deleteFromSuspects));
+
+	// Finalize all the statements
+	sqlite3_finalize(deleteFromIpPortCounts);
+	sqlite3_finalize(deleteFromPacketSizes);
+	sqlite3_finalize(deleteFromPacketCounts);
+	sqlite3_finalize(deleteFromSuspects);
 }
 
 void Database::InsertSuspect(Suspect *suspect)

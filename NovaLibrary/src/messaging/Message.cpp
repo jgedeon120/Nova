@@ -44,11 +44,7 @@ Message::~Message()
 
 void Message::DeleteContents()
 {
-	for(uint i = 0; i < m_suspects.size(); i++)
-	{
-		delete m_suspects[i];
-	}
-	m_suspects.clear();
+
 }
 
 uint32_t Message::GetLength()

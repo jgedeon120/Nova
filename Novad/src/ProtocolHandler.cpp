@@ -16,6 +16,7 @@
 // Description : Manages the message sending protocol to and from the Nova UI
 //============================================================================
 
+#include "Database.h"
 #include "ProtocolHandler.h"
 #include "Config.h"
 #include "Logger.h"
@@ -62,68 +63,34 @@ void HandleExitRequest(Message *incoming)
 
 void HandleClearAllRequest(Message *incoming)
 {
-	/* TODO DTC borked from the suspecttable -> sql conversion
-	suspects.EraseAllSuspects();
-	boost::filesystem::path delString = Config::Inst()->GetPathCESaveFile();
-	bool successResult = true;
-	try
-	{
-		boost::filesystem::remove(delString);
-	}
-	catch(boost::filesystem::filesystem_error const& e)
-	{
-		LOG(ERROR, ("Unable to delete CE state file." + string(e.what())),"");
-		successResult = false;
-	}
+	Database::Inst()->StartTransaction();
+	Database::Inst()->ClearAllSuspects();
+	Database::Inst()->StopTransaction();
 
-	if(successResult)
+	LOG(DEBUG, "Cleared all suspects due to UI request",
+			"Got a CONTROL_CLEAR_ALL_REQUEST, cleared all suspects.");
+
+	//First, send the reply (wth message ID) to just the original sender
+	Message updateMessage(UPDATE_ALL_SUSPECTS_CLEARED);
+	if(incoming->m_contents.has_m_messageid())
 	{
-		LOG(DEBUG, "Cleared all suspects due to UI request",
-				"Got a CONTROL_CLEAR_ALL_REQUEST, cleared all suspects.");
-
-		//First, send the reply (wth message ID) to just the original sender
-		Message updateMessage(UPDATE_ALL_SUSPECTS_CLEARED);
-		if(incoming->m_contents.has_m_messageid())
-		{
-			updateMessage.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
-		}
-		MessageManager::Instance().WriteMessage(&updateMessage, incoming->m_contents.m_sessionindex());
-
-		//Now send a generic message to the rest of the clients
-		updateMessage.m_contents.clear_m_messageid();
-		MessageManager::Instance().WriteMessageExcept(&updateMessage, incoming->m_contents.m_sessionindex());
+		updateMessage.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
 	}
-	*/
+	MessageManager::Instance().WriteMessage(&updateMessage, incoming->m_contents.m_sessionindex());
+
+	//Now send a generic message to the rest of the clients
+	updateMessage.m_contents.clear_m_messageid();
+	MessageManager::Instance().WriteMessageExcept(&updateMessage, incoming->m_contents.m_sessionindex());
 }
 
 void HandleClearSuspectRequest(Message *incoming)
 {
-	// TODO DTC
-	// This needs work because of the database switch
-
-	/*
-	Suspect messageSuspect = suspects.GetSuspect(incoming->m_contents.m_suspectid());
-	bool result = suspects.Erase(incoming->m_contents.m_suspectid());
-
-	if(!result)
-	{
-		LOG(DEBUG, "Failed to Erase suspect from the unsaved suspect table.", "");
-		// Send failure notice
-		Message updateMessage;
-		updateMessage.m_suspects.push_back(&messageSuspect);
-		updateMessage.m_contents.set_m_type(UPDATE_SUSPECT_CLEARED);
-		updateMessage.m_contents.set_m_success(false);
-		if(incoming->m_contents.has_m_messageid())
-		{
-			updateMessage.m_contents.set_m_messageid(incoming->m_contents.m_messageid());
-		}
-		updateMessage.m_contents.mutable_m_suspectid()->CopyFrom(incoming->m_contents.m_suspectid());
-		MessageManager::Instance().WriteMessage(&updateMessage, incoming->m_contents.m_sessionindex());
-		return;
-	}
-
 	struct in_addr suspectAddress;
 	suspectAddress.s_addr = ntohl(incoming->m_contents.m_suspectid().m_ip());
+
+	Database::Inst()->StartTransaction();
+	Database::Inst()->ClearSuspect(string(inet_ntoa(suspectAddress)), incoming->m_contents.m_suspectid().m_ifname());
+	Database::Inst()->StopTransaction();
 
 	LOG(DEBUG, "Cleared a suspect due to UI request",
 			"Got a CONTROL_CLEAR_SUSPECT_REQUEST, cleared suspect: "
@@ -131,7 +98,6 @@ void HandleClearSuspectRequest(Message *incoming)
 
 	//First, send the reply (wth message ID) to just the original sender
 	Message updateMessage;
-	updateMessage.m_suspects.push_back(&messageSuspect);
 	updateMessage.m_contents.set_m_type(UPDATE_SUSPECT_CLEARED);
 	updateMessage.m_contents.set_m_success(true);
 	if(incoming->m_contents.has_m_messageid())
@@ -144,7 +110,6 @@ void HandleClearSuspectRequest(Message *incoming)
 	//Now send a generic message to the rest of the clients
 	updateMessage.m_contents.clear_m_messageid();
 	MessageManager::Instance().WriteMessageExcept(&updateMessage, incoming->m_contents.m_sessionindex());
-	*/
 }
 
 void HandleReclassifyAllRequest(Message *incoming)

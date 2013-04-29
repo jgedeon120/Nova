@@ -61,7 +61,6 @@ private:
 	static void HandleAllSuspectsCleared();
 	static void HandleSuspectCleared(Suspect *);
 	static int HandleAllClearedOnV8Thread(eio_req *);
-	static int HandleMessageWithIDOnV8Thread(eio_req *);
 	static int HandleSuspectClearedOnV8Thread(eio_req *);
 	static void HandleCallbackError();
 

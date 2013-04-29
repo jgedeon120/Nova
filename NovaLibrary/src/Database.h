@@ -56,6 +56,9 @@ public:
 	void InsertSuspectHostileAlert(Suspect *suspect);
 	void WriteClassification(Suspect *s);
 
+	void ClearAllSuspects();
+	void ClearSuspect(std::string ip, std::string interface);
+
 	void IncrementPacketCount(std::string ip, std::string interface, std::string type, uint64_t increment = 1);
 	void IncrementPacketSizeCount(std::string ip, std::string interface, uint16_t size, uint64_t increment = 1);
 	void IncrementPortContactedCount(std::string ip, std::string interface, std::string protocol, std::string dstip, int port, uint64_t increment = 1);
