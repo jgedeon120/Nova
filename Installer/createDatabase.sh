@@ -71,6 +71,39 @@ CREATE TABLE suspects (
 	PRIMARY KEY(ip, interface)
 );
 
+
+/* Basically a copy of the suspects table with a new key added. Annoying there isn't a good way to copy the schema in sqlite */
+CREATE TABLE suspect_alerts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+	ip TEXT,
+	interface TEXT,
+
+	startTime INTEGER,
+	endTime INTEGER,
+	lastTime INTEGER,
+
+	classification DOUBLE,
+	hostileNeighbors INTEGER,
+	isHostile INTEGER,
+
+	classificationNotes TEXT,
+
+	ip_traffic_distribution DOUBLE,
+	port_traffic_distribution DOUBLE,
+	packet_size_mean DOUBLE,
+	packet_size_deviation DOUBLE,
+	distinct_ips DOUBLE,
+	distinct_tcp_ports DOUBLE,
+	distinct_udp_ports DOUBLE,
+	avg_tcp_ports_per_host DOUBLE,
+	avg_udp_ports_per_host DOUBLE,
+	tcp_percent_syn DOUBLE,
+	tcp_percent_fin DOUBLE,
+	tcp_percent_rst DOUBLE,
+	tcp_percent_synack DOUBLE,
+	haystack_percent_contacted DOUBLE
+);
+
 CREATE TABLE packet_sizes (
 	ip TEXT,
 	interface,
@@ -96,6 +129,7 @@ CREATE TABLE ip_port_counts (
 );
 
 
+/* We keep track of what honeypot IPs are currently up so we can join against the ip_port_counts for haystack_percent_contacted */
 CREATE TABLE honeypots (
 	ip TEXT,
 	PRIMARY KEY (ip)

@@ -21,6 +21,7 @@
 
 #include "Suspect.h"
 
+#include <string>
 #include <vector>
 
 namespace Nova
@@ -38,7 +39,7 @@ public:
 	virtual double Classify(Suspect *suspect) = 0;
 
 	// (Re)loads any configuration settings needed. Must be called before classification.
-	virtual void LoadConfiguration(string filePath);
+	virtual void LoadConfiguration(std::string filePath);
 
 	virtual void Reload();
 

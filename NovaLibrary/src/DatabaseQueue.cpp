@@ -92,6 +92,7 @@ void DatabaseQueue::WriteToDatabase()
 		Suspect *s = it->second;
 
 		Database::Inst()->InsertSuspect(s);
+		Database::Inst()->WriteTimestamps(s);
 
 		string ip = s->GetIpString();
 		string interface = s->GetInterface();
@@ -150,8 +151,23 @@ void DatabaseQueue::WriteToDatabase()
 		// Classify the suspect with the new featureset we computed
 		engine->Classify(it->second);
 
+		// If it's hostile, see if we need to copy it into the hostile_alerts table
+		bool generateHostileAlert = false;
+		if (s->GetIsHostile())
+		{
+			// If it wasn't hostile before, but it is now, make an alert
+			if (!Database::Inst()->IsSuspectHostile(s->GetIpString(), s->GetInterface())){
+				generateHostileAlert = true;
+			}
+		}
+
 		// Store result back into database
 		Database::Inst()->WriteClassification(s);
+
+		if (generateHostileAlert)
+		{
+			Database::Inst()->InsertSuspectHostileAlert(s->GetIpString(), s->GetInterface());
+		}
 
 		m_suspectTable[it->first] = NULL;
 		delete s;

@@ -1154,7 +1154,6 @@ everyone.now.GetProfile = function (profileName, cb)
 };
 
 
-
 everyone.now.GetHostileEvents = function (cb)
 {
     NovaCommon.dbqSuspectAlertsGet.all(function(err, results){

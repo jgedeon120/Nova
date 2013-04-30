@@ -50,7 +50,6 @@
 #include <sys/inotify.h>
 #include <netinet/if_ether.h>
 
-// ***DEBUG***
 #include <arpa/inet.h>
 
 using namespace std;
@@ -58,9 +57,6 @@ using namespace Nova;
 
 // Maintains a list of suspects and information on network activity
 extern DatabaseQueue suspects;
-
-extern time_t lastLoadTime;
-extern time_t lastSaveTime;
 
 //HS Vars
 extern string dhcpListFile;

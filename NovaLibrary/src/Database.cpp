@@ -113,9 +113,15 @@ void Database::Connect()
 		-1, &incrementPacketCount,  NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
-		"INSERT OR REPLACE INTO suspects (ip, interface, startTime, endTime, lastTime, classification, hostileNeighbors, isHostile, classificationNotes) "
+		"INSERT OR IGNORE INTO suspects (ip, interface, startTime, endTime, lastTime, classification, hostileNeighbors, isHostile, classificationNotes) "
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		-1, &insertSuspect,  NULL));
+
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
+		"UPDATE suspects "
+		" SET startTime = ?3, endTime = ?4, lastTime = ?5"
+		" WHERE ip = ?1 AND interface = ?2",
+		-1, &updateSuspectTimestamps,  NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"INSERT INTO ip_port_counts VALUES(?1, ?2, ?3, ?4, ?5, 1)",
@@ -200,7 +206,7 @@ void Database::Connect()
 		-1, &computeMaxPacketsToPort, NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
-		"INSERT INTO honeypots VALUES(?1)",
+		"INSERT OR IGNORE INTO honeypots VALUES(?1)",
 		-1, &insertHoneypotIp, NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
@@ -214,6 +220,16 @@ void Database::Connect()
 		" SET classification = ?3, classificationNotes = ?4, hostileNeighbors = ?5, isHostile = ?6 "
 		" WHERE ip = ?1 AND interface = ?2",
 		-1, &updateClassification, NULL));
+
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
+		"INSERT INTO suspect_alerts (ip, interface, startTime, endTime, lastTime, classification, hostileNeighbors, isHostile, classificationNotes, ip_traffic_distribution, port_traffic_distribution, packet_size_mean, packet_size_deviation, distinct_ips, distinct_tcp_ports, distinct_udp_ports, avg_tcp_ports_per_host, avg_udp_ports_per_host, tcp_percent_syn, tcp_percent_fin, tcp_percent_rst, tcp_percent_synack, haystack_percent_contacted) "
+		" SELECT * FROM suspects"
+		" WHERE ip = ? AND interface = ?",
+		-1 , &createHostileAlert, NULL));
+
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
+		"SELECT isHostile, classification FROM suspects WHERE ip = ? AND interface = ?",
+		-1, &isSuspectHostile, NULL));
 }
 
 void Database::WriteClassification(Suspect *s)
@@ -230,6 +246,21 @@ void Database::WriteClassification(Suspect *s)
 	m_count++;
 	SQL_RUN(SQLITE_DONE,sqlite3_step(updateClassification));
 	SQL_RUN(SQLITE_OK, sqlite3_reset(updateClassification));
+}
+
+void Database::WriteTimestamps(Suspect *s)
+{
+	int res;
+
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(updateSuspectTimestamps, 1, s->GetIpString().c_str(), -1, SQLITE_TRANSIENT));
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(updateSuspectTimestamps, 2, s->GetInterface().c_str(), -1, SQLITE_TRANSIENT));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(updateSuspectTimestamps, 3, static_cast<long int>(s->m_features.m_startTime)));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(updateSuspectTimestamps, 4, static_cast<long int>(s->m_features.m_endTime)));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(updateSuspectTimestamps, 5, static_cast<long int>(s->m_features.m_lastTime)));
+
+	m_count++;
+	SQL_RUN(SQLITE_DONE,sqlite3_step(updateSuspectTimestamps));
+	SQL_RUN(SQLITE_OK, sqlite3_reset(updateSuspectTimestamps));
 }
 
 vector<double> Database::ComputeFeatures(std::string ip, std::string interface)
@@ -452,6 +483,9 @@ bool Database::Disconnect()
 	sqlite3_finalize(computeHoneypotsContacted);
 	sqlite3_finalize(insertHoneypotIp);
 	sqlite3_finalize(updateClassification);
+	sqlite3_finalize(updateSuspectTimestamps);
+	sqlite3_finalize(createHostileAlert);
+	sqlite3_finalize(isSuspectHostile);
 
 	if (sqlite3_close(db) != SQLITE_OK)
 	{
@@ -692,37 +726,43 @@ void Database::SetFeatureSetValue(std::string ip, std::string interface, vector<
 }
 
 
-// TODO DTC: hostile event table got removed. Would like to refactor this so it just makes a copy of the suspect into a different
-// table along with all of the forien key references
-void Database::InsertSuspectHostileAlert(Suspect *suspect)
+void Database::InsertSuspectHostileAlert(std::string ip, std::string interface)
 {
-	EvidenceAccumulator features = suspect->GetFeatureSet(MAIN_FEATURES);
+	int res;
 
-	stringstream ss;
-	ss << "INSERT INTO statistics VALUES (NULL";
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(createHostileAlert, 1, ip.c_str(), -1, SQLITE_STATIC));
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(createHostileAlert, 2, interface.c_str(), -1, SQLITE_STATIC));
 
-	for (int i = 0; i < DIM; i++)
+	m_count++;
+	SQL_RUN(SQLITE_DONE, sqlite3_step(createHostileAlert));
+	SQL_RUN(SQLITE_OK, sqlite3_reset(createHostileAlert));
+
+}
+
+bool Database::IsSuspectHostile(const std::string &ip, const std::string &interface)
+{
+	int res;
+	bool suspectHostile;
+
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(isSuspectHostile, 1, ip.c_str(), -1, SQLITE_STATIC));
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(isSuspectHostile, 2, interface.c_str(), -1, SQLITE_STATIC));
+
+
+	m_count++;
+	res = sqlite3_step(isSuspectHostile);
+
+	if (res == SQLITE_ROW)
 	{
-		ss << ", ";
-
-		ss << features.m_features[i];
-
+		suspectHostile = sqlite3_column_int(isSuspectHostile, 1);
 	}
-	ss << ");";
-
-
-	ss << "INSERT INTO suspect_alerts VALUES (NULL, '";
-	ss << suspect->GetIpString() << "', '" << suspect->GetInterface() << "', datetime('now')" << ",";
-	ss << "last_insert_rowid()" << "," << suspect->GetClassification() << ")";
-
-	char *zErrMsg = 0;
-	int state = sqlite3_exec(db, ss.str().c_str(), callback, 0, &zErrMsg);
-	if (state != SQLITE_OK)
+	else
 	{
-		string errorMessage(zErrMsg);
-		sqlite3_free(zErrMsg);
-		throw DatabaseException(string(errorMessage));
+		suspectHostile = false;
 	}
+
+	SQL_RUN(SQLITE_OK, sqlite3_reset(isSuspectHostile));
+
+	return suspectHostile;
 }
 
 

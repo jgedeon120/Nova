@@ -74,9 +74,6 @@ vector<int> dropCounts;
 
 Doppelganger *doppel;
 
-// Timestamps for the CE state file exiration of data
-time_t lastLoadTime;
-time_t lastSaveTime;
 
 // Time novad started, used for uptime and pcap capture names
 time_t startTime;
@@ -190,12 +187,6 @@ int RunNovaD()
 	}
 
 	pthread_mutex_init(&packetCapturesLock, NULL);
-
-	lastLoadTime = lastSaveTime = startTime = time(NULL);
-	if(lastLoadTime == ((time_t)-1))
-	{
-		LOG(ERROR, "Unable to get timestamp, call to time() failed", "");
-	}
 
 	//Need to load the configuration before making the Classification Engine for setting up the DM
 	//Reload requires a CE object so we do a partial config load here.

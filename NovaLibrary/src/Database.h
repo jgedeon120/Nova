@@ -32,7 +32,7 @@ namespace Nova
 class DatabaseException : public std::runtime_error
 {
 public:
-	DatabaseException(const string& errorcode)
+	DatabaseException(const std::string& errorcode)
 	: runtime_error("Database error code: " + errorcode) {};
 
 };
@@ -52,8 +52,9 @@ public:
 	void InsertSuspect(Suspect *suspect);
 	void InsertHoneypotIp(std::string ip);
 
-	void InsertSuspectHostileAlert(Suspect *suspect);
+	void InsertSuspectHostileAlert(std::string ip, std::string interface);
 	void WriteClassification(Suspect *s);
+	void WriteTimestamps(Suspect *s);
 
 	void ClearAllSuspects();
 	void ClearSuspect(std::string ip, std::string interface);
@@ -65,6 +66,8 @@ public:
 	std::vector<double> ComputeFeatures(std::string ip, std::string interface);
 
 	void SetFeatureSetValue(std::string ip, std::string interface, std::vector<double> features);
+
+	bool IsSuspectHostile(const std::string &ip, const std::string &interface);
 
 	void ResetPassword();
 
@@ -120,7 +123,10 @@ private:
 	sqlite3_stmt *insertHoneypotIp;
 
 	sqlite3_stmt *updateClassification;
+	sqlite3_stmt *updateSuspectTimestamps;
 
+	sqlite3_stmt *isSuspectHostile;
+	sqlite3_stmt *createHostileAlert;
 };
 
 } /* namespace Nova */
