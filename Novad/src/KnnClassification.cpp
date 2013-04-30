@@ -147,7 +147,7 @@ double KnnClassification::Classify(Suspect *suspect)
 	double d;
 	FeatureIndex fi;
 
-	FeatureSet &fs = suspect->m_features;
+	EvidenceAccumulator &fs = suspect->m_features;
 	uint ai = 0;
 
 	// TODO DTC fix after suspecttable->sqlite conversion

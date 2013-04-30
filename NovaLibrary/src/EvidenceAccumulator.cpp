@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : FeatureSet.cpp
+// Name        : EvidenceAccumulator.cpp
 // Copyright   : DataSoft Corporation 2011-2013
 //	Nova is free software: you can redistribute it and/or modify
 //   it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 //============================================================================
 
 #include "SerializationHelper.h"
-#include "FeatureSet.h"
+#include "EvidenceAccumulator.h"
 #include "Logger.h"
 #include "Config.h"
 #include "Database.h"
@@ -33,7 +33,7 @@ using namespace std;
 namespace Nova
 {
 
-string FeatureSet::m_featureNames[] =
+string EvidenceAccumulator::m_featureNames[] =
 {
 	"IP Traffic Distribution",
 	"Port Traffic Distribution",
@@ -51,7 +51,7 @@ string FeatureSet::m_featureNames[] =
 	"Haystack Percent Contacted",
 };
 
-FeatureSet::FeatureSet()
+EvidenceAccumulator::EvidenceAccumulator()
 {
 	//Temp variables
 	m_startTime = 2147483647; //2^31 - 1 (IE: Y2.038K bug) (IE: The largest standard Unix time value)
@@ -78,38 +78,7 @@ FeatureSet::FeatureSet()
 	}
 }
 
-FeatureSet::~FeatureSet()
-{
-}
-
-string FeatureSet::toString()
-{
-	stringstream ss;
-
-	time_t start = m_startTime;
-	time_t end = m_endTime;
-	ss << "First packet seen at: " << ctime(&start) << endl;
-	ss << "Last packet seen at: " << ctime(&end) << endl;
-	ss << endl;
-	ss << "Total bytes in IP packets: " << m_bytesTotal << endl;
-	ss << "Packets seen: " << m_packetCount << endl;
-	ss << "TCP Packets Seen: " << m_tcpPacketCount << endl;
-	ss << "UDP Packets Seen: " << m_udpPacketCount << endl;
-	ss << "ICMP Packets Seen: " << m_icmpPacketCount << endl;
-	ss << "Other protocol Packets Seen: " << m_otherPacketCount << endl;
-	ss << endl;
-	ss << "TCP RST Packets: " << m_rstCount << endl;
-	ss << "TCP ACK Packets: " << m_ackCount << endl;
-	ss << "TCP SYN Packets: " << m_synCount << endl;
-	ss << "TCP FIN Packets: " << m_finCount << endl;
-	ss << "TCP SYN ACK Packets: " << m_synAckCount << endl;
-	ss << endl;
-
-	return ss.str();
-}
-
-
-void FeatureSet::UpdateEvidence(const Evidence &evidence)
+void EvidenceAccumulator::Add(const Evidence &evidence)
 {
 	// Ensure our assumptions about valid packet fields are true
 	if(evidence.m_evidencePacket.ip_dst == 0)

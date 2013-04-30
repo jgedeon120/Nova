@@ -21,7 +21,6 @@
 #include "NovaUtil.h"
 #include "Logger.h"
 #include "ClassificationEngine.h"
-#include "FeatureSet.h"
 
 #include <iostream>
 #include <sstream>
@@ -697,7 +696,7 @@ void Database::SetFeatureSetValue(std::string ip, std::string interface, vector<
 // table along with all of the forien key references
 void Database::InsertSuspectHostileAlert(Suspect *suspect)
 {
-	FeatureSet features = suspect->GetFeatureSet(MAIN_FEATURES);
+	EvidenceAccumulator features = suspect->GetFeatureSet(MAIN_FEATURES);
 
 	stringstream ss;
 	ss << "INSERT INTO statistics VALUES (NULL";

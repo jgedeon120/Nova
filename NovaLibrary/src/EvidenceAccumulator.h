@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : FeatureSet.h
+// Name        : EvidenceAccumulator.h
 // Copyright   : DataSoft Corporation 2011-2013
 //	Nova is free software: you can redistribute it and/or modify
 //   it under the terms of the GNU General Public License as published by
@@ -114,13 +114,20 @@ namespace Nova
 {
 
 
-class FeatureSet
+class EvidenceAccumulator
 {
 
 public:
-	/// The actual feature values
+	EvidenceAccumulator();
+
+	// Adds evidence to the accumulated data we've gathered for a suspect
+	void Add(const Evidence &evidence);
+
+
+	/// The computed feature values used for KNN
 	double m_features[DIM];
 
+	// Names of the KNN feature values we compute
 	static std::string m_featureNames[];
 
 	//Number of packets total
@@ -131,19 +138,6 @@ public:
 	uint64_t m_icmpPacketCount;
 	uint64_t m_otherPacketCount;
 
-	FeatureSet();
-	~FeatureSet();
-
-	std::string toString();
-
-	FeatureSet& operator+=(FeatureSet &rhs);
-	bool operator ==(const FeatureSet &rhs) const;
-	bool operator !=(const FeatureSet &rhs) const;
-
-
-	// Processes incoming evidence before calculating the features
-	//		packet - packet headers of new packet
-	void UpdateEvidence(const Evidence &evidence);
 
 	// For some TCP flag ratios and statistics
 	uint64_t m_rstCount;

@@ -8,8 +8,8 @@ CPP_SRCS += \
 ../src/Database.cpp \
 ../src/Doppelganger.cpp \
 ../src/Evidence.cpp \
+../src/EvidenceAccumulator.cpp \
 ../src/EvidenceTable.cpp \
-../src/FeatureSet.cpp \
 ../src/FilePacketCapture.cpp \
 ../src/HaystackControl.cpp \
 ../src/InterfacePacketCapture.cpp \
@@ -26,8 +26,8 @@ OBJS += \
 ./src/Database.o \
 ./src/Doppelganger.o \
 ./src/Evidence.o \
+./src/EvidenceAccumulator.o \
 ./src/EvidenceTable.o \
-./src/FeatureSet.o \
 ./src/FilePacketCapture.o \
 ./src/HaystackControl.o \
 ./src/InterfacePacketCapture.o \
@@ -44,8 +44,8 @@ CPP_DEPS += \
 ./src/Database.d \
 ./src/Doppelganger.d \
 ./src/Evidence.d \
+./src/EvidenceAccumulator.d \
 ./src/EvidenceTable.d \
-./src/FeatureSet.d \
 ./src/FilePacketCapture.d \
 ./src/HaystackControl.d \
 ./src/InterfacePacketCapture.d \

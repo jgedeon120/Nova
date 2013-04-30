@@ -625,7 +625,7 @@ void PrintAllSuspects(enum SuspectListType listType, bool csv)
 		cout << "INTERFACE,";
 		for(int i = 0; i < DIM; i++)
 		{
-			cout << FeatureSet::m_featureNames[i] << ",";
+			cout << EvidenceAccumulator::m_featureNames[i] << ",";
 		}
 		cout << "CLASSIFICATION" << endl;
 	}

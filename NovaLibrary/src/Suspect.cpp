@@ -1,3 +1,4 @@
+
 //============================================================================
 // Name        : Suspect.cpp
 // Copyright   : DataSoft Corporation 2011-2013
@@ -18,7 +19,6 @@
 //============================================================================
 
 #include "SerializationHelper.h"
-#include "FeatureSet.h"
 #include "Suspect.h"
 #include "Logger.h"
 #include "Config.h"
@@ -108,7 +108,7 @@ string Suspect::ToString()
 
 	for(int i = 0; i < DIM; i++)
 	{
-		ss << FeatureSet::m_featureNames[i] << ": " << m_features.m_features[i] << "\n";
+		ss << EvidenceAccumulator::m_featureNames[i] << ": " << m_features.m_features[i] << "\n";
 	}
 
 
@@ -129,7 +129,7 @@ void Suspect::ReadEvidence(Evidence *evidence, bool deleteEvidence)
 	while(curEvidence != NULL)
 	{
 		// TODO Delete this line (and all of the featureset class)
-		m_features.UpdateEvidence(*curEvidence);
+		m_features.Add(*curEvidence);
 
 //		Database::Inst()->IncrementPacketCount(m_id, 'bytes');
 //		m_bytesTotal += curEvidence->m_evidencePacket.ip_len;
@@ -236,7 +236,7 @@ void Suspect::SetIsHostile(bool b)
 
 
 //Returns a copy of the suspects FeatureSet
-FeatureSet Suspect::GetFeatureSet(FeatureMode whichFeatures)
+EvidenceAccumulator Suspect::GetFeatureSet(FeatureMode whichFeatures)
 {
 	switch(whichFeatures)
 	{

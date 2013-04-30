@@ -82,21 +82,3 @@ TEST_F(DatabaseTest, testInsertSuspect)
 	mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
 	cout << "Elapsed time in milliseconds: " << mtime << endl;
 }
-
-// Tests go here. Multiple small tests are better than one large test, as each test
-// will get a pass/fail and debugging information associated with it.
-
-/*
-TEST_F(DatabaseTest, testInsertHostileSuspectEvent)
-{
-	FeatureSet f;
-	for (int i = 0; i < DIM; i++)
-	{
-		f.m_features[i] = i;
-	}
-	Suspect s;
-	s.SetFeatureSet(&f, MAIN_FEATURES);
-	s.SetClassification(0.42);
-
-	testObject.InsertSuspectHostileAlert(&s);
-}*/

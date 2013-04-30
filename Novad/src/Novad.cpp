@@ -17,18 +17,18 @@
 //============================================================================
 
 #include "HoneydConfiguration/HoneydConfiguration.h"
-#include "messaging/MessageManager.h"
-#include "WhitelistConfiguration.h"
-#include "InterfacePacketCapture.h"
 #include "ClassificationAggregator.h"
-#include "HaystackControl.h"
+#include "messaging/MessageManager.h"
+#include "InterfacePacketCapture.h"
+#include "WhitelistConfiguration.h"
+#include "EvidenceAccumulator.h"
 #include "FilePacketCapture.h"
+#include "HaystackControl.h"
 #include "ProtocolHandler.h"
 #include "PacketCapture.h"
 #include "EvidenceTable.h"
 #include "Doppelganger.h"
 #include "SuspectTable.h"
-#include "FeatureSet.h"
 #include "NovaUtil.h"
 #include "Database.h"
 #include "Threads.h"
@@ -602,10 +602,6 @@ void UpdateHaystackFeatures()
 	stringstream ss2;
 	ss2 << "Currently monitoring " << haystackDhcpAddresses.size() << " DHCP honeypot IP addresses";
 	LOG(DEBUG, ss2.str(), "");
-
-
-	// TODO DTC put this in the database
-	//suspects.SetHaystackNodes(haystackNodes);
 }
 
 }

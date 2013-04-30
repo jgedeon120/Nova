@@ -239,7 +239,7 @@ Handle<Value> NovaNode::GetFeatureNames(const Arguments &)
 	vector<string> featureNames;
 	for (int i = 0; i < DIM; i++)
 	{
-		featureNames.push_back(Nova::FeatureSet::m_featureNames[i]);
+		featureNames.push_back(Nova::EvidenceAccumulator::m_featureNames[i]);
 	}
 
 	return scope.Close(cvv8::CastToJS(featureNames));

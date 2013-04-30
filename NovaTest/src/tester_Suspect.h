@@ -19,7 +19,7 @@
 #include "gtest/gtest.h"
 
 #include "Suspect.h"
-#include "FeatureSet.h"
+#include "EvidenceAccumulator.h"
 
 using namespace Nova;
 using namespace std;

@@ -23,7 +23,7 @@
 #include "SerializationHelper.h"
 #include "Point.h"
 #include "Evidence.h"
-#include "FeatureSet.h"
+#include "EvidenceAccumulator.h"
 #include "protobuf/marshalled_classes.pb.h"
 
 enum FeatureMode: bool
@@ -98,16 +98,12 @@ public:
 	void SetIsHostile(bool b);
 
 	//Returns a copy of the suspects FeatureSet
-	FeatureSet GetFeatureSet(FeatureMode whichFeatures = MAIN_FEATURES);
+	EvidenceAccumulator GetFeatureSet(FeatureMode whichFeatures = MAIN_FEATURES);
 
 	//Returns the accuracy double of the feature using featureIndex 'fi'
-	// 	fi: featureIndex enum of the feature you wish to set, (see FeatureSet.h for values)
-	// Returns the value of the feature accuracy for the feature specified
 	double GetFeatureAccuracy(FeatureIndex fi);
 
 	//Sets the accuracy double of the feature using featureIndex 'fi'
-	// 	fi: featureIndex enum of the feature you wish to set, (see FeatureSet.h for values)
-	// 	 d: the value you wish to set the feature accuracy to
 	void SetFeatureAccuracy(FeatureIndex fi, double d);
 
 	// Get the last time we saw this suspect
@@ -116,7 +112,7 @@ public:
 
 	bool m_needsClassificationUpdate;
 
-	FeatureSet m_features;
+	EvidenceAccumulator m_features;
 
 	std::string m_classificationNotes;
 

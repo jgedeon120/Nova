@@ -20,7 +20,6 @@
 #define DATABASE_H_
 
 #include "Suspect.h"
-#include "FeatureSet.h"
 
 #include <Lock.h>
 #include <string>
