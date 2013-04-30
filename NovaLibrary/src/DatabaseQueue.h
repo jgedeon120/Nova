@@ -57,32 +57,14 @@ struct SuspectIDEq
 
 typedef Nova::HashMap<Nova::SuspectID_pb, Nova::Suspect *, std::hash<Nova::SuspectID_pb>, Nova::SuspectIDEq> SuspectHashTable;
 
-struct SuspectLock
-{
-	int ref_cnt;
-	pthread_mutex_t lock;
-	bool deleted;
-};
 
-typedef Nova::HashMap<Nova::SuspectID_pb,SuspectLock, std::hash<Nova::SuspectID_pb>, Nova::SuspectIDEq> SuspectLockTable;
-
-enum SuspectTableRet : int32_t
-{
-	SUSPECT_KEY_INVALID = -2, //The key cannot be associated with (or assigned to) a recognized suspect
-	SUSPECT_NOT_CHECKED_OUT = -1, //The suspect isn't checked out by this thread
-	SUSPECT_TABLE_CALL_SUCCESS = 0, //The call succeeded
-};
-
-class SuspectTable
+class DatabaseQueue
 {
 
 public:
-	SuspectTable();
-	~SuspectTable();
+	DatabaseQueue();
+	~DatabaseQueue();
 
-	// This function returns a vector of suspects keys the caller can iterate over to access the table.
-	// Returns a std::vector containing the keys of all suspects that need a classification update.
-	std::vector<SuspectID_pb> GetKeys_of_ModifiedSuspects();
 
 	//Consumes the linked list of evidence objects, extracting their information and inserting them into the Suspects.
 	// evidence: Evidence object, if consuming more than one piece of evidence this is the start
@@ -96,9 +78,7 @@ private:
 
 	// Hashmap used for constant time key lookups
 	SuspectHashTable m_suspectTable;
-	std::vector<Nova::SuspectID_pb> m_suspectsNeedingUpdate;
 
-	// Lock used to maintain concurrency between threads
 	pthread_rwlock_t m_lock;
 };
 

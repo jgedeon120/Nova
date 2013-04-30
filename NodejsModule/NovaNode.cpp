@@ -17,7 +17,6 @@
 //============================================================================
 
 #include "NovaNode.h"
-#include "SuspectTable.h"
 #include "Suspect.h"
 #include "Config.h"
 #include "HashMapStructs.h"

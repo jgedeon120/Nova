@@ -23,7 +23,6 @@
 #include "Control.h"
 #include "Novad.h"
 #include "messaging/MessageManager.h"
-#include "SuspectTable.h"
 #include "Lock.h"
 
 #include <sstream>
@@ -44,8 +43,6 @@ using namespace std;
 
 int IPCParentSocket = -1;
 
-extern SuspectTable suspects;
-extern SuspectTable suspectsSinceLastSave;
 extern time_t startTime;
 
 struct sockaddr_un msgRemote, msgLocal;

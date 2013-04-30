@@ -19,7 +19,7 @@
 
 #include "ClassificationEngine.h"
 #include "SerializationHelper.h"
-#include "SuspectTable.h"
+#include "DatabaseQueue.h"
 #include "HashMap.h"
 #include "Config.h"
 #include "Logger.h"
@@ -29,8 +29,6 @@
 #include <fstream>
 #include <sstream>
 
-#define NOERROR 0
-
 using namespace std;
 using namespace Nova;
 
@@ -38,7 +36,7 @@ extern ClassificationEngine *engine;
 
 namespace Nova
 {
-SuspectTable::SuspectTable()
+DatabaseQueue::DatabaseQueue()
 {
 	pthread_rwlockattr_t tempAttr;
 	pthread_rwlockattr_init(&tempAttr);
@@ -46,7 +44,7 @@ SuspectTable::SuspectTable()
 	pthread_rwlock_init(&m_lock, &tempAttr);
 }
 
-SuspectTable::~SuspectTable()
+DatabaseQueue::~DatabaseQueue()
 {
 	//Deletes the suspects pointed to by the table
 	for(SuspectHashTable::iterator it = m_suspectTable.begin(); it != m_suspectTable.end(); it++)
@@ -60,32 +58,12 @@ SuspectTable::~SuspectTable()
 }
 
 
-// This function returns a vector of suspects keys the caller can iterate over to access the table.
-// Returns a std::vector containing the keys of all suspects that need a classification update.
-vector<SuspectID_pb> SuspectTable::GetKeys_of_ModifiedSuspects()
-{
-	vector<SuspectID_pb> ret;
-	vector<SuspectID_pb> invalidKeys;
-	ret.clear();
-	Lock lock(&m_lock, WRITE_LOCK);
-
-	for(uint i = 0; i < m_suspectsNeedingUpdate.size(); i++)
-	{
-		ret.push_back(m_suspectsNeedingUpdate[i]);
-		m_suspectTable[m_suspectsNeedingUpdate[i]]->m_needsClassificationUpdate = false;
-	}
-
-	m_suspectsNeedingUpdate.clear();
-	return ret;
-}
-
-
 //Consumes the linked list of evidence objects, extracting their information and inserting them into the Suspects.
 // evidence: Evidence object, if consuming more than one piece of evidence this is the start
 //				of the linked list.
 // Note: Every evidence object contained in the list is deallocated after use, invalidating the pointers,
 //		this is a specialized function designed only for use by Consumer threads.
-void SuspectTable::ProcessEvidence(Evidence *evidence, bool readOnly)
+void DatabaseQueue::ProcessEvidence(Evidence *evidence, bool readOnly)
 {
 	Lock lock (&m_lock, WRITE_LOCK);
 	SuspectID_pb key;
@@ -103,7 +81,7 @@ void SuspectTable::ProcessEvidence(Evidence *evidence, bool readOnly)
 }
 
 
-void SuspectTable::WriteToDatabase()
+void DatabaseQueue::WriteToDatabase()
 {
 	Lock lock (&m_lock, WRITE_LOCK);
 

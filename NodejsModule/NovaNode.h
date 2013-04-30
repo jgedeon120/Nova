@@ -29,9 +29,7 @@
 #include "Suspect.h"
 #include "Logger.h"
 
-/* NovaNode headers */
 #include "v8Helper.h"
-#include "SuspectTable.h"
 
 using namespace node;
 using namespace v8;

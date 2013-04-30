@@ -28,7 +28,7 @@
 #include "PacketCapture.h"
 #include "EvidenceTable.h"
 #include "Doppelganger.h"
-#include "SuspectTable.h"
+#include "DatabaseQueue.h"
 #include "NovaUtil.h"
 #include "Database.h"
 #include "Threads.h"
@@ -64,7 +64,7 @@ using namespace std;
 using namespace Nova;
 
 // Maintains a list of suspects and information on network activity
-SuspectTable suspects;
+DatabaseQueue suspects;
 //Contains packet evidence yet to be included in a suspect
 EvidenceTable suspectEvidence;
 

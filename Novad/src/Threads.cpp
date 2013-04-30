@@ -21,10 +21,10 @@
 #include "ClassificationEngine.h"
 #include "EvidenceAccumulator.h"
 #include "ProtocolHandler.h"
+#include "DatabaseQueue.h"
 #include "EvidenceTable.h"
 #include "PacketCapture.h"
 #include "Doppelganger.h"
-#include "SuspectTable.h"
 #include "NovaUtil.h"
 #include "Threads.h"
 #include "Control.h"
@@ -57,9 +57,7 @@ using namespace std;
 using namespace Nova;
 
 // Maintains a list of suspects and information on network activity
-extern SuspectTable suspects;
-// Suspects not yet written to the state file
-extern SuspectTable suspectsSinceLastSave;
+extern DatabaseQueue suspects;
 
 extern time_t lastLoadTime;
 extern time_t lastSaveTime;

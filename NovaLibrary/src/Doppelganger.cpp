@@ -32,7 +32,7 @@ namespace Nova
 {
 
 // suspects: Uses the hostile suspects in this suspect table to determine Dopp routing
-Doppelganger::Doppelganger(SuspectTable& suspects)
+Doppelganger::Doppelganger(DatabaseQueue& suspects)
 : m_suspectTable(suspects)
 {
 	m_initialized = false;
