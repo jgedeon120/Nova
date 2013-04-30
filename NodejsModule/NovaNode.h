@@ -49,7 +49,6 @@ private:
 	static bool m_AllSuspectsClearedCallbackRegistered;
 	static bool m_SuspectClearedCallbackRegistered;
 	static bool m_callbackRunning;
-	static SuspectHashTable m_suspects;
 
 	static void InitNovaCallbackProcessing();
 	static void CheckInitNova();

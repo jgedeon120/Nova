@@ -127,14 +127,6 @@ void NovaNode::DoneWithSuspectCallback(Persistent<Value> suspect, void *paramate
 
 int NovaNode::HandleSuspectClearedOnV8Thread(eio_req* req)
 {
-	HandleScope scope;
-	Suspect* suspect = static_cast<Suspect*>(req->data);
-	if (m_suspects.keyExists(suspect->GetIdentifier()))
-	{
-		delete m_suspects[suspect->GetIdentifier()];
-	}
-	m_suspects.erase(suspect->GetIdentifier());
-
 	/* TODO DTC this is terrible, why are we sending an entire suspect in the "suspect s was cleared" message?
 	v8::Persistent<Value> weak_handle = Persistent<Value>::New(SuspectJs::WrapSuspect(suspect));
 	weak_handle.MakeWeak(suspect, &DoneWithSuspectCallback);
@@ -147,11 +139,6 @@ int NovaNode::HandleSuspectClearedOnV8Thread(eio_req* req)
 int NovaNode::HandleAllClearedOnV8Thread(eio_req*)
 {
 	HandleScope scope;
-	for(SuspectHashTable::iterator it = m_suspects.begin(); it != m_suspects.end(); it++)
-	{
-		delete (*it).second;
-	}
-	m_suspects.clear();
 	m_SuspectsClearedCallback->Call(m_SuspectsClearedCallback, 0, NULL);
 	return 0;
 }
@@ -315,11 +302,6 @@ NovaNode::NovaNode() :
 NovaNode::~NovaNode()
 {
 	cout << "Destructing NovaNode." << endl;
-	for(SuspectHashTable::iterator it = m_suspects.begin(); it != m_suspects.end(); it++)
-	{
-		delete (*it).second;
-	}
-	m_suspects.clear();
 }
 
 // Update our internal suspect list to that of novad
@@ -432,8 +414,6 @@ Persistent<Function> NovaNode::m_CallbackFunction=Persistent<Function>();
 Persistent<Function> NovaNode::m_SuspectsClearedCallback=Persistent<Function>();
 Persistent<Function> NovaNode::m_SuspectClearedCallback=Persistent<Function>();
 
-SuspectHashTable NovaNode::m_suspects = SuspectHashTable();
-//map<SuspectIdentifier, Suspect*> NovaNode::m_suspects = map<SuspectIdentifier, Suspect*>();
 bool NovaNode::m_CallbackRegistered=false;
 bool NovaNode::m_AllSuspectsClearedCallbackRegistered=false;
 bool NovaNode::m_SuspectClearedCallbackRegistered=false;
