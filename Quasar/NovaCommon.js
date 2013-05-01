@@ -124,6 +124,11 @@ var NovaCommon = new function() {
 	var hostNameDb = this.hostNameDb;
 
 
+	// We set a few pragmas to speed up access to novadb
+	novaDb.run("PRAGMA cache_size = 100000");
+	novaDb.run("PRAGMA temp_store = MEMORY");
+
+
 	var databaseOpenResult = function(err){
 		if(err === null)
 		{

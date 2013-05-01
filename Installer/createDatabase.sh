@@ -59,6 +59,8 @@ CREATE TABLE suspects (
 	PRIMARY KEY(ip, interface)
 );
 
+CREATE INDEX idx ON suspects(classification);
+
 
 /* Basically a copy of the suspects table with a new key added. Annoying there isn't a good way to copy the schema in sqlite */
 CREATE TABLE suspect_alerts (

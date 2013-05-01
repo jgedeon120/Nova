@@ -225,7 +225,6 @@ block headerAdditions
        
       suspectGrid.PushEntry(row);
 
-      $('#numberOfSuspects').text("Recieved data for " + String(Object.keys(suspectGrid.m_elements).length) + " suspects");
     };
 
     function showAdvancedChanged()
@@ -352,6 +351,7 @@ block headerAdditions
             if (err) {return;}
 
             suspectGrid.m_numberOfPages = Math.ceil(res[0].count/suspectGrid.m_rowsPerPage);
+            $('#numberOfSuspects').text("Recieved data for " + res[0].count + " suspects");
         });
 
         now.GetSuspects(rows, offset, sortBy, sortOrder, parseSuspects);
