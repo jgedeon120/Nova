@@ -71,6 +71,7 @@ TEST_F(DatabaseTest, testDatabase)
 
 }
 
+/*
 TEST_F(DatabaseTest, testInsertSuspect)
 {
 
@@ -117,3 +118,4 @@ TEST_F(DatabaseTest, testInsertSuspect)
 	mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
 	cout << "Elapsed time in milliseconds: " << mtime << endl;
 }
+*/

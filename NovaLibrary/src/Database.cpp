@@ -115,11 +115,23 @@ void Database::Connect()
 
 	// Set up all our prepared queries
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
-		"INSERT INTO packet_counts VALUES(?1, ?2, ?3, ?4);",
+		"INSERT INTO packet_counts VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?);",
 		-1, &insertPacketCount,  NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
-		"UPDATE packet_counts SET count = count + ?4 WHERE ip = ?1 AND interface = ?2 AND type = ?3;",
+		"UPDATE packet_counts SET "
+		" count_tcp = count_tcp + ?3"
+		", count_udp = count_udp + ?4"
+		", count_icmp = count_icmp + ?5"
+		", count_other = count_other + ?6"
+		", count_total = count_total + ?7"
+		", count_tcpRst = count_tcpRst + ?8"
+		", count_tcpAck = count_tcpAck + ?9"
+		", count_tcpSyn = count_tcpSyn + ?10"
+		", count_tcpFin = count_tcpFin + ?11"
+		", count_tcpSynAck = count_tcpSynAck + ?12"
+		", count_bytes = count_bytes + ?13"
+		" WHERE ip = ?1 AND interface = ?2;",
 		-1, &incrementPacketCount,  NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
@@ -174,19 +186,17 @@ void Database::Connect()
 
 	// Queries for featureset computation
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
-		"SELECT (1.0*packet_counts.count) / (1.0*SUM(packet_sizes.count))"
+		"SELECT (1.0*packet_counts.count_bytes) / (1.0*SUM(packet_sizes.count))"
 		" FROM packet_counts INNER JOIN packet_sizes"
 		" ON packet_counts.ip = packet_sizes.ip AND packet_counts.interface = packet_sizes.interface"
-		" WHERE packet_counts.type = 'bytes'"
 		" AND packet_counts.ip = ?1"
 		" AND packet_counts.interface = ?2;",
 		-1, &computePacketSizeMean, NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
-		"SELECT SUM((packet_sizes.count)*(packet_sizes.packetSize-?3)*(packet_sizes.packetSize-?3))/(1.0*packet_counts.count)"
+		"SELECT SUM((packet_sizes.count)*(packet_sizes.packetSize-?3)*(packet_sizes.packetSize-?3))/(1.0*packet_counts.count_total)"
 		" FROM packet_counts INNER JOIN packet_sizes"
 		" ON packet_counts.ip = packet_sizes.ip AND packet_counts.interface = packet_sizes.interface"
-		" WHERE packet_counts.type = 'total'"
 		" AND packet_counts.ip = ?1"
 		" AND packet_counts.interface = ?2",
 		-1, &computePacketSizeVariance, NULL));
@@ -204,7 +214,7 @@ void Database::Connect()
 		-1, &computeDistinctIpPorts, NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
-		"SELECT type, count FROM packet_counts WHERE ip = ?1 AND interface = ?2;",
+		"SELECT * FROM packet_counts WHERE ip = ?1 AND interface = ?2;",
 		-1, &selectPacketCounts, NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
@@ -360,64 +370,31 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 
 
 
-	// Compute all of the features that are based on packet counts
-	// This is kind of ugly, some of it 'could' be moved to more specific SQL queries rather than doing it in C++.
-	// I'm not entirely decided on this part of the table schema anyway, so not worrying about it too much yet.
 	SQL_RUN(SQLITE_OK, sqlite3_bind_text(selectPacketCounts, 1, ip.c_str(), -1, SQLITE_STATIC));
 	SQL_RUN(SQLITE_OK, sqlite3_bind_text(selectPacketCounts, 2, interface.c_str(), -1, SQLITE_STATIC));
 
 	// Did we find the value in the database, and if so what is it?
-	pair<bool, double> totalTcpPackets = pair<bool, double>(false, 0);
-	pair<bool, double> synPackets = pair<bool, double>(false, 0);
-	pair<bool, double> finPackets = pair<bool, double>(false, 0);
-	pair<bool, double> rstPackets = pair<bool, double>(false, 0);
-	pair<bool, double> synAckPackets = pair<bool, double>(false, 0);
-	pair<bool, double> totalPackets = pair<bool, double>(false, 0);
+	double totalTcpPackets, synPackets , finPackets, rstPackets, synAckPackets, totalPackets;
 
 	res = sqlite3_step(selectPacketCounts);
-	while (res == SQLITE_ROW)
-	{
-		string countType = string(reinterpret_cast<const char*>(sqlite3_column_text(selectPacketCounts, 0)));
-		if (countType == "tcp")
-		{
-			totalTcpPackets.first = true;
-			totalTcpPackets.second = sqlite3_column_double(selectPacketCounts, 1);
-		}
-		else if (countType == "tcpSyn")
-		{
-			synPackets.first = true;
-			synPackets.second = sqlite3_column_double(selectPacketCounts, 1);
-		}
-		else if (countType == "tcpFin")
-		{
-			finPackets.first = true;
-			finPackets.second = sqlite3_column_double(selectPacketCounts, 1);
-		}
-		else if (countType == "tcpRst")
-		{
-			rstPackets.first = true;
-			rstPackets.second = sqlite3_column_double(selectPacketCounts, 1);
-		}
-		else if (countType == "tcpSynAck")
-		{
-			synAckPackets.first = true;
-			synAckPackets.second = sqlite3_column_double(selectPacketCounts, 1);
-		}
-		else if (countType == "total")
-		{
-			totalPackets.first = true;
-			totalPackets.second = sqlite3_column_double(selectPacketCounts, 1);
-		}
 
-		res = sqlite3_step(selectPacketCounts);
+	if (res == SQLITE_ROW)
+	{
+		totalTcpPackets = sqlite3_column_int64(selectPacketCounts, 2);
+		totalPackets = sqlite3_column_int64(selectPacketCounts, 6);
+		rstPackets = sqlite3_column_int64(selectPacketCounts, 7);
+		synPackets = sqlite3_column_int64(selectPacketCounts, 9);
+		finPackets = sqlite3_column_int64(selectPacketCounts, 10);
+		synAckPackets = sqlite3_column_int64(selectPacketCounts, 11);
+
 	}
 
 	SQL_RUN(SQLITE_OK, sqlite3_reset(selectPacketCounts));
 
-	featureValues[TCP_PERCENT_SYN] = synPackets.second / (totalTcpPackets.second + 1);
-	featureValues[TCP_PERCENT_FIN] = finPackets.second / (totalTcpPackets.second + 1);
-	featureValues[TCP_PERCENT_RST] = rstPackets.second / (totalTcpPackets.second + 1);
-	featureValues[TCP_PERCENT_SYNACK] = synAckPackets.second / (totalTcpPackets.second + 1);
+	featureValues[TCP_PERCENT_SYN] = synPackets / (totalTcpPackets + 1);
+	featureValues[TCP_PERCENT_FIN] = finPackets / (totalTcpPackets + 1);
+	featureValues[TCP_PERCENT_RST] = rstPackets / (totalTcpPackets + 1);
+	featureValues[TCP_PERCENT_SYNACK] = synAckPackets / (totalTcpPackets + 1);
 
 
 	if (featureValues[DISTINCT_IPS] > 0) {
@@ -426,7 +403,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToIp, 2, interface.c_str(), -1, SQLITE_STATIC));
 
 		SQL_RUN(SQLITE_ROW, sqlite3_step(computeMaxPacketsToIp));
-		featureValues[IP_TRAFFIC_DISTRIBUTION] = totalPackets.second / featureValues[DISTINCT_IPS] / sqlite3_column_double(computeMaxPacketsToIp, 0);
+		featureValues[IP_TRAFFIC_DISTRIBUTION] = totalPackets / featureValues[DISTINCT_IPS] / sqlite3_column_double(computeMaxPacketsToIp, 0);
 
 		SQL_RUN(SQLITE_OK, sqlite3_reset(computeMaxPacketsToIp));
 
@@ -449,7 +426,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 			double maxPacketsToUdpPort = sqlite3_column_double(computeMaxPacketsToPort, 0);
 			SQL_RUN(SQLITE_OK, sqlite3_reset(computeMaxPacketsToPort));
 
-			featureValues[PORT_TRAFFIC_DISTRIBUTION] = totalPackets.second
+			featureValues[PORT_TRAFFIC_DISTRIBUTION] = totalPackets
 					/ (featureValues[DISTINCT_TCP_PORTS] + featureValues[DISTINCT_UDP_PORTS])
 					/ max(maxPacketsToTcpPort, maxPacketsToUdpPort);
 		}
@@ -605,17 +582,24 @@ void Database::InsertSuspect(Suspect *suspect)
 	SQL_RUN(SQLITE_OK, sqlite3_reset(insertSuspect));
 }
 
-void Database::IncrementPacketCount(const string &ip, const string &interface, const string &type, uint64_t increment)
+void Database::IncrementPacketCount(const string &ip, const string &interface, const EvidenceAccumulator &e)
 {
-	if (!increment)
-		return;
-
 	int res;
 
 	SQL_RUN(SQLITE_OK,sqlite3_bind_text(incrementPacketCount, 1, ip.c_str(), -1, SQLITE_STATIC));
 	SQL_RUN(SQLITE_OK,sqlite3_bind_text(incrementPacketCount, 2, interface.c_str(), -1, SQLITE_STATIC));
-	SQL_RUN(SQLITE_OK,sqlite3_bind_text(incrementPacketCount, 3, type.c_str(), -1, SQLITE_STATIC));
-	SQL_RUN(SQLITE_OK,sqlite3_bind_int(incrementPacketCount, 4, increment));
+
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(incrementPacketCount, 3, e.m_tcpPacketCount));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(incrementPacketCount, 4, e.m_udpPacketCount));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(incrementPacketCount, 5, e.m_icmpPacketCount));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(incrementPacketCount, 6, e.m_otherPacketCount));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(incrementPacketCount, 7, e.m_packetCount));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(incrementPacketCount, 8, e.m_rstCount));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(incrementPacketCount, 9, e.m_ackCount));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(incrementPacketCount, 10, e.m_synCount));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(incrementPacketCount, 11, e.m_finCount));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(incrementPacketCount, 12, e.m_synAckCount));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(incrementPacketCount, 13, e.m_bytesTotal));
 
 	m_count++;
 	SQL_RUN(SQLITE_DONE, sqlite3_step(incrementPacketCount));
@@ -627,8 +611,18 @@ void Database::IncrementPacketCount(const string &ip, const string &interface, c
 	{
 		SQL_RUN(SQLITE_OK,sqlite3_bind_text(insertPacketCount, 1, ip.c_str(), -1, SQLITE_STATIC));
 		SQL_RUN(SQLITE_OK,sqlite3_bind_text(insertPacketCount, 2, interface.c_str(), -1, SQLITE_STATIC));
-		SQL_RUN(SQLITE_OK,sqlite3_bind_text(insertPacketCount, 3, type.c_str(), -1, SQLITE_STATIC));
-		SQL_RUN(SQLITE_OK,sqlite3_bind_int(insertPacketCount, 4, increment));
+
+		SQL_RUN(SQLITE_OK,sqlite3_bind_int64(insertPacketCount, 3, e.m_tcpPacketCount));
+		SQL_RUN(SQLITE_OK,sqlite3_bind_int64(insertPacketCount, 4, e.m_udpPacketCount));
+		SQL_RUN(SQLITE_OK,sqlite3_bind_int64(insertPacketCount, 5, e.m_icmpPacketCount));
+		SQL_RUN(SQLITE_OK,sqlite3_bind_int64(insertPacketCount, 6, e.m_otherPacketCount));
+		SQL_RUN(SQLITE_OK,sqlite3_bind_int64(insertPacketCount, 7, e.m_packetCount));
+		SQL_RUN(SQLITE_OK,sqlite3_bind_int64(insertPacketCount, 8, e.m_rstCount));
+		SQL_RUN(SQLITE_OK,sqlite3_bind_int64(insertPacketCount, 9, e.m_ackCount));
+		SQL_RUN(SQLITE_OK,sqlite3_bind_int64(insertPacketCount, 10, e.m_synCount));
+		SQL_RUN(SQLITE_OK,sqlite3_bind_int64(insertPacketCount, 11, e.m_finCount));
+		SQL_RUN(SQLITE_OK,sqlite3_bind_int64(insertPacketCount, 12, e.m_synAckCount));
+		SQL_RUN(SQLITE_OK,sqlite3_bind_int64(insertPacketCount, 13, e.m_bytesTotal));
 
 		m_count++;
 		SQL_RUN(SQLITE_DONE, sqlite3_step(insertPacketCount));

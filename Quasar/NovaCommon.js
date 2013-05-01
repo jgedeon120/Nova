@@ -193,7 +193,7 @@ var NovaCommon = new function() {
 	this.dbqClearHostnameAllocations = hostNameDb.prepare('UPDATE allocs SET IP = NULL');
 	this.dbqDeleteHostname = hostNameDb.prepare('DELETE from allocs WHERE name = ?');
 
-	this.dbqGetSuspect = novaDb.prepare("SELECT * from suspects WHERE ip = ? AND interface = ?");
+	this.dbqGetSuspect = novaDb.prepare("SELECT * from suspects JOIN packet_counts ON suspects.ip = packet_counts.ip AND suspects.interface = packet_counts.interface WHERE suspects.ip = ? AND suspects.interface = ?");
 	this.dbqGetIpPorts = novaDb.prepare("SELECT * from ip_port_counts where ip = ? AND interface = ?");
 	this.dbqGetSuspectPacketCounts = novaDb.prepare("SELECT * from packet_counts WHERE ip = ? AND interface = ?");
 

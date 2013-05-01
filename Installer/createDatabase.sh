@@ -6,40 +6,26 @@ PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
 PRAGMA synchronous = NORMAL;
 
-
-CREATE TABLE packet_count_types(
-	type TEXT PRIMARY KEY NOT NULL
-);
-INSERT INTO packet_count_types VALUES('tcp');
-INSERT INTO packet_count_types VALUES('udp');
-INSERT INTO packet_count_types VALUES('icmp');
-INSERT INTO packet_count_types VALUES('other');
-INSERT INTO packet_count_types VALUES('total');
-INSERT INTO packet_count_types VALUES('tcpRst');
-INSERT INTO packet_count_types VALUES('tcpAck');
-INSERT INTO packet_count_types VALUES('tcpSyn');
-INSERT INTO packet_count_types VALUES('tcpFin');
-INSERT INTO packet_count_types VALUES('tcpSynAck');
-INSERT INTO packet_count_types VALUES('bytes');
-	
 CREATE TABLE packet_counts(
 	ip TEXT,
 	interface TEXT,
 
-	type TEXT NOT NULL REFERENCES packet_count_types(type),
-	count INTEGER,
+	count_tcp INTEGER,
+	count_udp INTEGER,
+	count_icmp INTEGER,
+	count_other INTEGER,
+	count_total INTEGER,
+	count_tcpRst INTEGER,
+	count_tcpAck INTEGER,
+	count_tcpSyn INTEGER,
+	count_tcpFin INTEGER,
+	count_tcpSynAck INTEGER,
+	count_bytes INTEGER,
 
 	FOREIGN KEY (ip, interface) REFERENCES suspects(ip, interface),
-	PRIMARY KEY(ip, interface, type)
+	PRIMARY KEY(ip, interface)
 );
 
-
-CREATE TABLE features(
-	id INTEGER,
-	name TEXT NOT NULL,
-
-	PRIMARY KEY(name)
-);
 
 CREATE TABLE suspects (
 	ip TEXT,

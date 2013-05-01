@@ -59,7 +59,7 @@ public:
 	void ClearAllSuspects();
 	void ClearSuspect(const std::string &ip, const std::string &interface);
 
-	void IncrementPacketCount(const std::string &ip, const std::string &interface, const std::string &type, uint64_t increment = 1);
+	void IncrementPacketCount(const std::string &ip, const std::string &interface, const EvidenceAccumulator &e);
 	void IncrementPacketSizeCount(const std::string &ip, const std::string &interface, uint16_t size, uint64_t increment = 1);
 	void IncrementPortContactedCount(const std::string &ip, const std::string &interface, const std::string &protocol, const std::string &dstip, int port, uint64_t increment = 1);
 
