@@ -41,7 +41,6 @@ Suspect::Suspect()
 	m_classification = -1;
 	m_needsClassificationUpdate = false;
 	m_isHostile = false;
-	m_lastPacketTime = 0;
 	m_classificationNotes = "";
 
 	for(int i = 0; i < DIM; i++)
@@ -128,40 +127,9 @@ void Suspect::ReadEvidence(Evidence *evidence, bool deleteEvidence)
 	Evidence *curEvidence = evidence, *tempEv = NULL;
 	while(curEvidence != NULL)
 	{
-		// TODO Delete this line (and all of the featureset class)
 		m_features.Add(*curEvidence);
 
-//		Database::Inst()->IncrementPacketCount(m_id, 'bytes');
-//		m_bytesTotal += curEvidence->m_evidencePacket.ip_len;
-//
-//		if(m_HaystackIPTable.keyExists(curEvidence->m_evidencePacket.ip_dst))
-//		{
-//			if (m_HaystackIPTable[curEvidence->m_evidencePacket.ip_dst] == 0)
-//			{
-//				m_numberOfHaystackNodesContacted++;
-//				m_HaystackIPTable[curEvidence->m_evidencePacket.ip_dst]++;
-//			}
-//		}
-//
-//		m_lastTime = curEvidence->m_evidencePacket.ts;
-//
-//		//Accumulate to find the lowest Start time and biggest end time.
-//		if(curEvidence->m_evidencePacket.ts < m_startTime)
-//		{
-//			m_startTime = curEvidence->m_evidencePacket.ts;
-//		}
-//		if(curEvidence->m_evidencePacket.ts > m_endTime)
-//		{
-//			m_endTime =  curEvidence->m_evidencePacket.ts;
-//			CalculateTimeInterval();
-//		}
-
 		m_id.set_m_ifname(curEvidence->m_evidencePacket.interface);
-
-		if(m_lastPacketTime < evidence->m_evidencePacket.ts)
-		{
-			m_lastPacketTime = evidence->m_evidencePacket.ts;
-		}
 
 
 		tempEv = curEvidence;
@@ -258,11 +226,6 @@ double Suspect::GetFeatureAccuracy(FeatureIndex fi)
 void Suspect::SetFeatureAccuracy(FeatureIndex fi, double d)
 {
 	m_featureAccuracy[fi] = d;
-}
-
-long int Suspect::GetLastPacketTime()
-{
-	return m_lastPacketTime;
 }
 
 }

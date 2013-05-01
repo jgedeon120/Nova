@@ -18,9 +18,14 @@
 
 #include "gtest/gtest.h"
 
+#include "ClassificationAggregator.h"
 #include "Database.h"
+#include "DatabaseQueue.h"
 
 using namespace Nova;
+
+extern ClassificationEngine *engine;
+
 
 // The test fixture for testing class Database.
 class DatabaseTest : public ::testing::Test {
@@ -35,6 +40,36 @@ protected:
 	}
 };
 
+TEST_F(DatabaseTest, testDatabase)
+{
+	engine = new ClassificationAggregator();
+	DatabaseQueue q;
+	Evidence f;
+
+	f.m_evidencePacket.ip_p = 17;
+	f.m_evidencePacket.interface = "eth0";
+	f.m_evidencePacket.ip_dst = 42;
+
+	for (int i = 0; i < 250000; i++) {
+		f.m_evidencePacket.dst_port = i;
+		f.m_evidencePacket.ip_src = i;
+
+		q.ProcessEvidence(&f, true);
+	}
+
+	struct timeval start, end;
+	long mtime, seconds, useconds;
+	gettimeofday(&start, NULL);
+
+	q.WriteToDatabase();
+
+	gettimeofday(&end, NULL);
+	seconds  = end.tv_sec  - start.tv_sec;
+	useconds = end.tv_usec - start.tv_usec;
+	mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
+	cout << "Elapsed time in milliseconds: " << mtime << endl;
+
+}
 
 TEST_F(DatabaseTest, testInsertSuspect)
 {

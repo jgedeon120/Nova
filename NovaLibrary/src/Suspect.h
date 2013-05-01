@@ -132,8 +132,6 @@ private:
 
 	// Is the classification above the current threshold? IE: What conclusion has the CE come to?
 	bool m_isHostile;
-
-	long int m_lastPacketTime;
 };
 
 }

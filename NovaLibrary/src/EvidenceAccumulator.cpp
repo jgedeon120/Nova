@@ -80,12 +80,6 @@ EvidenceAccumulator::EvidenceAccumulator()
 
 void EvidenceAccumulator::Add(const Evidence &evidence)
 {
-	// Ensure our assumptions about valid packet fields are true
-	if(evidence.m_evidencePacket.ip_dst == 0)
-	{
-		LOG(DEBUG, "Got packet with invalid source IP address of 0. Skipping.", "");
-		return;
-	}
 	switch(evidence.m_evidencePacket.ip_p)
 	{
 		//If UDP
