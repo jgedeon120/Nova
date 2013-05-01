@@ -20,6 +20,7 @@
 #include "Logger.h"
 #include "NovaUtil.h"
 #include "Doppelganger.h"
+#include "Database.h"
 
 #include <string>
 #include <sstream>
@@ -56,11 +57,10 @@ void Doppelganger::UpdateDoppelganger()
 		InitDoppelganger();
 	}
 
-	vector<SuspectID_pb> keys;
+	Database::Inst()->StartTransaction();
+	vector<SuspectID_pb> keys = Database::Inst()->GetHostileSuspects();
+	Database::Inst()->StopTransaction();
 
-	// TODO DTC borked in the suspect table -> sqlite conversion
-	//Get latest list of hostile suspects
-	// keys = m_suspectTable.GetKeys_of_HostileSuspects();
 	vector<SuspectID_pb> keysCopy = keys;
 
 	//A few variable declarations
@@ -101,6 +101,8 @@ void Doppelganger::UpdateDoppelganger()
 			ss.str("");
 			inAddr.s_addr = htonl((in_addr_t)temp.m_ip());
 			ss << prefix << inet_ntoa(inAddr) << suffix;
+
+			LOG(DEBUG, "Doppelganger running command: " + ss.str(), "");
 			if(system(ss.str().c_str()) != 0)
 			{
 				LOG(ERROR, "Error routing suspect to Doppelganger", "Command '"+ss.str()+"' was unsuccessful.");
@@ -254,8 +256,9 @@ void Doppelganger::ResetDoppelganger()
 	}
 	m_suspectKeys.clear();
 
-	// TODO DTC borked in the suspecttable -> sqlite conversion
-	//m_suspectKeys = m_suspectTable.GetKeys_of_HostileSuspects();
+	Database::Inst()->StartTransaction();
+	m_suspectKeys = Database::Inst()->GetHostileSuspects();
+	Database::Inst()->StopTransaction();
 
 	prefix = "sudo iptables -t nat -I DOPP -s ";
 	string suffix = " -j DNAT --to-destination " + Config::Inst()->GetDoppelIp();

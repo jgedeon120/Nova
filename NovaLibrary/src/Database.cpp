@@ -254,6 +254,10 @@ void Database::Connect()
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"SELECT count_total FROM packet_counts WHERE ip = ? AND interface = ?",
 		-1, &getTotalPackets, NULL));
+
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
+		"SELECT ip, interface FROM suspects WHERE isHostile = 1",
+		-1, &getHostileSuspects, NULL));
 }
 
 void Database::WriteClassification(Suspect *s)
@@ -285,6 +289,34 @@ void Database::WriteTimestamps(Suspect *s)
 	m_count++;
 	SQL_RUN(SQLITE_DONE,sqlite3_step(updateSuspectTimestamps));
 	SQL_RUN(SQLITE_OK, sqlite3_reset(updateSuspectTimestamps));
+}
+
+vector<SuspectID_pb> Database::GetHostileSuspects()
+{
+	int res;
+
+	vector<SuspectID_pb> hostiles;
+
+	res = sqlite3_step(getHostileSuspects);
+
+	while (res == SQLITE_ROW)
+	{
+		SuspectID_pb id;
+
+		id.set_m_ip(inet_network((const char*)sqlite3_column_text(getHostileSuspects, 0)));
+		id.set_m_ifname(string((const char*)sqlite3_column_text(getHostileSuspects, 1)));
+
+		hostiles.push_back(id);
+
+		res = sqlite3_step(getHostileSuspects);
+	}
+
+	SQL_RUN(SQLITE_OK, sqlite3_reset(getHostileSuspects));
+
+
+
+	return hostiles;
+
 }
 
 uint64_t Database::GetTotalPacketCount(const string &ip, const string &interface)
@@ -500,6 +532,7 @@ bool Database::Disconnect()
 	sqlite3_finalize(createHostileAlert);
 	sqlite3_finalize(isSuspectHostile);
 	sqlite3_finalize(getTotalPackets);
+	sqlite3_finalize(getHostileSuspects);
 
 	if (sqlite3_close(db) != SQLITE_OK)
 	{

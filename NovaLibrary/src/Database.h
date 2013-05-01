@@ -72,6 +72,8 @@ public:
 
 	void ResetPassword();
 
+	std::vector<SuspectID_pb> GetHostileSuspects();
+
 
 
 	static int callback(void *NotUsed, int argc, char **argv, char **azColName);
@@ -130,6 +132,8 @@ private:
 	sqlite3_stmt *createHostileAlert;
 
 	sqlite3_stmt *getTotalPackets;
+
+	sqlite3_stmt *getHostileSuspects;
 };
 
 } /* namespace Nova */

@@ -123,6 +123,7 @@ void *ClassificationLoop(void *ptr)
 
 		Database::Inst()->m_count = 0;
 		suspects.WriteToDatabase();
+		doppel->UpdateDoppelganger();
 
 
 		gettimeofday(&end, NULL);
