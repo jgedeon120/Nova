@@ -297,6 +297,7 @@ vector<SuspectID_pb> Database::GetHostileSuspects()
 
 	vector<SuspectID_pb> hostiles;
 
+	m_count++;
 	res = sqlite3_step(getHostileSuspects);
 
 	while (res == SQLITE_ROW)
@@ -364,6 +365,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 	SQL_RUN(SQLITE_OK, sqlite3_bind_double(computePacketSizeVariance, 3, featureValues[PACKET_SIZE_MEAN]));
 
 	// SQL query gives us the variance, take sqrt to get the standard deviation
+	m_count++;
 	SQL_RUN(SQLITE_ROW, sqlite3_step(computePacketSizeVariance));
 	featureValues[PACKET_SIZE_DEVIATION] = sqrt(sqlite3_column_double(computePacketSizeVariance, 0));
 
@@ -374,6 +376,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeDistinctIps, 1, ip.c_str(), -1, SQLITE_STATIC));
 	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeDistinctIps, 2, interface.c_str(), -1, SQLITE_STATIC));
 
+	m_count++;
 	SQL_RUN(SQLITE_ROW, sqlite3_step(computeDistinctIps));
 	featureValues[DISTINCT_IPS] = sqlite3_column_double(computeDistinctIps, 0);
 
@@ -385,6 +388,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeDistinctPorts, 2, interface.c_str(), -1, SQLITE_STATIC));
 	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeDistinctPorts, 3, "tcp", -1, SQLITE_STATIC));
 
+	m_count++;
 	SQL_RUN(SQLITE_ROW, sqlite3_step(computeDistinctPorts));
 	featureValues[DISTINCT_TCP_PORTS] = sqlite3_column_double(computeDistinctPorts, 0);
 
@@ -396,6 +400,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeDistinctPorts, 2, interface.c_str(), -1, SQLITE_STATIC));
 	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeDistinctPorts, 3, "udp", -1, SQLITE_STATIC));
 
+	m_count++;
 	SQL_RUN(SQLITE_ROW, sqlite3_step(computeDistinctPorts));
 	featureValues[DISTINCT_UDP_PORTS] = sqlite3_column_double(computeDistinctPorts, 0);
 
@@ -408,6 +413,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeDistinctIpPorts, 2, interface.c_str(), -1, SQLITE_STATIC));
 		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeDistinctIpPorts, 3, "tcp", -1, SQLITE_STATIC));
 
+		m_count++;
 		SQL_RUN(SQLITE_ROW, sqlite3_step(computeDistinctIpPorts));
 		featureValues[AVG_TCP_PORTS_PER_HOST] = sqlite3_column_double(computeDistinctIpPorts, 0) / featureValues[DISTINCT_IPS];
 
@@ -419,6 +425,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeDistinctIpPorts, 2, interface.c_str(), -1, SQLITE_STATIC));
 		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeDistinctIpPorts, 3, "udp", -1, SQLITE_STATIC));
 
+		m_count++;
 		SQL_RUN(SQLITE_ROW, sqlite3_step(computeDistinctIpPorts));
 		featureValues[AVG_UDP_PORTS_PER_HOST] = sqlite3_column_double(computeDistinctIpPorts, 0) / featureValues[DISTINCT_IPS];
 
@@ -434,6 +441,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 	// Did we find the value in the database, and if so what is it?
 	double totalTcpPackets, synPackets , finPackets, rstPackets, synAckPackets, totalPackets;
 
+	m_count++;
 	res = sqlite3_step(selectPacketCounts);
 
 	if (res == SQLITE_ROW)
@@ -460,6 +468,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToIp, 1, ip.c_str(), -1, SQLITE_STATIC));
 		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToIp, 2, interface.c_str(), -1, SQLITE_STATIC));
 
+		m_count++;
 		SQL_RUN(SQLITE_ROW, sqlite3_step(computeMaxPacketsToIp));
 		featureValues[IP_TRAFFIC_DISTRIBUTION] = totalPackets / featureValues[DISTINCT_IPS] / sqlite3_column_double(computeMaxPacketsToIp, 0);
 
@@ -472,6 +481,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 			SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 2, interface.c_str(), -1, SQLITE_STATIC));
 			SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 3, "tcp", -1, SQLITE_STATIC));
 
+			m_count++;
 			SQL_RUN(SQLITE_ROW, sqlite3_step(computeMaxPacketsToPort));
 			double maxPacketsToTcpPort = sqlite3_column_double(computeMaxPacketsToPort, 0);
 			SQL_RUN(SQLITE_OK, sqlite3_reset(computeMaxPacketsToPort));
@@ -480,6 +490,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 			SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 2, interface.c_str(), -1, SQLITE_STATIC));
 			SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeMaxPacketsToPort, 3, "udp", -1, SQLITE_STATIC));
 
+			m_count++;
 			SQL_RUN(SQLITE_ROW, sqlite3_step(computeMaxPacketsToPort));
 			double maxPacketsToUdpPort = sqlite3_column_double(computeMaxPacketsToPort, 0);
 			SQL_RUN(SQLITE_OK, sqlite3_reset(computeMaxPacketsToPort));
@@ -493,6 +504,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 		// Compute the haystack percent contacted
 		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeHoneypotsContacted, 1, ip.c_str(), -1, SQLITE_STATIC));
 		SQL_RUN(SQLITE_OK, sqlite3_bind_text(computeHoneypotsContacted, 2, interface.c_str(), -1, SQLITE_STATIC));
+		m_count++;
 		SQL_RUN(SQLITE_ROW, sqlite3_step(computeHoneypotsContacted));
 		featureValues[HAYSTACK_PERCENT_CONTACTED] = sqlite3_column_double(computeHoneypotsContacted, 0);
 		SQL_RUN(SQLITE_OK, sqlite3_reset(computeHoneypotsContacted));
@@ -607,12 +619,16 @@ void Database::ClearSuspect(const string &ip, const string &interface)
 	SQL_RUN(SQLITE_OK,sqlite3_bind_text(deleteFromSuspects, 2, interface.c_str(), -1, SQLITE_STATIC));
 
 	// Step and reset them. Make sure we get rid of foreign key references and do suspects table last
+	m_count++;
 	SQL_RUN(SQLITE_DONE,sqlite3_step(deleteFromIpPortCounts));
 	SQL_RUN(SQLITE_OK, sqlite3_reset(deleteFromIpPortCounts));
+	m_count++;
 	SQL_RUN(SQLITE_DONE,sqlite3_step(deleteFromPacketSizes));
 	SQL_RUN(SQLITE_OK, sqlite3_reset(deleteFromPacketSizes));
+	m_count++;
 	SQL_RUN(SQLITE_DONE,sqlite3_step(deleteFromPacketCounts));
 	SQL_RUN(SQLITE_OK, sqlite3_reset(deleteFromPacketCounts));
+	m_count++;
 	SQL_RUN(SQLITE_DONE,sqlite3_step(deleteFromSuspects));
 	SQL_RUN(SQLITE_OK, sqlite3_reset(deleteFromSuspects));
 

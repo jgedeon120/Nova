@@ -89,6 +89,7 @@ void DatabaseQueue::ProcessEvidence(Evidence *evidence, bool readOnly)
 void DatabaseQueue::WriteToDatabase()
 {
 	Lock lock (&m_lock, WRITE_LOCK);
+	int totalCount = 0;
 
 	// This is in a while loop because we break out of the for loop every now and then to keep the
 	// queries per transaction down and improve responsiveness of readers
@@ -174,12 +175,13 @@ void DatabaseQueue::WriteToDatabase()
 			// up into multiple transactions if we get really behind processing suspects.
 			if (Database::Inst()->m_count > 100000)
 			{
+				totalCount += Database::Inst()->m_count;
 				break;
 			}
 
 		}
 
-
+		Database::Inst()->m_count = totalCount;
 		Database::Inst()->StopTransaction();
 	}
 }
