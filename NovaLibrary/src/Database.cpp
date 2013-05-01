@@ -263,7 +263,7 @@ void Database::WriteTimestamps(Suspect *s)
 	SQL_RUN(SQLITE_OK, sqlite3_reset(updateSuspectTimestamps));
 }
 
-vector<double> Database::ComputeFeatures(std::string ip, std::string interface)
+vector<double> Database::ComputeFeatures(const string &ip, const string &interface)
 {
 	int res;
 
@@ -532,7 +532,7 @@ void Database::ClearAllSuspects()
 	  }
 }
 
-void Database::ClearSuspect(string ip, string interface)
+void Database::ClearSuspect(const string &ip, const string &interface)
 {
 	cout << "Clearing suspect " << ip << " on interface " << interface << endl;
 	int res;
@@ -595,7 +595,7 @@ void Database::InsertSuspect(Suspect *suspect)
 	SQL_RUN(SQLITE_OK, sqlite3_reset(insertSuspect));
 }
 
-void Database::IncrementPacketCount(std::string ip, std::string interface, std::string type, uint64_t increment)
+void Database::IncrementPacketCount(const string &ip, const string &interface, const string &type, uint64_t increment)
 {
 	if (!increment)
 		return;
@@ -626,7 +626,7 @@ void Database::IncrementPacketCount(std::string ip, std::string interface, std::
 	}
 }
 
-void Database::IncrementPacketSizeCount(std::string ip, std::string interface, uint16_t size, uint64_t increment)
+void Database::IncrementPacketSizeCount(const string &ip, const string &interface, uint16_t size, uint64_t increment)
 {
 	if (!increment)
 		return;
@@ -655,7 +655,7 @@ void Database::IncrementPacketSizeCount(std::string ip, std::string interface, u
 	}
 }
 
-void Database::IncrementPortContactedCount(std::string ip, std::string interface, string protocol, string dstip, int port, uint64_t increment)
+void Database::IncrementPortContactedCount(const string &ip, const string &interface, const string &protocol, const string &dstip, int port, uint64_t increment)
 {
 	if (!increment)
 		return;
@@ -701,7 +701,7 @@ void Database::InsertHoneypotIp(std::string ip)
 
 }
 
-void Database::SetFeatureSetValue(std::string ip, std::string interface, vector<double> features)
+void Database::SetFeatureSetValue(const string &ip, const string &interface, const vector<double> &features)
 {
 	int res;
 
@@ -726,7 +726,7 @@ void Database::SetFeatureSetValue(std::string ip, std::string interface, vector<
 }
 
 
-void Database::InsertSuspectHostileAlert(std::string ip, std::string interface)
+void Database::InsertSuspectHostileAlert(const std::string &ip, const std::string &interface)
 {
 	int res;
 

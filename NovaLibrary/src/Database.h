@@ -52,20 +52,20 @@ public:
 	void InsertSuspect(Suspect *suspect);
 	void InsertHoneypotIp(std::string ip);
 
-	void InsertSuspectHostileAlert(std::string ip, std::string interface);
+	void InsertSuspectHostileAlert(const std::string &ip, const std::string &interface);
 	void WriteClassification(Suspect *s);
 	void WriteTimestamps(Suspect *s);
 
 	void ClearAllSuspects();
-	void ClearSuspect(std::string ip, std::string interface);
+	void ClearSuspect(const std::string &ip, const std::string &interface);
 
-	void IncrementPacketCount(std::string ip, std::string interface, std::string type, uint64_t increment = 1);
-	void IncrementPacketSizeCount(std::string ip, std::string interface, uint16_t size, uint64_t increment = 1);
-	void IncrementPortContactedCount(std::string ip, std::string interface, std::string protocol, std::string dstip, int port, uint64_t increment = 1);
+	void IncrementPacketCount(const std::string &ip, const std::string &interface, const std::string &type, uint64_t increment = 1);
+	void IncrementPacketSizeCount(const std::string &ip, const std::string &interface, uint16_t size, uint64_t increment = 1);
+	void IncrementPortContactedCount(const std::string &ip, const std::string &interface, const std::string &protocol, const std::string &dstip, int port, uint64_t increment = 1);
 
-	std::vector<double> ComputeFeatures(std::string ip, std::string interface);
+	std::vector<double> ComputeFeatures(const std::string &ip, const std::string &interface);
 
-	void SetFeatureSetValue(std::string ip, std::string interface, std::vector<double> features);
+	void SetFeatureSetValue(const std::string &ip, const std::string &interface, const std::vector<double> &features);
 
 	bool IsSuspectHostile(const std::string &ip, const std::string &interface);
 

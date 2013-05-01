@@ -97,17 +97,28 @@ void DatabaseQueue::WriteToDatabase()
 		string ip = s->GetIpString();
 		string interface = s->GetInterface();
 
-		Database::Inst()->IncrementPacketCount(ip, interface, "total", s->m_features.m_packetCount);
-		Database::Inst()->IncrementPacketCount(ip, interface, "tcp", s->m_features.m_tcpPacketCount);
-		Database::Inst()->IncrementPacketCount(ip, interface, "udp", s->m_features.m_udpPacketCount);
-		Database::Inst()->IncrementPacketCount(ip, interface, "icmp", s->m_features.m_icmpPacketCount);
-		Database::Inst()->IncrementPacketCount(ip, interface, "other", s->m_features.m_otherPacketCount);
-		Database::Inst()->IncrementPacketCount(ip, interface, "tcpRst", s->m_features.m_rstCount);
-		Database::Inst()->IncrementPacketCount(ip, interface, "tcpAck", s->m_features.m_ackCount);
-		Database::Inst()->IncrementPacketCount(ip, interface, "tcpFin", s->m_features.m_finCount);
-		Database::Inst()->IncrementPacketCount(ip, interface, "tcpSyn", s->m_features.m_synCount);
-		Database::Inst()->IncrementPacketCount(ip, interface, "tcpSynAck", s->m_features.m_synAckCount);
 		Database::Inst()->IncrementPacketCount(ip, interface, "bytes", s->m_features.m_bytesTotal);
+
+		if (s->m_features.m_packetCount)
+			Database::Inst()->IncrementPacketCount(ip, interface, "total", s->m_features.m_packetCount);
+		if (s->m_features.m_tcpPacketCount)
+			Database::Inst()->IncrementPacketCount(ip, interface, "tcp", s->m_features.m_tcpPacketCount);
+		if (s->m_features.m_udpPacketCount)
+			Database::Inst()->IncrementPacketCount(ip, interface, "udp", s->m_features.m_udpPacketCount);
+		if (s->m_features.m_icmpPacketCount)
+			Database::Inst()->IncrementPacketCount(ip, interface, "icmp", s->m_features.m_icmpPacketCount);
+		if (s->m_features.m_otherPacketCount)
+			Database::Inst()->IncrementPacketCount(ip, interface, "other", s->m_features.m_otherPacketCount);
+		if (s->m_features.m_rstCount)
+			Database::Inst()->IncrementPacketCount(ip, interface, "tcpRst", s->m_features.m_rstCount);
+		if (s->m_features.m_ackCount)
+			Database::Inst()->IncrementPacketCount(ip, interface, "tcpAck", s->m_features.m_ackCount);
+		if (s->m_features.m_finCount)
+			Database::Inst()->IncrementPacketCount(ip, interface, "tcpFin", s->m_features.m_finCount);
+		if (s->m_features.m_synCount)
+			Database::Inst()->IncrementPacketCount(ip, interface, "tcpSyn", s->m_features.m_synCount);
+		if (s->m_features.m_synAckCount)
+			Database::Inst()->IncrementPacketCount(ip, interface, "tcpSynAck", s->m_features.m_synAckCount);
 
 
 		for(Packet_Table::iterator it = s->m_features.m_packTable.begin() ; it != s->m_features.m_packTable.end(); it++)
