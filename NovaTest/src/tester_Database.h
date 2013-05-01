@@ -40,9 +40,17 @@ protected:
 	}
 };
 
+class dummyce : public ClassificationEngine {
+public:
+	 double Classify(Nova::Suspect*)
+	 {
+		 return 0.5;
+	 }
+};
+
 TEST_F(DatabaseTest, testDatabase)
 {
-	engine = new ClassificationAggregator();
+	engine = new dummyce();
 	DatabaseQueue q;
 	Evidence f;
 

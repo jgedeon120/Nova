@@ -65,6 +65,7 @@ public:
 	DatabaseQueue();
 	~DatabaseQueue();
 
+	bool empty();
 
 	//Consumes the linked list of evidence objects, extracting their information and inserting them into the Suspects.
 	// evidence: Evidence object, if consuming more than one piece of evidence this is the start

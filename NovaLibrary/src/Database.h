@@ -58,6 +58,7 @@ public:
 
 	void ClearAllSuspects();
 	void ClearSuspect(const std::string &ip, const std::string &interface);
+	uint64_t GetTotalPacketCount(const std::string &ip, const std::string &interface);
 
 	void IncrementPacketCount(const std::string &ip, const std::string &interface, const EvidenceAccumulator &e);
 	void IncrementPacketSizeCount(const std::string &ip, const std::string &interface, uint16_t size, uint64_t increment = 1);
@@ -127,6 +128,8 @@ private:
 
 	sqlite3_stmt *isSuspectHostile;
 	sqlite3_stmt *createHostileAlert;
+
+	sqlite3_stmt *getTotalPackets;
 };
 
 } /* namespace Nova */

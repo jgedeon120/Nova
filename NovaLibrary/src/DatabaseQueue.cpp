@@ -57,6 +57,11 @@ DatabaseQueue::~DatabaseQueue()
 	pthread_rwlock_destroy(&m_lock);
 }
 
+bool DatabaseQueue::empty()
+{
+	return m_suspectTable.size() == 0;
+}
+
 
 //Consumes the linked list of evidence objects, extracting their information and inserting them into the Suspects.
 // evidence: Evidence object, if consuming more than one piece of evidence this is the start
@@ -85,89 +90,98 @@ void DatabaseQueue::WriteToDatabase()
 {
 	Lock lock (&m_lock, WRITE_LOCK);
 
-	Database::Inst()->StartTransaction();
-
-	for(SuspectHashTable::iterator it = m_suspectTable.begin(); it != m_suspectTable.end(); it++)
+	// This is in a while loop because we break out of the for loop every now and then to keep the
+	// queries per transaction down and improve responsiveness of readers
+	while (!m_suspectTable.empty())
 	{
-		Suspect *s = it->second;
+		Database::Inst()->StartTransaction();
+		Database::Inst()->m_count = 0;
 
-		Database::Inst()->InsertSuspect(s);
-		Database::Inst()->WriteTimestamps(s);
-
-		string ip = s->GetIpString();
-		string interface = s->GetInterface();
-
-		Database::Inst()->IncrementPacketCount(ip, interface, s->m_features);
-
-		for(Packet_Table::iterator it = s->m_features.m_packTable.begin() ; it != s->m_features.m_packTable.end(); it++)
+		for(SuspectHashTable::iterator it = m_suspectTable.begin(); it != m_suspectTable.end();)
 		{
-			Database::Inst()->IncrementPacketSizeCount(ip, interface, it->first, it->second);
-		}
+			Suspect *s = it->second;
 
-		for (IpPortTable::iterator it = s->m_features.m_hasTcpPortIpBeenContacted.begin(); it != s->m_features.m_hasTcpPortIpBeenContacted.end(); it++)
-		{
-			SuspectID_pb dst;
-			dst.set_m_ip(it->first.m_ip);
-			Database::Inst()->IncrementPortContactedCount(ip, interface, "tcp", Suspect::GetIpString(dst), it->first.m_port, it->second);
-		}
+			Database::Inst()->InsertSuspect(s);
+			Database::Inst()->WriteTimestamps(s);
 
-		for (IpPortTable::iterator it = s->m_features.m_hasUdpPortIpBeenContacted.begin(); it != s->m_features.m_hasUdpPortIpBeenContacted.end(); it++)
-		{
-			SuspectID_pb dst;
-			dst.set_m_ip(it->first.m_ip);
-			Database::Inst()->IncrementPortContactedCount(ip, interface, "udp", Suspect::GetIpString(dst), it->first.m_port, it->second);
-		}
+			string ip = s->GetIpString();
+			string interface = s->GetInterface();
 
-		// Random non TCP/UDP packets, we just keep a generic "other" count
-		for (IP_Table::iterator it = s->m_features.m_IPTable.begin(); it != s->m_features.m_IPTable.end(); it++)
-		{
-			SuspectID_pb dst;
-			dst.set_m_ip(it->first);
-			Database::Inst()->IncrementPortContactedCount(ip, interface, "other", Suspect::GetIpString(dst), 0, it->second);
-		}
+			Database::Inst()->IncrementPacketCount(ip, interface, s->m_features);
 
-	}
-
-
-	// Update all of the featuresets
-	for(SuspectHashTable::iterator it = m_suspectTable.begin(); it != m_suspectTable.end(); it++)
-	{
-		Suspect *s = it->second;
-
-		vector<double> featureset = Database::Inst()->ComputeFeatures(Suspect::GetIpString(it->first), it->first.m_ifname());
-		copy(featureset.begin(), featureset.begin() + DIM, it->second->m_features.m_features);
-
-		// Classify the suspect with the new featureset we computed
-		engine->Classify(it->second);
-
-		// If it's hostile, see if we need to copy it into the hostile_alerts table
-		bool generateHostileAlert = false;
-		if (s->GetIsHostile())
-		{
-			// If it wasn't hostile before, but it is now, make an alert
-			if (!Database::Inst()->IsSuspectHostile(s->GetIpString(), s->GetInterface())){
-				generateHostileAlert = true;
+			for(Packet_Table::iterator it = s->m_features.m_packTable.begin() ; it != s->m_features.m_packTable.end(); it++)
+			{
+				Database::Inst()->IncrementPacketSizeCount(ip, interface, it->first, it->second);
 			}
+
+			for (IpPortTable::iterator it = s->m_features.m_hasTcpPortIpBeenContacted.begin(); it != s->m_features.m_hasTcpPortIpBeenContacted.end(); it++)
+			{
+				SuspectID_pb dst;
+				dst.set_m_ip(it->first.m_ip);
+				Database::Inst()->IncrementPortContactedCount(ip, interface, "tcp", Suspect::GetIpString(dst), it->first.m_port, it->second);
+			}
+
+			for (IpPortTable::iterator it = s->m_features.m_hasUdpPortIpBeenContacted.begin(); it != s->m_features.m_hasUdpPortIpBeenContacted.end(); it++)
+			{
+				SuspectID_pb dst;
+				dst.set_m_ip(it->first.m_ip);
+				Database::Inst()->IncrementPortContactedCount(ip, interface, "udp", Suspect::GetIpString(dst), it->first.m_port, it->second);
+			}
+
+			// Random non TCP/UDP packets, we just keep a generic "other" count
+			for (IP_Table::iterator it = s->m_features.m_IPTable.begin(); it != s->m_features.m_IPTable.end(); it++)
+			{
+				SuspectID_pb dst;
+				dst.set_m_ip(it->first);
+				Database::Inst()->IncrementPortContactedCount(ip, interface, "other", Suspect::GetIpString(dst), 0, it->second);
+			}
+
+
+			vector<double> featureset = Database::Inst()->ComputeFeatures(Suspect::GetIpString(it->first), it->first.m_ifname());
+			copy(featureset.begin(), featureset.begin() + DIM, it->second->m_features.m_features);
+
+			if (Database::Inst()->GetTotalPacketCount(ip, interface) >= Config::Inst()->GetMinPacketThreshold())
+			{
+				// Classify the suspect with the new featureset we computed
+				engine->Classify(it->second);
+
+				// If it's hostile, see if we need to copy it into the hostile_alerts table
+				bool generateHostileAlert = false;
+				if (s->GetIsHostile())
+				{
+					// If it wasn't hostile before, but it is now, make an alert
+					if (!Database::Inst()->IsSuspectHostile(s->GetIpString(), s->GetInterface())){
+						generateHostileAlert = true;
+					}
+				}
+
+				// Store result back into database
+				Database::Inst()->WriteClassification(s);
+
+				if (generateHostileAlert)
+				{
+					Database::Inst()->InsertSuspectHostileAlert(s->GetIpString(), s->GetInterface());
+				}
+			}
+
+
+			it = m_suspectTable.erase(it);
+			delete s;
+
+			// Don't do more than 100k queries per transaction. Not a hard and fast rule,
+			// but it causes readers to not get new suspects for a long time if we're
+			// fuzzing things with the FAST tool, and it doesn't hurt to break things
+			// up into multiple transactions if we get really behind processing suspects.
+			if (Database::Inst()->m_count > 100000)
+			{
+				break;
+			}
+
 		}
 
-		// Store result back into database
-		Database::Inst()->WriteClassification(s);
 
-		if (generateHostileAlert)
-		{
-			Database::Inst()->InsertSuspectHostileAlert(s->GetIpString(), s->GetInterface());
-		}
-
-		m_suspectTable[it->first] = NULL;
-		delete s;
-
+		Database::Inst()->StopTransaction();
 	}
-
-
-	Database::Inst()->StopTransaction();
-
-
-	m_suspectTable.clear();
 }
 
 }

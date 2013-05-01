@@ -250,6 +250,10 @@ void Database::Connect()
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"SELECT isHostile, classification FROM suspects WHERE ip = ? AND interface = ?",
 		-1, &isSuspectHostile, NULL));
+
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
+		"SELECT count_total FROM packet_counts WHERE ip = ? AND interface = ?",
+		-1, &getTotalPackets, NULL));
 }
 
 void Database::WriteClassification(Suspect *s)
@@ -283,6 +287,27 @@ void Database::WriteTimestamps(Suspect *s)
 	SQL_RUN(SQLITE_OK, sqlite3_reset(updateSuspectTimestamps));
 }
 
+uint64_t Database::GetTotalPacketCount(const string &ip, const string &interface)
+{
+	int res;
+	uint64_t packets = 0;
+
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(getTotalPackets, 1, ip.c_str(), -1, SQLITE_STATIC));
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(getTotalPackets, 2, interface.c_str(), -1, SQLITE_STATIC));
+
+	m_count++;
+	res = sqlite3_step(getTotalPackets);
+
+	if (res == SQLITE_ROW)
+	{
+		packets = sqlite3_column_int64(getTotalPackets, 0);
+	}
+
+	SQL_RUN(SQLITE_OK, sqlite3_reset(getTotalPackets));
+
+	return packets;
+}
+
 vector<double> Database::ComputeFeatures(const string &ip, const string &interface)
 {
 	int res;
@@ -294,6 +319,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computePacketSizeMean, 1, ip.c_str(), -1, SQLITE_STATIC));
 	SQL_RUN(SQLITE_OK, sqlite3_bind_text(computePacketSizeMean, 2, interface.c_str(), -1, SQLITE_STATIC));
 
+	m_count++;
 	SQL_RUN(SQLITE_ROW, sqlite3_step(computePacketSizeMean));
 	featureValues[PACKET_SIZE_MEAN] = sqlite3_column_double(computePacketSizeMean, 0);
 
@@ -473,6 +499,7 @@ bool Database::Disconnect()
 	sqlite3_finalize(updateSuspectTimestamps);
 	sqlite3_finalize(createHostileAlert);
 	sqlite3_finalize(isSuspectHostile);
+	sqlite3_finalize(getTotalPackets);
 
 	if (sqlite3_close(db) != SQLITE_OK)
 	{
