@@ -1,9 +1,11 @@
 #!/bin/bash
 
 QUERY1="
+PRAGMA page_size = 4096;
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
 PRAGMA synchronous = NORMAL;
+
 
 CREATE TABLE packet_count_types(
 	type TEXT PRIMARY KEY NOT NULL

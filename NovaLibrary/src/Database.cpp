@@ -99,9 +99,19 @@ void Database::Connect()
 
 	sqlite3_exec(db, "PRAGMA foreign_keys = ON", NULL, NULL, &err);
 	if (err != NULL)
-	{
 		LOG(ERROR, "Error when trying to enable foreign database keys: " + string(err), "");
-	}
+
+	sqlite3_exec(db, "PRAGMA cache_size = 100000", NULL, NULL, &err);
+	if (err != NULL)
+		LOG(ERROR, "Error when trying to set cache_size: " + string(err), "");
+
+	sqlite3_exec(db, "PRAGMA synchronous = OFF", NULL, NULL, &err);
+	if (err != NULL)
+		LOG(ERROR, "Error when setting pragma: " + string(err), "");
+
+	sqlite3_exec(db, "PRAGMA temp_store = MEMORY", NULL, NULL, &err);
+	if (err != NULL)
+		LOG(ERROR, "Error when setting pragma: " + string(err), "");
 
 	// Set up all our prepared queries
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
