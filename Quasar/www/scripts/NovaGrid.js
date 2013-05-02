@@ -32,7 +32,14 @@ var NovaGrid = function(columns, keyIndex, tableElement, gridName, selection, ri
     this.m_elements = new Object();
     this.m_pageElements = [];
     this.m_pagesElement = null;
+    
+    // Called whenever the grid is redrawn
     this.m_renderCallback = function() {};
+
+    // Called when the grid is redrawn without explicit Render call (page change, sort order change, etc)
+    this.m_autoRenderCallback = function() {};
+    
+    
     this.m_selected = [];
     this.m_currentPage = 0;
     this.m_relativePageNumbersToShow = 2;
@@ -142,6 +149,7 @@ NovaGrid.prototype = {
                if (page >= 0 && page < this.GetNumberOfPages()) {
                    this.m_currentPage = page;
                    this.m_selected.length = 0;
+                   this.m_autoRenderCallback();
                    this.Render();
                }
            }
@@ -307,6 +315,7 @@ NovaGrid.prototype = {
         }
         this.m_sortByKey = key;
         this.GenerateTableHeader();
+        this.m_autoRenderCallback();
         this.Render();
     }
 

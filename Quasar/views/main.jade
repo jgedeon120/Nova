@@ -40,7 +40,7 @@ block content
       label Show Advanced Suspect Statistics
       br
       
-      input#showUnclassified(type="checkbox", onchange="showUnclassifiedChanged()")
+      input#showUnclassified(type="checkbox")
       label Show Unclassified Suspects
       br
       br
@@ -305,10 +305,11 @@ block headerAdditions
         suspectGrid.SetRowsPerPage(20);
         suspectGrid.SetPageNumberDiv($('#tablePages').get(0));
 
-        suspectGrid.SetRenderCallback(function() {
-            $(".newRow").css({backgroundColor:"#E4F2FF"}).animate({backgroundColor:"transparent"}, 2500, null, 
-                function() { this.style.backgroundColor='transparent'; });
-        });
+
+        suspectGrid.m_autoRenderCallback = function() {
+            querySuspects();
+            
+        };
 
         var renderSuspects = function(){
             if(!liveUpdate || lastNovadStatus == false) {return;}
@@ -325,6 +326,7 @@ block headerAdditions
         var rows = suspectGrid.m_rowsPerPage;
         var offset = suspectGrid.m_currentPage * suspectGrid.m_rowsPerPage;
         var sortOrder = suspectGrid.m_sortDescending ? "DESC" : "ASC";
+        var showUnclassified = $("#showUnclassified").prop("checked");
 
         // Translate the grid column index to the actual SQL column name we want to sort by
         var sortBy = "classification";
@@ -347,14 +349,14 @@ block headerAdditions
             case 18: sortBy = "haystack_percent_contacted"; break;
         }
   
-        now.GetNumberOfSuspects(function(err, res) {
+        now.GetNumberOfSuspects(showUnclassified, function(err, res) {
             if (err) {return;}
 
             suspectGrid.m_numberOfPages = Math.ceil(res[0].count/suspectGrid.m_rowsPerPage);
             $('#numberOfSuspects').text("Recieved data for " + res[0].count + " suspects");
         });
 
-        now.GetSuspects(rows, offset, sortBy, sortOrder, parseSuspects);
+        now.GetSuspects(rows, offset, sortBy, sortOrder, showUnclassified, parseSuspects);
     }
 
     function parseSuspects(err, suspects) {

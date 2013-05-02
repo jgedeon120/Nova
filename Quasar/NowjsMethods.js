@@ -1398,16 +1398,24 @@ everyone.now.DeleteHostname = function(hostname, cb) {
 
 // TODO
 // Suspect related queries?
-everyone.now.GetSuspects = function(limit, offset, orderBy, direction, cb) {
-    var queryString = "SELECT * FROM suspects ORDER BY " + orderBy + " " + direction + " LIMIT " + limit + " OFFSET " + offset;
+everyone.now.GetSuspects = function(limit, offset, orderBy, direction, showUnclassified, cb) {
+    var classifiedFilter = "";
+    if (!showUnclassified) {
+        classifiedFilter = " WHERE classification != -2 ";
+    }
+    var queryString = "SELECT * FROM suspects " + classifiedFilter + "ORDER BY " + orderBy + " " + direction + " LIMIT " + limit + " OFFSET " + offset;
     NovaCommon.novaDb.all(queryString, function(err, results) {
         if (databaseError(err, cb)) {return;}
         cb && cb(null, results);
     });
 };
 
-everyone.now.GetNumberOfSuspects = function(cb) {
-    var queryString = "SELECT COUNT() as count FROM suspects";
+everyone.now.GetNumberOfSuspects = function(showUnclassified, cb) {
+    if (showUnclassified) {
+        var queryString = "SELECT COUNT() as count FROM suspects";
+    } else {
+        var queryString = "SELECT COUNT() as count FROM suspects WHERE classification != -2";
+    }
     NovaCommon.novaDb.all(queryString, function(err, results) {
         if (databaseError(err, cb)) {return;}
         cb && cb(null, results);

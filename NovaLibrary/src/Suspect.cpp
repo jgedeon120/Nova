@@ -38,7 +38,7 @@ namespace Nova
 Suspect::Suspect()
 {
 	m_hostileNeighbors = 0;
-	m_classification = -1;
+	m_classification = -2;
 	m_needsClassificationUpdate = false;
 	m_isHostile = false;
 	m_classificationNotes = "";
@@ -167,7 +167,6 @@ void Suspect::SetIpAddress(in_addr_t ip)
 }
 
 //Returns a copy of the Suspects classification double
-// Returns -1 on failure
 double Suspect::GetClassification()
 {
 	return m_classification;
