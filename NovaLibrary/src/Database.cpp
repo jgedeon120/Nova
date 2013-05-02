@@ -459,10 +459,13 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 
 	SQL_RUN(SQLITE_OK, sqlite3_reset(selectPacketCounts));
 
-	featureValues[TCP_PERCENT_SYN] = synPackets / (totalTcpPackets + 1);
-	featureValues[TCP_PERCENT_FIN] = finPackets / (totalTcpPackets + 1);
-	featureValues[TCP_PERCENT_RST] = rstPackets / (totalTcpPackets + 1);
-	featureValues[TCP_PERCENT_SYNACK] = synAckPackets / (totalTcpPackets + 1);
+	if (totalTcpPackets != 0)
+	{
+		featureValues[TCP_PERCENT_SYN] = synPackets / totalTcpPackets;
+		featureValues[TCP_PERCENT_FIN] = finPackets / totalTcpPackets;
+		featureValues[TCP_PERCENT_RST] = rstPackets / totalTcpPackets;
+		featureValues[TCP_PERCENT_SYNACK] = synAckPackets / totalTcpPackets;
+	}
 
 
 	if (featureValues[DISTINCT_IPS] > 0) {
