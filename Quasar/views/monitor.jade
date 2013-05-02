@@ -403,10 +403,12 @@ block headerAdditions
         
         now.ready(function()
         {
+            now.reverseDNS('#{suspectIp}', reverseDNScb);
+            now.GetSuspect('#{suspectIp}', '#{suspectInterface}', OnNewSuspect)
+            
             setInterval(function() {
                 now.GetSuspect('#{suspectIp}', '#{suspectInterface}', OnNewSuspect)
             }, 3000);
-            now.reverseDNS('#{suspectIp}', reverseDNScb);
         });
     };
 
