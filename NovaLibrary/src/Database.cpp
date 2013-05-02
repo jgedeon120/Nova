@@ -438,8 +438,7 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 	SQL_RUN(SQLITE_OK, sqlite3_bind_text(selectPacketCounts, 1, ip.c_str(), -1, SQLITE_STATIC));
 	SQL_RUN(SQLITE_OK, sqlite3_bind_text(selectPacketCounts, 2, interface.c_str(), -1, SQLITE_STATIC));
 
-	// Did we find the value in the database, and if so what is it?
-	double totalTcpPackets, synPackets , finPackets, rstPackets, synAckPackets, totalPackets;
+	double totalTcpPackets = 0, synPackets = 0, finPackets = 0, rstPackets = 0, synAckPackets = 0, totalPackets = 0;
 
 	m_count++;
 	res = sqlite3_step(selectPacketCounts);
@@ -452,7 +451,10 @@ vector<double> Database::ComputeFeatures(const string &ip, const string &interfa
 		synPackets = sqlite3_column_int64(selectPacketCounts, 9);
 		finPackets = sqlite3_column_int64(selectPacketCounts, 10);
 		synAckPackets = sqlite3_column_int64(selectPacketCounts, 11);
-
+	}
+	else
+	{
+		LOG(ERROR, "Unable to get packet counts from the database for suspect: " + ip + "/" + interface, "");
 	}
 
 	SQL_RUN(SQLITE_OK, sqlite3_reset(selectPacketCounts));
