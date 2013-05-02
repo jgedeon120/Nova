@@ -20,7 +20,8 @@ block content
   h1 Details for !{suspect} on !{interface}
 
   div#genericInfo
-  
+ 
+  h1 Packet Counts
   div.novaGrid
     div#packetCountTable
   div#tablePages
@@ -96,11 +97,11 @@ block headerAdditions
         info += "<TR><TD> Distinct UDP Ports Contacted </TD> <TD>" + suspect.distinct_udp_ports + "</TD></TR>";
         info += "<TR><TD> Average TCP Ports Per Host</TD> <TD>" + suspect.avg_tcp_ports_per_host + "</TD></TR>";
         info += "<TR><TD> Average UDP Ports Per Host</TD> <TD>" + suspect.avg_udp_ports_per_host + "</TD></TR>";
-        info += "<TR><TD> Percent TCP SYN Packets </TD> <TD>" + suspect.tcp_percent_syn + "</TD></TR>";
-        info += "<TR><TD> Percent TCP SYN ACK Packets </TD> <TD>" + suspect.tcp_percent_synack + "</TD></TR>";
-        info += "<TR><TD> Percent TCP FIN Packets </TD> <TD>" + suspect.tcp_percent_fin + "</TD></TR>";
-        info += "<TR><TD> Percent TCP RST Packets </TD> <TD>" + suspect.tcp_percent_rst + "</TD></TR>";
-        info += "<TR><TD> Percent Haystack Contacted </TD> <TD>" + suspect.haystack_percent_contacted + "</TD></TR>";
+        info += "<TR><TD> Percent TCP SYN Packets </TD> <TD>" + suspect.tcp_percent_syn * 100 + "%</TD></TR>";
+        info += "<TR><TD> Percent TCP SYN ACK Packets </TD> <TD>" + suspect.tcp_percent_synack * 100 + "%</TD></TR>";
+        info += "<TR><TD> Percent TCP FIN Packets </TD> <TD>" + suspect.tcp_percent_fin * 100 + "%</TD></TR>";
+        info += "<TR><TD> Percent TCP RST Packets </TD> <TD>" + suspect.tcp_percent_rst * 100 + "%</TD></TR>";
+        info += "<TR><TD> Percent Haystack Contacted </TD> <TD>" + suspect.haystack_percent_contacted * 100 + "%</TD></TR>";
         
         
         info += "<TR><TD></TD></TR>";
@@ -122,18 +123,15 @@ block headerAdditions
 
         for (var r in results) {
             var row = new Array();
-            row.push(results[r].dstip + results[r].dstiport + results[r].type);
+            row.push(results[r].dstip + String(results[r].port) + results[r].type);
             row.push(results[r].dstip);
             row.push(results[r].port);
             row.push(results[r].type);
             row.push(results[r].count);
+            console.log(row)
 
             grid.PushEntry(row);
         }
-
-
-
-        console.log(results);
         
         grid.Render();
     };
