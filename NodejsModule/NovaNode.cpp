@@ -37,22 +37,20 @@ void NovaNode::InitNovaCallbackProcessing()
 	eio_custom(NovaCallbackHandling, EIO_PRI_DEFAULT, AfterNovaCallbackHandling, NULL);
 }
 
-void NovaNode::CheckInitNova()
+bool NovaNode::CheckInitNova()
 {
 	if(Nova::IsNovadConnected())
 	{
-		return;
+		return true;
 	}
 
 	if(!Nova::ConnectToNovad())
 	{
 		LOG(WARNING, "Could not connect to Novad. It is likely down.","");
-		return;
+		return false;
 	}
 
-	SynchInternalList();
-
-	LOG(DEBUG, "CheckInitNova complete","");
+	return false;
 }
 
 void NovaNode::NovaCallbackHandling(eio_req*)
@@ -108,40 +106,12 @@ int NovaNode::AfterNovaCallbackHandling(eio_req*)
 
 void NovaNode::HandleSuspectCleared(Suspect *suspect)
 {
-	eio_nop( EIO_PRI_DEFAULT, NovaNode::HandleSuspectClearedOnV8Thread, suspect);
 }
 
 void NovaNode::HandleAllSuspectsCleared()
 {
-	eio_nop( EIO_PRI_DEFAULT, NovaNode::HandleAllClearedOnV8Thread, NULL);
 }
 
-void NovaNode::DoneWithSuspectCallback(Persistent<Value> suspect, void *paramater)
-{
-	Suspect *s = static_cast<Suspect*>(paramater);
-	delete s;	
-	suspect.ClearWeak();
-	suspect.Dispose();
-	suspect.Clear();
-}
-
-int NovaNode::HandleSuspectClearedOnV8Thread(eio_req* req)
-{
-	/* TODO DTC this is terrible, why are we sending an entire suspect in the "suspect s was cleared" message?
-	v8::Persistent<Value> weak_handle = Persistent<Value>::New(SuspectJs::WrapSuspect(suspect));
-	weak_handle.MakeWeak(suspect, &DoneWithSuspectCallback);
-	Persistent<Value> argv[1] = { weak_handle };	
-	m_SuspectClearedCallback->Call(m_SuspectClearedCallback, 1, argv);
-	*/
-	return 0;
-}
-
-int NovaNode::HandleAllClearedOnV8Thread(eio_req*)
-{
-	HandleScope scope;
-	m_SuspectsClearedCallback->Call(m_SuspectsClearedCallback, 0, NULL);
-	return 0;
-}
 
 void NovaNode::HandleCallbackError()
 {
@@ -181,11 +151,7 @@ void NovaNode::Init(Handle<Object> target)
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "GetDIM", GetDIM);
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "GetSupportedEngines", GetSupportedEngines);
 
-	NODE_SET_PROTOTYPE_METHOD(s_ct, "RequestSuspectCallback", RequestSuspectCallback);
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "ClearAllSuspects", ClearAllSuspects);
-	NODE_SET_PROTOTYPE_METHOD(s_ct, "registerOnNewSuspect", registerOnNewSuspect );
-	NODE_SET_PROTOTYPE_METHOD(s_ct, "registerOnAllSuspectsCleared", registerOnAllSuspectsCleared );
-	NODE_SET_PROTOTYPE_METHOD(s_ct, "registerOnSuspectCleared", registerOnSuspectCleared );
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "CheckConnection", CheckConnection );
 
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "CloseNovadConnection", (InvokeMethod<bool, DisconnectFromNovadWrapper>) );
@@ -200,8 +166,7 @@ void NovaNode::Init(Handle<Object> target)
 
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "IsNovadConnected", (InvokeMethod<bool, Nova::IsNovadConnected>) );
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "IsHaystackUp", (InvokeMethod<bool, Nova::IsHaystackUp>) );
-	//              
-	//              NODE_SET_PROTOTYPE_METHOD(s_ct, "SaveAllSuspects", (InvokeMethod<Boolean, bool, Nova::SaveAllSuspects>) );
+
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "ReclassifyAllSuspects", (InvokeMethod<bool, ReclassifyAllSuspectsWrapper>) );
 	
 	NODE_SET_PROTOTYPE_METHOD(s_ct, "GetLocalIP", (InvokeMethod<std::string, std::string, Nova::GetLocalIP>) );
@@ -260,10 +225,9 @@ Handle<Value> NovaNode::CheckConnection(const Arguments &)
 {
 	HandleScope scope;
 
-	LOG(DEBUG, "Attempting to connect to Novad...", "");
-	CheckInitNova();
+	//LOG(DEBUG, "Attempting to connect to Novad...", "");
 
-	Local<Boolean> result = Local<Boolean>::New( Boolean::New(true) );
+	Local<Boolean> result = Local<Boolean>::New( Boolean::New(CheckInitNova()) );
 	return scope.Close(result);
 }
 
@@ -304,98 +268,12 @@ NovaNode::~NovaNode()
 	cout << "Destructing NovaNode." << endl;
 }
 
-// Update our internal suspect list to that of novad
-void NovaNode::SynchInternalList()
-{
-	RequestSuspects(SUSPECTLIST_ALL);
-}
-
 Handle<Value> NovaNode::New(const Arguments& args)
 {
 	HandleScope scope;
 	NovaNode* hw = new NovaNode();
 	hw->Wrap(args.This());
 	return args.This();
-}
-
-Handle<Value> NovaNode::RequestSuspectCallback(const Arguments& args)
-{
-	HandleScope scope;
-
-	string suspectIp = cvv8::CastFromJS<string>(args[0]);
-	string suspectInterface = cvv8::CastFromJS<string>(args[1]);
-	Persistent<Function> cb = Persistent<Function>::New(args[2].As<Function>());
-
-	struct in_addr address;
-	inet_pton(AF_INET, suspectIp.c_str(), &address);
-
-	SuspectID_pb id;
-	id.set_m_ifname(suspectInterface);
-	id.set_m_ip(htonl(address.s_addr));
-
-	messageID++;
-	jsCallbacks[messageID] = cb;
-	RequestSuspect(id, messageID);
-	
-	return scope.Close(Null());
-}
-
-Handle<Value> NovaNode::registerOnNewSuspect(const Arguments& args)
-{
-	HandleScope scope;
-
-	if(!args[0]->IsFunction())
-	{
-		LOG(DEBUG, 
-				"Attempted to register OnNewSuspect with non-function, excepting","");
-		return ThrowException(Exception::TypeError(String::New("Argument must be a function")));
-	}
-
-	m_CallbackFunction = Persistent<Function>::New( args[0].As<Function>() );
-	m_CallbackFunction.MakeWeak(0, HandleOnNewSuspectWeakCollect);
-
-
-	Local<Boolean> result = Local<Boolean>::New( Boolean::New(true) );
-	m_CallbackRegistered = true;
-	return scope.Close(result);      
-}
-
-Handle<Value> NovaNode::registerOnAllSuspectsCleared(const Arguments& args)
-{
-	HandleScope scope;
-
-	if(!args[0]->IsFunction())
-	{
-		LOG(DEBUG, 
-				"Attempted to register OnAllSuspectsCleared with non-function, excepting","");
-		return ThrowException(Exception::TypeError(String::New("Argument must be a function")));
-	}
-
-	m_SuspectsClearedCallback = Persistent<Function>::New( args[0].As<Function>() );
-	m_SuspectsClearedCallback.MakeWeak(0, HandleOnNewSuspectWeakCollect);
-
-	m_AllSuspectsClearedCallbackRegistered = true;
-	Local<Boolean> result = Local<Boolean>::New( Boolean::New(true) );
-	return scope.Close(result);      
-}
-
-Handle<Value> NovaNode::registerOnSuspectCleared(const Arguments& args)
-{
-	HandleScope scope;
-
-	if(!args[0]->IsFunction())
-	{
-		LOG(DEBUG, 
-				"Attempted to register OnSuspectCleared with non-function, excepting","");
-		return ThrowException(Exception::TypeError(String::New("Argument must be a function")));
-	}
-
-	m_SuspectClearedCallback = Persistent<Function>::New( args[0].As<Function>() );
-	m_SuspectClearedCallback.MakeWeak(0, HandleOnNewSuspectWeakCollect);
-
-	m_SuspectClearedCallbackRegistered = true;
-	Local<Boolean> result = Local<Boolean>::New( Boolean::New(true) );
-	return scope.Close(result);      
 }
 
 // Invoked when the only one referring to an OnNewSuspect handler is us, i.e. no JS objects
@@ -410,12 +288,5 @@ void NovaNode::HandleOnNewSuspectWeakCollect(Persistent<Value> , void *)
 
 Persistent<FunctionTemplate> NovaNode::s_ct;
 
-Persistent<Function> NovaNode::m_CallbackFunction=Persistent<Function>();
-Persistent<Function> NovaNode::m_SuspectsClearedCallback=Persistent<Function>();
-Persistent<Function> NovaNode::m_SuspectClearedCallback=Persistent<Function>();
-
-bool NovaNode::m_CallbackRegistered=false;
-bool NovaNode::m_AllSuspectsClearedCallbackRegistered=false;
-bool NovaNode::m_SuspectClearedCallbackRegistered=false;
 pthread_t NovaNode::m_NovaCallbackThread=0;
 

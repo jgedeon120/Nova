@@ -851,4 +851,128 @@ bool Database::IsSuspectHostile(const std::string &ip, const std::string &interf
 }
 
 
+std::vector<string> Database::GetSuspectList(enum SuspectListType listType)
+{
+	vector<string> suspects;
+	int res;
+	sqlite3_stmt *stmt;
+
+	if (listType == SUSPECTLIST_ALL)
+	{
+	   SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db, "SELECT ip, interface FROM suspects", -1, &stmt, NULL));
+	}
+	else if (listType == SUSPECTLIST_HOSTILE)
+	{
+	   SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db, "SELECT ip, interface FROM suspects WHERE isHostile = 1", -1, &stmt, NULL));
+	}
+	else if (listType == SUSPECTLIST_BENIGN)
+	{
+	   SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db, "SELECT ip, interface FROM suspects WHERE isHostile = 0", -1, &stmt, NULL));
+	}
+
+	res = sqlite3_step(stmt);
+
+	while (res == SQLITE_ROW)
+	{
+		string str;
+		str += string((const char*)sqlite3_column_text(stmt, 1));
+		str += " ";
+		str += string((const char*)sqlite3_column_text(stmt, 0));
+
+		suspects.push_back(str);
+
+		res = sqlite3_step(stmt);
+	}
+
+	sqlite3_finalize(stmt);
+
+	return suspects;
+}
+
+std::vector<Suspect> Database::GetSuspects(enum SuspectListType listType)
+{
+	vector<Suspect> suspects;
+	int res;
+	sqlite3_stmt *stmt;
+
+	if (listType == SUSPECTLIST_ALL)
+	{
+	   SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db, "SELECT * FROM suspects", -1, &stmt, NULL));
+	}
+	else if (listType == SUSPECTLIST_HOSTILE)
+	{
+	   SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db, "SELECT * FROM suspects WHERE isHostile = 1", -1, &stmt, NULL));
+	}
+	else if (listType == SUSPECTLIST_BENIGN)
+	{
+	   SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db, "SELECT * FROM suspects WHERE isHostile = 0", -1, &stmt, NULL));
+	}
+
+	res = sqlite3_step(stmt);
+
+	while (res == SQLITE_ROW)
+	{
+		Suspect s;
+
+		SuspectID_pb id;
+		id.set_m_ip(inet_addr(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0))));
+		id.set_m_ifname(string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1))));
+		s.SetIdentifier(id);
+
+		s.m_features.m_startTime = sqlite3_column_int(stmt, 2);
+		s.m_features.m_endTime = sqlite3_column_int(stmt, 3);
+		s.m_features.m_lastTime = sqlite3_column_int(stmt, 4);
+		s.SetClassification(sqlite3_column_double(stmt, 5));
+		s.SetIsHostile(sqlite3_column_double(stmt, 7));
+		s.m_classificationNotes = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 8)));
+		for (int i = 9; i < 9 + DIM; i++)
+		{
+			s.m_features.m_features[i - 9] = sqlite3_column_double(stmt, i);
+		}
+
+		suspects.push_back(s);
+
+		res = sqlite3_step(stmt);
+	}
+
+	sqlite3_finalize(stmt);
+
+	return suspects;
+}
+
+Suspect Database::GetSuspect(SuspectID_pb id)
+{
+	Suspect s;
+	int res;
+	sqlite3_stmt *stmt;
+
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db, "SELECT * FROM suspects WHERE ip = ? AND interface = ?", -1, &stmt, NULL));
+
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(stmt, 1, Suspect::GetIpString(id).c_str(), -1, SQLITE_TRANSIENT));
+	SQL_RUN(SQLITE_OK, sqlite3_bind_text(stmt, 2, id.m_ifname().c_str(), -1, SQLITE_TRANSIENT));
+
+	res = sqlite3_step(stmt);
+
+	if (res == SQLITE_ROW)
+	{
+		s.SetIdentifier(id);
+		s.m_features.m_startTime = sqlite3_column_int(stmt, 2);
+		s.m_features.m_endTime = sqlite3_column_int(stmt, 3);
+		s.m_features.m_lastTime = sqlite3_column_int(stmt, 4);
+		s.SetClassification(sqlite3_column_double(stmt, 5));
+		s.SetIsHostile(sqlite3_column_double(stmt, 7));
+		s.m_classificationNotes = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 8)));
+		for (int i = 9; i < 9 + DIM; i++)
+		{
+			s.m_features.m_features[i - 9] = sqlite3_column_double(stmt, i);
+		}
+	}
+
+	sqlite3_finalize(stmt);
+
+	return s;
+}
+
+
+
 }/* namespace Nova */

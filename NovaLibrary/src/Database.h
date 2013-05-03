@@ -19,6 +19,7 @@
 #ifndef DATABASE_H_
 #define DATABASE_H_
 
+#include "protobuf/marshalled_classes.pb.h"
 #include "Suspect.h"
 
 #include <Lock.h>
@@ -75,6 +76,9 @@ public:
 	std::vector<SuspectID_pb> GetHostileSuspects();
 
 
+	std::vector<std::string> GetSuspectList(enum SuspectListType listType);
+	std::vector<Suspect> GetSuspects(enum SuspectListType listType);
+	Suspect GetSuspect(SuspectID_pb id);
 
 	static int callback(void *NotUsed, int argc, char **argv, char **azColName);
 

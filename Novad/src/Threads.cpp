@@ -117,27 +117,9 @@ void *ClassificationLoop(void *ptr)
 
 		CheckForDroppedPackets();
 
-		struct timeval start, end;
-		long mtime, seconds, useconds;
-		gettimeofday(&start, NULL);
-
 		Database::Inst()->m_count = 0;
 		suspects.WriteToDatabase();
 		doppel->UpdateDoppelganger();
-
-
-		gettimeofday(&end, NULL);
-		seconds  = end.tv_sec  - start.tv_sec;
-		useconds = end.tv_usec - start.tv_usec;
-		mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
-		cout << "Elapsed time in milliseconds: " << mtime << endl;
-		cout << "Total queries: " << Database::Inst()->m_count << endl;
-		if (mtime != 0)
-		{
-			cout << "Queries per second: " << 1000*((double)Database::Inst()->m_count / (double)mtime) << endl;
-		}
-		cout << endl;
-
 
 	}while(Config::Inst()->GetClassificationTimeout() && !Config::Inst()->GetReadPcap());
 
@@ -239,36 +221,6 @@ void *UpdateWhitelistIPFilter(void *ptr)
 						}
 					}
 				}
-
-
-
-				// TODO DTC borked because of the suspect table -> sql conversion
-				/*
-				// Clear any suspects that were whitelisted from the GUIs
-				vector<SuspectID_pb> all = suspects.GetAllKeys();
-				for(uint i = 0; i < whitelistIpAddresses.size(); i++)
-				{
-					struct sockaddr_in doop;
-					uint32_t splitDex = whitelistIpAddresses.at(i).find_first_of(",");
-					string whitelistUse = whitelistIpAddresses.at(i).substr(splitDex + 1);
-
-					char str[INET_ADDRSTRLEN];
-					for(uint j = 0; j < all.size(); j++)
-					{
-						doop.sin_addr.s_addr = ntohl(all[j].m_ip());
-						inet_ntop(AF_INET, &(doop.sin_addr), str, INET_ADDRSTRLEN);
-
-
-						if(!whitelistUse.compare(string(str)) && suspects.Erase(all[j]))
-						{
-							Message msg;
-							msg.m_contents.set_m_type(UPDATE_SUSPECT_CLEARED);
-							msg.m_contents.mutable_m_suspectid()->CopyFrom(all[j]);
-							MessageManager::Instance().WriteMessage(&msg, 0);
-						}
-					}
-				}
-				*/
 			}
 		}
 		else

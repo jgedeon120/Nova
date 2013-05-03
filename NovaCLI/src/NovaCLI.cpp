@@ -34,8 +34,6 @@ using namespace std;
 using namespace Nova;
 using namespace NovaCLI;
 
-bool printCsv = false;
-
 int main(int argc, const char *argv[])
 {
 	// Fail if no arguments
@@ -268,22 +266,6 @@ int main(int argc, const char *argv[])
 			{
 				PrintAllSuspects(SUSPECTLIST_BENIGN, false);
 			}
-		}
-		else if (!strcmp(argv[2], "data"))
-		{
-			if (argc != 5)
-			{
-				PrintUsage();
-			}
-
-			in_addr_t address;
-			if(inet_pton(AF_INET, argv[4], &address) != 1)
-			{
-				cout << "Error: Unable to convert to IP address" << endl;
-				exit(EXIT_FAILURE);
-			}
-
-			PrintSuspectData(address, string(argv[3]));
 		}
 		else
 		{
@@ -588,60 +570,70 @@ bool StopQuasarWrapper()
 
 void PrintSuspect(in_addr_t address, string interface)
 {
-	Connect();
-
 	SuspectID_pb id;
 	id.set_m_ifname(interface);
 	id.set_m_ip(ntohl(address));
 
-	RequestSuspect(id, 1);
-	MonitorCallback(1);
-	DisconnectFromNovad();
-}
+	Suspect s = Database::Inst()->GetSuspect(id);
 
-void PrintSuspectData(in_addr_t address, string interface)
-{
-	Connect();
-
-	SuspectID_pb id;
-	id.set_m_ifname(interface);
-	id.set_m_ip(ntohl(address));
-
-	// TODO DTC broke with the suspecttable -> sqlite conversion
-	//RequestSuspectWithData(id, 1);
-	//MonitorCallback(1);
+	if (s.GetIpAddress() != 0)
+	{
+		cout << s.ToString() << endl;
+	}
+	else
+	{
+		cout << "Could not fetch that suspect" << endl;
+	}
 }
 
 void PrintAllSuspects(enum SuspectListType listType, bool csv)
 {
-	printCsv = csv;
-	Connect();
-	RequestSuspects(listType, 1);
+	vector<Suspect> suspects = Database::Inst()->GetSuspects(listType);
 
 	// Print the CSV header
 	if(csv)
 	{
 		cout << "IP,";
 		cout << "INTERFACE,";
+		cout << "CLASSIFICATION" << ",";
+
 		for(int i = 0; i < DIM; i++)
 		{
 			cout << EvidenceAccumulator::m_featureNames[i] << ",";
 		}
-		cout << "CLASSIFICATION" << endl;
+
+		cout << endl;
+
+		for (uint i = 0; i < suspects.size(); i++)
+		{
+			cout << suspects[i].GetIpString() << ",";
+			cout << suspects[i].GetInterface() << ",";
+			cout << suspects[i].GetClassification() << ",";
+
+			for (uint j = 0; j < DIM; j++)
+			{
+				cout << suspects[i].m_features.m_features[j] << ",";
+			}
+
+			cout << endl;
+		}
 	}
-
-
-	MonitorCallback(1);
-
-	DisconnectFromNovad();
+	else
+	{
+		for (uint i = 0; i < suspects.size(); i++)
+		{
+			cout << suspects[i].ToString() << endl;
+		}
+	}
 }
 
 void PrintSuspectList(enum SuspectListType listType)
 {
-	Connect();
-	RequestSuspectList(listType, 1);
-	MonitorCallback(1);
-	DisconnectFromNovad();
+	vector<string> suspects = Database::Inst()->GetSuspectList(listType);
+	for (uint i = 0 ; i < suspects.size(); i++)
+	{
+		cout << suspects[i] << endl;
+	}
 }
 
 void ClearAllSuspectsWrapper()

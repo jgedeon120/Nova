@@ -2215,121 +2215,6 @@ var SendBenignSuspectToPulsar = function(suspect)
 };
 everyone.now.SendBenignSuspectToPulsar = SendBenignSuspectToPulsar;
 
-var distributeSuspect = function (suspect)
-{
-  var d = new Date(suspect.GetLastPacketTime() * 1000);
-  var dString = pad(d.getMonth() + 1) + "/" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
-  
-  
-  var s = new Object();
-  objCopy(suspect, s);
-  s.interfaceAlias = ConvertInterfaceToAlias(s.GetInterface);
-  
-  // Save to unseen db
-  NovaCommon.dbqIsNewSuspect.all(s.GetIpString, s.GetInterface, function(err, results) {
-    if(err)
-    {
-      LOG("ERROR", err);
-      return;
-    }
-      
-    if(results[0].rows === 0)
-    {
-      NovaCommon.dbqAddNewSuspect.run(s.GetIpString, s.GetInterface, function()
-      {
-        try {
-          everyone.now.OnNewSuspectInserted(s.GetIpString, s.GetInterface);
-          everyone.now.OnNewSuspectData(s.GetIpString, s.GetInterface);
-        } catch(err) {}
-      });
-    } 
-    else
-    {
-      NovaCommon.dbqSeenAllData.all(s.GetIpString, s.GetInterface, function(err, results) {
-        if(err)
-        {
-          LOG("ERROR", err);
-          return;
-        }
-        
-        if(results[0].seenAllData)
-        {
-          NovaCommon.dbqMarkSuspectDataUnseen.run(s.GetIpString, s.GetInterface, function() {
-            try
-            {
-              everyone.now.OnNewSuspectData(s.GetIpString, s.GetInterface);
-            } catch(err) {}
-          });
-        }
-      });
-     }
-  });
-
-  try 
-  {
-    everyone.now.OnNewSuspect(s);
-  } catch(err) {};
-  
-  if(suspect.GetIsHostile() == true && parseInt(suspect.GetClassification()) >= 0)
-  {
-    var send = {};
-    
-    send.ip = suspect.GetIpString();
-    send.classification = String(suspect.GetClassification());
-    send.lastpacket = dString;
-    send.ishostile = String(suspect.GetIsHostile());
-    send.interface = String(suspect.GetInterface());
-    
-    SendHostileEventToPulsar(send);
-  }
-  else if(suspect.GetIsHostile() == false && benignRequest && parseInt(suspect.GetClassification()) >= 0)
-  {
-    var d = new Date(suspect.GetLastPacketTime() * 1000);
-    var dString = pad(d.getMonth() + 1) + "/" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
-    var send = {};
-    
-    send.ip = suspect.GetIpString();
-    send.classification = String(suspect.GetClassification());
-    send.lastpacket = dString;
-    send.ishostile = String(suspect.GetIsHostile());
-    send.interface = String(suspect.GetInterface());
-    
-    SendBenignSuspectToPulsar(send);
-  }
-  else
-  {
-
-  }
-};
-
-var distributeAllSuspectsCleared = function ()
-{
-    try 
-    {
-        everyone.now.AllSuspectsCleared();
-    } 
-    catch(err) 
-    {
-        // We can safely ignore this, it's just because no browsers are connected
-    };
-}
-
-var distributeSuspectCleared = function (suspect)
-{
-    //var s = new Object;
-    
-    //s['interface'] = suspect.GetInterface();
-    //s['ip'] = suspect.GetIpString();
-    //s['idString'] = suspect.GetIdString();
-    
-    //everyone.now.SuspectCleared(s);
-}
-
-NovaCommon.nova.registerOnAllSuspectsCleared(distributeAllSuspectsCleared);
-NovaCommon.nova.registerOnSuspectCleared(distributeSuspectCleared);
-NovaCommon.nova.registerOnNewSuspect(distributeSuspect);
-
-
 process.on('SIGINT', function ()
 {
     NovaCommon.nova.Shutdown();
@@ -2431,7 +2316,8 @@ function ConvertInterfaceToAlias(iface)
 setInterval(function(){
     try 
     {
-        everyone.now.updateHaystackStatus(NovaCommon.nova.IsHaystackUp());
+        NovaCommon.nova.CheckConnection();
+        everyone.now.updateHaystackStatus(NovaCommon.nova.IsHaystackUp(true));
         everyone.now.updateNovadStatus(NovaCommon.nova.IsNovadConnected());
     } 
     catch(err) 
