@@ -1131,23 +1131,12 @@ app.get('/getSuspectDetails', function(req, res)
   var suspectIp = req.query['ip'];
   var suspectInterface = req.query['interface'];
   
-  NovaCommon.nova.RequestSuspectDetailsString(suspectIp, suspectInterface, function(suspectString){
-    if(suspectString != '')
-    {
-    	res.render('suspectDetails.jade', {
+    res.render('suspectDetails.jade', {
         locals: {
           suspect: suspectIp
           , interface: suspectInterface
-          , details: suspectString
         }
-    	});
-  	}
-  	else
-  	{
-      RenderError(res, 'The suspect ' + suspectIp + ' does not exist', '/suspects');
-      return;
-  	}
-  });
+    });
 });
 
 app.get('/editHoneydNode', function(req, res)
@@ -1503,7 +1492,7 @@ app.get('/shutdown', function(req, res)
 
 app.get('/about', function(req, res)
 {
-    res.render('about.jade');
+    res.render('about.jade', {locals: {version: NovaCommon.config.GetVersionString()}});
 });
 
 app.get('/newInformation', function(req, res)
@@ -1700,7 +1689,11 @@ app.get("/editClassifier", function(req, res)
     }); 
 });
 
-app.get("/hostnames", function(req, res) {
+app.get("/hostnames", function (req, res) {
+    if (!NovaCommon.dbqGetHostnames) {
+        RenderError(res, "Unable to access honeyd hostnames database. Something probably went wrong during the honeyd install.");
+        return;
+    }
     res.render('hostnames.jade', {
         locals: {}
     });
@@ -1852,9 +1845,8 @@ app.post('/customizeTrainingSave', function(req, res)
      });
 
     for(var uid in uids) {
-        if(req.body[uid] == undefined) 
-        {
-            NovaCommon.dbqAddLastTrainingDataSelection.run(uid, 0, function(err){
+        if(req.body[uid] == undefined) {
+            NovaCommon.dbqAddLastTrainingDataSelection.run(uid, 0, function(err) {
                 if(err) {LOG("ERROR", 'Database error: ' + err);}
             });
         }
@@ -2493,7 +2485,8 @@ function ConvertInterfaceToAlias(iface)
 setInterval(function(){
     try 
     {
-        everyone.now.updateHaystackStatus(NovaCommon.nova.IsHaystackUp());
+        NovaCommon.nova.CheckConnection();
+        everyone.now.updateHaystackStatus(NovaCommon.nova.IsHaystackUp(true));
         everyone.now.updateNovadStatus(NovaCommon.nova.IsNovadConnected());
     } 
     catch(err) 

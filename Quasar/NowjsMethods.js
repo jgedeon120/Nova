@@ -173,10 +173,10 @@ everyone.now.SaveHoneydNode = function(node, cb)
         }
         else
         {
-			NovaCommon.config.WriteSetting('DOPPELGANGER_IP', ipAddress);
-			NovaCommon.config.WriteSetting('DOPPELGANGER_INTERFACE', node.intface);
+            NovaCommon.config.WriteSetting('DOPPELGANGER_IP', ipAddress);
+            NovaCommon.config.WriteSetting('DOPPELGANGER_INTERFACE', node.intface);
             
-			if(!NovaCommon.honeydConfig.SaveAll())
+            if(!NovaCommon.honeydConfig.SaveAll())
             {
                 cb && cb("Unable to save honeyd configuration");
             }
@@ -377,7 +377,7 @@ everyone.now.deleteNodes = function (nodeNames, cb)
     nodeName = nodeNames[i];
     if(nodeName != null && !NovaCommon.honeydConfig.DeleteNode(nodeName))
     {
-      cb && cb(false, "Failed to delete node " + nodeName);
+      cb(false, "Failed to delete node " + nodeName);
       return;
     }
 
@@ -385,11 +385,11 @@ everyone.now.deleteNodes = function (nodeNames, cb)
 
   if(!NovaCommon.honeydConfig.SaveAll())
   {
-    cb && cb(false, "Failed to save XML templates");
+    cb(false, "Failed to save XML templates");
     return;
   }
 
-  cb && cb(true, "");
+  cb(true, "");
 };
 
 everyone.now.deleteProfiles = function (profileNames, cb)
@@ -828,10 +828,6 @@ everyone.now.WriteHoneydConfig = function(cb)
 
 everyone.now.GetConfigSummary = function(configName, cb)
 {
-  var oldConfig = NovaCommon.config.GetCurrentConfig();
-  NovaCommon.honeydConfig.SwitchConfiguration(configName);
-  NovaCommon.config.SetCurrentConfig(configName);
-  
   NovaCommon.honeydConfig.LoadAllTemplates();
   
   var scriptProfileBindings = NovaCommon.GetPorts();
@@ -1175,8 +1171,6 @@ everyone.now.GetProfile = function (profileName, cb)
     cb(profile);
 };
 
-
-
 everyone.now.GetHostileEvents = function (cb)
 {
     NovaCommon.dbqSuspectAlertsGet.all(function(err, results){
@@ -1213,12 +1207,12 @@ everyone.now.WizardHasRun = function (cb)
 everyone.now.deleteUserEntry = function (usernamesToDelete, cb)
 {
     var username;
-    for(var i = 0; i < usernamesToDelete.length; i++)
+    for (var i = 0; i < usernamesToDelete.length; i++)
     {
         username = String(usernamesToDelete[i]);
         NovaCommon.dbqCredentialsDeleteUser.run(username, function (err)
         {
-            if(err)
+            if (err)
             {
                 console.log("Database error: " + err);
                 cb(false);
@@ -1258,32 +1252,32 @@ everyone.now.updateUserPassword = function (username, newPassword, cb)
 
 var GetPortSets = function (profileName, cb)
 {
-  var portSetNames = NovaCommon.honeydConfig.GetPortSetNames(profileName);
-  
-  var portSets = [];  
+    var portSetNames = NovaCommon.honeydConfig.GetPortSetNames(profileName);
+    
+    var portSets = [];  
 
-  for(var i = 0; i < portSetNames.length; i++)
-  {
-    var portSet = NovaCommon.honeydConfig.GetPortSet(profileName, portSetNames[i]);
-    portSet.setName = i;
-    portSet.TCPBehavior = portSet.GetTCPBehavior();
-    portSet.UDPBehavior = portSet.GetUDPBehavior();
-    portSet.ICMPBehavior = portSet.GetICMPBehavior();
-
-    portSet.PortExceptions = portSet.GetPorts();
-    for(var j = 0; j < portSet.PortExceptions.length; j++)
+    for(var i = 0; i < portSetNames.length; i++)
     {
-      portSet.PortExceptions[j].portNum = portSet.PortExceptions[j].GetPortNum();
-      portSet.PortExceptions[j].protocol = portSet.PortExceptions[j].GetProtocol();
-      portSet.PortExceptions[j].behavior = portSet.PortExceptions[j].GetBehavior();
-      portSet.PortExceptions[j].scriptName = portSet.PortExceptions[j].GetScriptName();
-      portSet.PortExceptions[j].scriptConfiguration = portSet.PortExceptions[j].GetScriptConfiguration();
-    }
-    portSets.push(portSet);
-  }
+        var portSet = NovaCommon.honeydConfig.GetPortSet( profileName, portSetNames[i] );
+        portSet.setName = i;
+        portSet.TCPBehavior = portSet.GetTCPBehavior();
+        portSet.UDPBehavior = portSet.GetUDPBehavior();
+        portSet.ICMPBehavior = portSet.GetICMPBehavior();
 
-  if(typeof cb == 'function')
-  {
+        portSet.PortExceptions = portSet.GetPorts();
+        for(var j = 0; j < portSet.PortExceptions.length; j++)
+        {
+            portSet.PortExceptions[j].portNum = portSet.PortExceptions[j].GetPortNum();
+            portSet.PortExceptions[j].protocol = portSet.PortExceptions[j].GetProtocol();
+            portSet.PortExceptions[j].behavior = portSet.PortExceptions[j].GetBehavior();
+            portSet.PortExceptions[j].scriptName = portSet.PortExceptions[j].GetScriptName();
+            portSet.PortExceptions[j].scriptConfiguration = portSet.PortExceptions[j].GetScriptConfiguration();
+        }
+        portSets.push(portSet);
+    }
+
+    if(typeof cb == 'function')
+    {
     cb(portSets, profileName);
   }
   return portSets;
@@ -1292,13 +1286,13 @@ everyone.now.GetPortSets = GetPortSets;
 
 
 function databaseError(err, cb) {
-  if (err)
-  {
-    LOG("ERROR", "Database error: " + err);
-    cb && cb(err);
-    return true;
-  }
-  return false;
+        if (err)
+        {
+            LOG("ERROR", "Database error: " + err);
+            cb && cb(err);
+            return true;
+        }
+        return false;
 }
 
 everyone.now.GetUnseenSuspects = function(cb) {
@@ -1431,31 +1425,94 @@ everyone.now.WriteWysiwygTopology = function(topo, cb) {
 
 // Hostname related database calls
 everyone.now.GetHostnames = function(cb) {
-	NovaCommon.dbqGetHostnames.all(function(err, results) {
+    if (!NovaCommon.dbqGetHostnames) {
+        cb("Unable to access hostnames database");
+        return;
+    }
+
+    NovaCommon.dbqGetHostnames.all(function(err, results) {
         if (databaseError(err, cb)) {return;}
         cb && cb(null, results);
-    });	
+    }); 
 };
 
 everyone.now.InsertHostname = function(hostname, cb) {
-	NovaCommon.dbqInsertHostname.run(hostname, function(err) {
+    if (!NovaCommon.dbqGetHostnames) {
+        cb("Unable to access hostnames database");
+        return;
+    }
+
+    NovaCommon.dbqInsertHostname.run(hostname, function(err) {
         if (databaseError(err, cb)) {return;}
         cb && cb(null);
-	});
+    });
 };
 
 everyone.now.ClearHostnameAllocations = function(cb) {
-	NovaCommon.dbqClearHostnameAllocations.run(function(err) {
+    if (!NovaCommon.dbqGetHostnames) {
+        cb("Unable to access hostnames database");
+        return;
+    }
+
+    NovaCommon.dbqClearHostnameAllocations.run(function(err) {
         if (databaseError(err, cb)) {return;}
         cb && cb(null);
-	});
+    });
 };
 
 everyone.now.DeleteHostname = function(hostname, cb) {
-	NovaCommon.dbqDeleteHostname.run(hostname, function(err) {
+    if (!NovaCommon.dbqGetHostnames) {
+        cb("Unable to access hostnames database");
+        return;
+    }
+
+    NovaCommon.dbqDeleteHostname.run(hostname, function(err) {
         if (databaseError(err, cb)) {return;}
         cb && cb(null);
-	});
+    });
+};
+
+
+everyone.now.GetSuspects = function(limit, offset, orderBy, direction, showUnclassified, cb) {
+    NovaCommon.GetSuspects(limit, offset, orderBy, direction, showUnclassified, cb);
+};
+
+everyone.now.GetNumberOfSuspects = function(showUnclassified, cb) {
+    if (showUnclassified) {
+        var queryString = "SELECT COUNT() as count FROM suspects";
+    } else {
+        var queryString = "SELECT COUNT() as count FROM suspects WHERE classification != -2";
+    }
+    NovaCommon.novaDb.all(queryString, function(err, results) {
+        if (databaseError(err, cb)) {return;}
+        cb && cb(null, results);
+    });
+};
+
+everyone.now.GetSuspect = function(ip, iface, cb) {
+    NovaCommon.dbqGetSuspect.all(ip, iface, function(err, results) {
+        if (databaseError(err, cb)) {return;}
+
+        if (results.length == 0) {
+            cb && cb("No such suspect", null);
+        } else {
+                cb && cb(null, results[0]);
+        }
+    });
+};
+
+everyone.now.GetIpPortsContacted = function(ip, iface, cb) {
+    NovaCommon.dbqGetIpPorts.all(ip, iface, function(err, results) {
+        if (databaseError(err, cb)) {return;}
+            cb && cb(null, results);
+    });
+};
+
+everyone.now.GetPacketSizes = function(ip, iface, cb) {
+    NovaCommon.dbqGetSuspectPacketSizes.all(ip, iface, function(err, results) {
+        if (databaseError(err, cb)) {return;}
+            cb && cb(null, results);
+    });
 };
 
 }
