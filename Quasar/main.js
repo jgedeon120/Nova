@@ -2379,11 +2379,6 @@ var distributeSuspectCleared = function(suspect)
     //everyone.now.SuspectCleared(s);
 }
 
-NovaCommon.nova.registerOnAllSuspectsCleared(distributeAllSuspectsCleared);
-NovaCommon.nova.registerOnSuspectCleared(distributeSuspectCleared);
-NovaCommon.nova.registerOnNewSuspect(distributeSuspect);
-
-
 process.on('SIGINT', function()
 {
     NovaCommon.nova.Shutdown();

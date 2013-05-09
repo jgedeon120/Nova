@@ -43,6 +43,7 @@ var NovaCommon = new function() {
         ret.ip = node.GetIP();
         ret.mac = node.GetMAC();
         ret.interface = node.GetInterface();
+        ret.portset = node.GetPortSet();
         return ret;
     }
 
