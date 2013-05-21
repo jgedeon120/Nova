@@ -560,8 +560,8 @@ everyone.now.SaveProfile = function (profile, newProfile, cb)
     // Check input
     var profileNameRegexp = new RegExp("[a-zA-Z]+[a-zA-Z0-9 ]*");
     var match = profileNameRegexp.exec(profile.name);
-    
-    if(match == null) 
+   
+    if(match != profile.name) 
     {
         var err = "ERROR: Attempt to save a profile with an invalid name. Must be alphanumeric and not begin with a number.";
         cb(err);
@@ -670,6 +670,12 @@ everyone.now.RenamePortset = function(profile, oldName, newName, cb)
 
 everyone.now.ShowAutoConfig = function (nodeInterface, numNodesType, numNodes, subnets, groupName, append, cb, route)
 {
+    if(!(new RegExp('^[a-zA-Z0-9 \\-_]+$')).test(groupName))
+	{
+        cb && cb("Haystack name must not be blank and must contain only letters, numbers, and hyphens. Invalid haystack name given.");
+        return;
+    }
+
     var executionString = 'haystackautoconfig';
 
     var hhconfigArgs = new Array();
@@ -733,7 +739,7 @@ everyone.now.ShowAutoConfig = function (nodeInterface, numNodesType, numNodes, s
     {
       if(typeof cb == 'function')
       {
-        cb('' + data);
+        cb(null, '' + data);
       }
     });
 
@@ -899,18 +905,6 @@ everyone.now.RemoveConfiguration = function(configName, cb)
   }
 };
 
-everyone.now.RemoveScript = function(scriptName, cb)
-{
-  NovaCommon.honeydConfig.RemoveScript(scriptName);
-  
-  NovaCommon.honeydConfig.SaveAllTemplates();
-  
-  if(typeof cb == 'function')
-  {
-    cb();
-  }
-};
-
 everyone.now.GetLocalIP = function (iface, cb)
 {
     cb(NovaCommon.nova.GetLocalIP(iface));
@@ -1008,7 +1002,7 @@ everyone.now.GetHaystackDHCPStatus = function(cb)
         }
         else
         {
-            data = data.toString().split("\n");
+            data = data.toString().replace(/ /g, '').split("\n");
             var tmp = [];
             for (var i = 0; i < data.length; i++) {
                 if (data[i] == "") {
@@ -1100,6 +1094,10 @@ everyone.now.saveClassifier = function(classifier, index, cb)
     else if(classifier.type == "THRESHOLD_TRIGGER")
     {
         classifier.strings["THRESHOLD_HOSTILE_TRIGGERS"] = thresholdString;
+    }
+    else if (classifier.type == "SCRIPT_ALERT")
+    {
+        classifier.strings = {};
     }
 
     NovaCommon.classifiers.saveClassifier(classifier, index);
@@ -1380,15 +1378,40 @@ everyone.now.GetHostnames = function(cb) {
 };
 
 everyone.now.InsertHostname = function(hostname, cb) {
+    // Convert hostname to lower case and check if it is valid
+    if (typeof(hostname) != "string") {
+        cb("Hostname must be a string! Invalid type.");
+        return; 
+    }
+
+    hostname = hostname.toLowerCase();
+
+    if (!(new RegExp("^[a-zA-Z0-9\-]+$")).test(hostname)) {
+        cb("Hostname must not be blank and must contain only letters, numbers, and hyphens. Invalid hostname given.");
+        return;
+    }
+
     if (!NovaCommon.dbqGetHostnames) {
         cb("Unable to access hostnames database");
         return;
     }
-
-    NovaCommon.dbqInsertHostname.run(hostname, function(err) {
+    
+    // Check if it exists already
+    
+    NovaCommon.dbqGetHostname.all(hostname, function(err, results) {
         if (databaseError(err, cb)) {return;}
-        cb && cb(null);
-    });
+
+        if (results.length != 0) {
+            cb && cb("Hostname already exists! Can not insert it.");
+            return;
+        } else {
+            NovaCommon.dbqInsertHostname.run(hostname, function(err) {
+                if (databaseError(err, cb)) {return;}
+                cb && cb(null);
+            });
+        }
+    }); 
+
 };
 
 everyone.now.ClearHostnameAllocations = function(cb) {

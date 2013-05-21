@@ -250,6 +250,10 @@ install-data:
 	#Copy the scripts and logs
 	install Installer/nova_init "$(DESTDIR)/usr/bin"
 	install Installer/nova_rsyslog_helper "$(DESTDIR)/usr/bin"
+	install Installer/miscFiles/createNovaScriptAlert.py "$(DESTDIR)/usr/bin"
+	install Installer/miscFiles/novamaildaemon.pl "$(DESTDIR)/usr/bin"
+	install Installer/miscFiles/cleannovasendmail.sh "$(DESTDIR)/usr/bin"
+	install Installer/miscFiles/placenovasendmail "$(DESTDIR)/usr/bin"
 	#Install permissions
 	install Installer/miscFiles/sudoers_nova "$(DESTDIR)/etc/sudoers.d/" --mode=0440
 	install Installer/miscFiles/40-nova.conf "$(DESTDIR)/etc/rsyslog.d/" --mode=664
