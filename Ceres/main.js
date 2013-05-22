@@ -111,6 +111,8 @@ var handler = function(req, res) {
                 return;
               }
               gridPageSuspectList(suspects, function(xml){
+                console.log('writing ' + xml + ' to file');
+                fs.writeFileSync('demo_suspect_list.xml', xml);
                 res.end(xml);
               });
             });
@@ -131,6 +133,7 @@ var handler = function(req, res) {
               }
 
               detailedSuspectPage(suspect[0], function(xml){
+                fs.writeFileSync('demo_suspect' + ipiface[0] + '-' + ipiface[1] + '.xml', xml);
                 res.end(xml);
               });
             });
