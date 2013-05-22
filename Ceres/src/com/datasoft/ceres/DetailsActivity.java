@@ -99,10 +99,11 @@ public class DetailsActivity extends Activity
 				XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
 				factory.setNamespaceAware(true);
 				XmlPullParser xpp;
-				
+				m_global.setMessageReceived(true);
 				if(m_global.checkMessageReceived())
 				{
 					xpp = factory.newPullParser();
+					System.out.println("xml_base in Details is " + m_global.getXmlBase());
 					xpp.setInput(m_global.getXmlReceive());
 					Suspect parsed = new Suspect();
 					int evt = xpp.getEventType();
@@ -152,10 +153,12 @@ public class DetailsActivity extends Activity
 			}
 			catch(XmlPullParserException xppe)
 			{
+				xppe.printStackTrace();
 				return null;
 			}
 			catch(IOException ioe)
 			{
+				ioe.printStackTrace();
 				return null;
 			}
 		}

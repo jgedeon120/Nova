@@ -1,0 +1,1 @@
+<detailedSuspect><idInfo id="eth0 192.168.11.100" ip="192.168.11.100" iface="eth0" class="1.26" lpt="05/22 09:24:41"/><protoInfo tcp="2" udp="28" icmp="0" other="0"/><packetInfo rst="0" ack="2" syn="0" fin="0" synack="0"/></detailedSuspect>

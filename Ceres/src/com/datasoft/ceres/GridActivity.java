@@ -16,6 +16,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -45,13 +46,13 @@ public class GridActivity extends ListActivity {
 	};
 	
 	public void loadGridFile()
-	{
-		InputStream is = m_gridContext.getResources().openRawResource(R.raw.demo_suspects);
-		InputStreamReader isr = new InputStreamReader(is);
-		BufferedReader br = new BufferedReader(isr, 8192);
-		
+	{	
 		try
 		{
+			InputStream is = m_gridContext.getAssets().open("demo_suspects.xml");
+			InputStreamReader isr = new InputStreamReader(is);
+			BufferedReader br = new BufferedReader(isr, 8192);
+			
 			String append = "";
 			String test = "";
 			while(true)
@@ -323,6 +324,43 @@ public class GridActivity extends ListActivity {
 		new CeresSuspectRequest().execute();
 	}
 	
+	public void loadSuspectXml()
+	{
+		m_selected = m_selected.replace('.', '_');
+		m_selected = m_selected.replace(':', '_');
+		
+		try
+		{
+			System.out.println("looking at demo_suspect_" + m_selected + ".xml");
+			InputStream is = m_gridContext.getAssets().open("demo_suspect_" + m_selected + ".xml");
+			InputStreamReader isr = new InputStreamReader(is);
+			BufferedReader br = new BufferedReader(isr, 8192);
+			
+			String append = "";
+			String test = "";
+			while(true)
+			{
+				test = br.readLine();
+				if(test != null)
+				{
+					append += test;
+				}
+				else
+				{
+					break;
+				}
+			}
+			isr.close();
+			is.close();
+			br.close();
+			m_global.setXmlBase(append);
+		}
+		catch(IOException ioe)
+		{
+			ioe.printStackTrace();
+		}
+	}
+	
 	private class CeresSuspectRequest extends AsyncTask<Void, Void, Integer> {
 		@Override
 		protected void onPreExecute()
@@ -337,32 +375,8 @@ public class GridActivity extends ListActivity {
 		@Override
 		protected Integer doInBackground(Void... vd)
 		{
-			try
-    		{
-				RequestParams params = new RequestParams("suspect", m_selected);
-    			NetworkHandler.get(("https://" + m_global.getURL() + "/getSuspect"), params, new AsyncHttpResponseHandler(){
-    				@Override
-    				public void onSuccess(String xml)
-    				{
-    					m_global.setXmlBase(xml);
-    					m_global.setMessageReceived(true);
-    				}
-    				
-    				@Override
-    				public void onFailure(Throwable err, String content)
-    				{
-    					m_global.setXmlBase("");
-    					m_global.setMessageReceived(true);
-    				}
-    			});
-    			while(!m_global.checkMessageReceived()){};
-    		}
-    		catch(Exception e)
-    		{
-    			e.printStackTrace();
-    			return 0;
-    		}
-    		
+			loadSuspectXml();
+			System.out.println("xml == " + m_global.getXmlBase());
     		if(m_global.getXmlBase() != "")
     		{
     			return 1;
