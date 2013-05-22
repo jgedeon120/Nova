@@ -285,8 +285,8 @@ public class MainActivity extends Activity {
     		{
     			m_global.setURL(params[0]);
     			m_global.clearXmlReceive();
-    			//NetworkHandler.setSSL(m_ctx, R.raw.test, m_passwd.getText().toString(), m_id.getText().toString());
-    			/*NetworkHandler.get(("https://" + m_global.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
+    			NetworkHandler.setSSL(m_ctx, R.raw.test, m_passwd.getText().toString(), m_id.getText().toString());
+    			NetworkHandler.get(("https://" + m_global.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
     				@Override
     				public void onSuccess(String xml)
     				{
@@ -302,7 +302,6 @@ public class MainActivity extends Activity {
     				}
     			});
     			while(!m_global.checkMessageReceived()){};
-    			*/
     		}
     		catch(Exception e)
     		{
@@ -310,7 +309,16 @@ public class MainActivity extends Activity {
     			return 0;
     		}
     		
-    		return 1;
+    		if(m_global.getXmlBase() != "")
+    		{
+    			System.out.println("returning 1");
+    			return 1;
+    		}
+    		else
+    		{
+    			System.out.println("returning 0");
+    			return 0;
+    		}
     	}
     	@Override
     	protected void onPostExecute(Integer result)

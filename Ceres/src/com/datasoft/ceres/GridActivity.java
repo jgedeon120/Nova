@@ -1,9 +1,6 @@
 package com.datasoft.ceres;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -44,40 +41,6 @@ public class GridActivity extends ListActivity {
 		}
 	};
 	
-	public void loadGridFile()
-	{
-		InputStream is = m_gridContext.getResources().openRawResource(R.raw.demo_suspects);
-		InputStreamReader isr = new InputStreamReader(is);
-		BufferedReader br = new BufferedReader(isr, 8192);
-		
-		try
-		{
-			String append = "";
-			String test = "";
-			while(true)
-			{
-				test = br.readLine();
-				if(test != null)
-				{
-					append += test;
-				}
-				else
-				{
-					break;
-				}
-			}
-			isr.close();
-			is.close();
-			br.close();
-			System.out.println("append == " + append);
-			m_global.setXmlBase(append);
-		}
-		catch(IOException ioe)
-		{
-			ioe.printStackTrace();
-		}
-	}
-	
 	Thread m_updateThread = new Thread() {
 		public void run() {
 			try
@@ -86,9 +49,31 @@ public class GridActivity extends ListActivity {
 				{
 					sleep(60000);
 					m_global.clearXmlReceive();
-					
-					loadGridFile();
-					
+					try
+		    		{
+		    			NetworkHandler.get(("https://" + m_global.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
+		    				@Override
+		    				public void onSuccess(String xml)
+		    				{
+		    					m_global.setXmlBase(xml);
+		    					m_global.setMessageReceived(true);
+		    				}
+		    				
+		    				@Override
+		    				public void onFailure(Throwable err, String content)
+		    				{
+		    					m_global.setXmlBase("");
+		    					m_global.setMessageReceived(true);
+		    				}
+		    			});
+		    			while(!m_global.checkMessageReceived()){};
+		    		}
+		    		catch(Exception e)
+		    		{
+		    			e.printStackTrace();
+		    			return;
+		    		}
+		    		
 		    		if(m_global.getXmlBase() != "")
 		    		{
 						m_gridValues = constructGridValues();
@@ -157,44 +142,54 @@ public class GridActivity extends ListActivity {
 		XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
 		factory.setNamespaceAware(true);
 		XmlPullParser xpp;
-		
-		xpp = factory.newPullParser();
-		xpp.setInput(m_global.getXmlReceive());
-		int evt = xpp.getEventType();
-		ArrayList<String> al = new ArrayList<String>();
-		// On this page, we're receiving a format containing three things:
-		// ip, interface and classification
-		String rowData = "";
-		while(evt != XmlPullParser.END_DOCUMENT)
+		if(m_global.checkMessageReceived())
 		{
-			switch(evt)
+			xpp = factory.newPullParser();
+			xpp.setInput(m_global.getXmlReceive());
+			int evt = xpp.getEventType();
+			ArrayList<String> al = new ArrayList<String>();
+			// On this page, we're receiving a format containing three things:
+			// ip, interface and classification
+			String rowData = "";
+			while(evt != XmlPullParser.END_DOCUMENT)
 			{
-				case(XmlPullParser.START_DOCUMENT):
-					break;
-				case(XmlPullParser.START_TAG):
-					if(xpp.getName().equals("suspect"))
-					{
-						rowData += xpp.getAttributeValue(null, "ipaddress") + ":";
-						rowData += xpp.getAttributeValue(null, "alias") + ":";
-						rowData += xpp.getAttributeValue(null, "hostile") + ":";
-						rowData += xpp.getAttributeValue(null, "interface") + ":";
-					}
-					break;
-				case(XmlPullParser.TEXT): 
-					rowData += xpp.getText() + "%";
-					al.add(rowData);
-					rowData = "";
-					break;
-				default: 
-					break;
+				switch(evt)
+				{
+					case(XmlPullParser.START_DOCUMENT):
+						break;
+					case(XmlPullParser.START_TAG):
+						if(xpp.getName().equals("suspect"))
+						{
+							rowData += xpp.getAttributeValue(null, "ipaddress") + ":";
+							rowData += xpp.getAttributeValue(null, "alias") + ":";
+							rowData += xpp.getAttributeValue(null, "hostile") + ":";
+							rowData += xpp.getAttributeValue(null, "interface") + ":";
+						}
+						break;
+					case(XmlPullParser.TEXT): 
+						rowData += xpp.getText() + "%";
+						al.add(rowData);
+						rowData = "";
+						break;
+					default: 
+						break;
+				}
+				evt = xpp.next();
 			}
-			evt = xpp.next();
+			if(al.size() > 0)
+			{
+				m_global.setGridCache(al);
+			}
+			return al;
 		}
-		if(al.size() > 0)
+		else if(m_global.getGridCache().size() != 0)
 		{
-			m_global.setGridCache(al);
+			return m_global.getGridCache();
 		}
-		return al;
+		else
+		{
+			return null;
+		}
 	}
 	
 	@Override
@@ -250,8 +245,30 @@ public class GridActivity extends ListActivity {
 						{
 							sleep(60000);
 							m_global.clearXmlReceive();
-	
-							loadGridFile();
+							try
+				    		{
+				    			NetworkHandler.get(("https://" + m_global.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
+				    				@Override
+				    				public void onSuccess(String xml)
+				    				{
+				    					m_global.setXmlBase(xml);
+				    					m_global.setMessageReceived(true);
+				    				}
+				    				
+				    				@Override
+				    				public void onFailure(Throwable err, String content)
+				    				{
+				    					m_global.setXmlBase("");
+				    					m_global.setMessageReceived(true);
+				    				}
+				    			});
+				    			while(!m_global.checkMessageReceived()){};
+				    		}
+				    		catch(Exception e)
+				    		{
+				    			e.printStackTrace();
+				    			return;
+				    		}
 				    		
 				    		if(m_global.getXmlBase() != "")
 				    		{
@@ -462,7 +479,6 @@ public class GridActivity extends ListActivity {
 		{
 			try
 			{
-				loadGridFile();
 				m_gridValues = constructGridValues();
 				return m_gridValues;
 			}
