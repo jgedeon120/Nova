@@ -285,7 +285,24 @@ public class MainActivity extends Activity {
     		{
     			m_global.setURL(params[0]);
     			m_global.clearXmlReceive();
-    			NetworkHandler.setSSL(m_ctx, R.raw.test, m_passwd.getText().toString(), m_id.getText().toString());
+    			//NetworkHandler.setSSL(m_ctx, R.raw.test, m_passwd.getText().toString(), m_id.getText().toString());
+    			/*NetworkHandler.get(("https://" + m_global.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
+    				@Override
+    				public void onSuccess(String xml)
+    				{
+    					m_global.setXmlBase(xml);
+    					m_global.setMessageReceived(true);
+    				}
+    				
+    				@Override
+    				public void onFailure(Throwable err, String content)
+    				{
+    					m_global.setXmlBase("");
+    					m_global.setMessageReceived(true);
+    				}
+    			});
+    			while(!m_global.checkMessageReceived()){};
+    			*/
     		}
     		catch(Exception e)
     		{

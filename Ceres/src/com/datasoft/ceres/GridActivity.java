@@ -69,6 +69,7 @@ public class GridActivity extends ListActivity {
 			isr.close();
 			is.close();
 			br.close();
+			System.out.println("append == " + append);
 			m_global.setXmlBase(append);
 		}
 		catch(IOException ioe)
@@ -133,7 +134,7 @@ public class GridActivity extends ListActivity {
     	switch(item.getItemId())
     	{
     		case R.id.refresh:
-    			new ParseXml().execute();
+    			new CeresClientConnect().execute();
     			return true;
     		default:
     			return super.onOptionsItemSelected(item);
@@ -390,6 +391,60 @@ public class GridActivity extends ListActivity {
 			}
 		}
 	}
+	
+	private class CeresClientConnect extends AsyncTask<String, Void, Integer> {
+    	@Override
+    	protected void onPreExecute()
+    	{
+    		super.onPreExecute();
+    	}
+    	
+    	@Override
+    	protected Integer doInBackground(String... params)
+    	{
+    		try
+    		{
+    			m_global.clearXmlReceive();
+    			NetworkHandler.get(("https://" + m_global.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
+    				@Override
+    				public void onSuccess(String xml)
+    				{
+    					m_global.setXmlBase(xml);
+    					m_global.setMessageReceived(true);
+    				}
+    				
+    				@Override
+    				public void onFailure(Throwable err, String content)
+    				{
+    					m_global.setXmlBase("");
+    					m_global.setMessageReceived(true);
+    				}
+    			});
+    			while(!m_global.checkMessageReceived()){};
+    		}
+    		catch(Exception e)
+    		{
+    			e.printStackTrace();
+    			return 0;
+    		}
+    		
+    		if(m_global.getXmlBase() != "")
+    		{
+    			System.out.println("returning 1");
+    			return 1;
+    		}
+    		else
+    		{
+    			System.out.println("returning 0");
+    			return 0;
+    		}
+    	}
+    	@Override
+    	protected void onPostExecute(Integer result)
+    	{
+			new ParseXml().execute();
+    	}
+    }
 	
 	private class ParseXml extends AsyncTask<Void, Integer, ArrayList<String>> {
 		@Override
