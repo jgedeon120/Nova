@@ -8,20 +8,16 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import org.json.*;
 import com.loopj.android.http.AsyncHttpResponseHandler;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
 
 public class MainActivity extends Activity {
 	Context m_ctx;
@@ -32,11 +28,14 @@ public class MainActivity extends Activity {
 	EditText m_passwd;
 	EditText m_notify;
 	EditText m_success;
+	EditText m_keystorePass;
 	CheckBox m_keepLogged;
+	CheckBox m_useSSC;
 	ProgressDialog m_dialog;
 	CeresClient m_global;
 	Boolean m_keepMeLoggedIn;
 	CeresClientConnect m_ceresClient;
+	SharedPreferences m_prefs;
 	String m_regexIp = "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
 	
     @Override
@@ -52,42 +51,30 @@ public class MainActivity extends Activity {
         m_ip = (EditText)findViewById(R.id.credIP);
         m_port = (EditText)findViewById(R.id.credPort);
         m_keepMeLoggedIn = false;
+        m_prefs = this.getSharedPreferences(CeresClient.SHAREDPREFS_FILE, Context.MODE_PRIVATE);
         
-    	InputStream in = null;
-        try
+        if(m_prefs.contains(CeresClient.SHAREDPREFS_IP) 
+        && m_prefs.contains(CeresClient.SHAREDPREFS_PORT)
+        && m_prefs.contains(CeresClient.SHAREDPREFS_ID))
         {
-        	File networkTarget = new File(getFilesDir(), "networkTarget");
-        	if(networkTarget.exists() && networkTarget.length() != 0)
-        	{
-        		m_keepMeLoggedIn = true;
-        		in = new BufferedInputStream(new FileInputStream(networkTarget));
-        		byte[] buf = new byte[512];
-        		if(in.read(buf, 0, 512) != -1)
-        		{
-        			String json = new String(buf);
-        			JSONObject net = new JSONObject(json);
-        			if(net.has("ip") && net.has("id") && net.has("port") && net.has("pword"))
-        			{
-        				m_ip.setText(net.get("ip").toString());
-        				m_port.setText(net.get("port").toString());
-        				m_passwd.setText(net.get("pword").toString());
-        				m_id.setText(net.get("id").toString());
-        			}
-        		}
-        		else
-        		{
-                	if(in != null)
-                	{
-                		in.close();
-                	}
-        		}
-        	}
+			m_ip.setText(m_prefs.getString(CeresClient.SHAREDPREFS_IP, ""));
+			m_port.setText(m_prefs.getString(CeresClient.SHAREDPREFS_PORT, ""));
+			m_id.setText(m_prefs.getString(CeresClient.SHAREDPREFS_ID, ""));
+			m_keepMeLoggedIn = true;
         }
-        catch(IOException ioe)
+        
+        m_useSSC = (CheckBox)findViewById(R.id.useSelfSigned);
+        m_keystorePass = (EditText)findViewById(R.id.keystorePass);
+        
+        if(m_prefs.contains(CeresClient.SHAREDPREFS_USESELFSIGNED) 
+        && m_prefs.contains(CeresClient.SHAREDPREFS_KSPASS))
         {
-        }
-        catch(JSONException jse)
-        {
+        	m_useSSC.setChecked(true);
+            m_global.setUseSelfSignedCert(true);
+            m_keystorePass.setText(m_prefs.getString(CeresClient.SHAREDPREFS_KSPASS, ""));
+    		Animation slideDown = AnimationUtils.loadAnimation(m_ctx, R.anim.slide_down);
+    		findViewById(R.id.slideMenu).setVisibility(View.VISIBLE);
+    		findViewById(R.id.slideMenu).startAnimation(slideDown);
         }
         
         m_keepLogged = (CheckBox)findViewById(R.id.keepLogged);
@@ -111,7 +98,7 @@ public class MainActivity extends Activity {
         			alert.show();
         		}
         		else if(Integer.parseInt(m_port.getText().toString()) < 0 
-                		|| Integer.parseInt(m_port.getText().toString()) > 65536)
+        			 || Integer.parseInt(m_port.getText().toString()) > 65536)
         		{
         			AlertDialog.Builder builder = new AlertDialog.Builder(m_ctx);
         			builder.setMessage("The port number you provided is invalid")
@@ -142,32 +129,26 @@ public class MainActivity extends Activity {
 	        		m_keepMeLoggedIn = ((CheckBox)findViewById(R.id.keepLogged)).isChecked();
 	        		if(m_keepMeLoggedIn)
 	        		{
-	        			try
+	        			SharedPreferences.Editor editor = m_prefs.edit();
+	        			System.out.println("Setting and commiting SHAREDPREFERENCES stuff");
+	        			System.out.println("ip == " + m_ip.getText().toString());
+	        			editor.putString(CeresClient.SHAREDPREFS_IP, m_ip.getText().toString());
+	        			editor.putString(CeresClient.SHAREDPREFS_PORT, m_port.getText().toString());
+	        			editor.putString(CeresClient.SHAREDPREFS_ID, m_id.getText().toString());
+	        			editor.putBoolean(CeresClient.SHAREDPREFS_USESELFSIGNED, m_useSSC.isChecked());
+	        			if(m_useSSC.isChecked())
 	        			{
-	        				File file = new File(getFilesDir(), "networkTarget");
-	        				OutputStreamWriter bos = new OutputStreamWriter(new FileOutputStream(file));
-	        				String writeToFile;
-	        				JSONObject json = new JSONObject();
-	        				json.put("ip", m_ip.getText().toString());
-	        				json.put("port", m_port.getText().toString());
-	        				json.put("id", m_id.getText().toString());
-	        				json.put("pword", m_passwd.getText().toString());
-	        				writeToFile = json.toString();
-	        				bos.write(writeToFile);
-	        				bos.flush();
-	        				bos.close();
+	        				editor.putString(CeresClient.SHAREDPREFS_KSPASS, m_keystorePass.getText().toString());
 	        			}
-	        			catch(IOException ioe)
-	        			{
-	        			}
-	        			catch(JSONException jse)
-	        			{
-	        			}
+	        			editor.commit();
+	        			System.out.println("IP in stored preferences is " + m_prefs.getString(CeresClient.SHAREDPREFS_IP, "not there"));
 	        		}
 	        		else
 	        		{
-	    				File file = new File(getFilesDir(), "networkTarget");
-	    				file.delete();
+	        			System.out.println("Clearing SHAREDPREFERENCES stuff");
+	        			SharedPreferences.Editor editor = m_prefs.edit();
+	        			editor.clear();
+	        			editor.commit();
 	        		}
 	        		String netString = (m_ip.getText().toString() + ":" + m_port.getText().toString());
 	        		if(m_id.getText().toString().equals("") || m_passwd.getText().toString().equals(""))
@@ -185,6 +166,10 @@ public class MainActivity extends Activity {
 	        		}
 	        		else
 	        		{
+	        			if(m_global.getUseSelfSignedCert())
+	        			{
+	        				m_global.setPass(m_keystorePass.getText().toString());
+	        			}
 	        			if(m_ceresClient.getStatus() == AsyncTask.Status.FINISHED)
 	        			{
 	        				m_ceresClient = new CeresClientConnect();
@@ -205,6 +190,56 @@ public class MainActivity extends Activity {
     	m_keepMeLoggedIn = ((CheckBox)view).isChecked();
     }
     
+    public void onUseSelfSigned(View view)
+    {
+    	Boolean checkValue = ((CheckBox)view).isChecked();
+    	if(checkValue)
+    	{
+    		AlertDialog.Builder builder = new AlertDialog.Builder(m_ctx);
+    		builder.setMessage(
+    				"WARNING: You are electing to use a self signed certificate!" 
+    				+ " In order for this to work, you must generate a new ceres.bks file (using your self-signed cert)," 
+    				+ " place it in res/raw, and sideload the app onto your device. Note: the filename MUST be 'ceres.bks'."
+    				+ " It is not recommended to use this feature.")
+    		       .setCancelable(false)
+    		       .setPositiveButton("I understand.", new DialogInterface.OnClickListener() {
+    		           public void onClick(DialogInterface dialog, int id) {
+    		                dialog.cancel();
+    		                m_global.setUseSelfSignedCert(true);
+    		        		Animation slideDown = AnimationUtils.loadAnimation(m_ctx, R.anim.slide_down);
+    		        		findViewById(R.id.slideMenu).setVisibility(View.VISIBLE);
+    		        		findViewById(R.id.slideMenu).startAnimation(slideDown);
+    		           }
+    		       })
+    		       .setNegativeButton("Scary! Take me back!", new DialogInterface.OnClickListener() {
+    					@Override
+    					public void onClick(DialogInterface dialog, int which) {
+    						((CheckBox)findViewById(R.id.useSelfSigned)).setChecked(false);
+    						m_global.setUseSelfSignedCert(false);
+    						dialog.cancel();
+    					}
+    		       });
+    		AlertDialog alert = builder.create();
+    		alert.show();
+    	}
+    	else
+    	{
+    		Animation slideUp = AnimationUtils.loadAnimation(this, R.anim.slide_up);
+    		slideUp.setAnimationListener(new AnimationListener(){
+    			@Override
+    			public void onAnimationEnd(Animation animation)
+    			{
+    				findViewById(R.id.slideMenu).setVisibility(View.GONE);
+    			}
+    			@Override
+    			public void onAnimationRepeat(Animation animation) {}
+    			@Override
+    			public void onAnimationStart(Animation animation) {}
+    		});
+    		findViewById(R.id.slideMenu).startAnimation(slideUp);
+    	}
+    }
+    
     @Override
     protected void onPause()
     {
@@ -223,40 +258,24 @@ public class MainActivity extends Activity {
     @Override
     protected void onRestart()
     {
-    	InputStream in = null;
-        try
+        if(m_prefs.contains(CeresClient.SHAREDPREFS_IP) 
+        && m_prefs.contains(CeresClient.SHAREDPREFS_PORT)
+        && m_prefs.contains(CeresClient.SHAREDPREFS_ID))
         {
-        	File networkTarget = new File(getFilesDir(), "networkTarget");
-        	if(networkTarget.exists() && networkTarget.length() != 0)
-        	{
-        		in = new BufferedInputStream(new FileInputStream(networkTarget));
-        		byte[] buf = new byte[512];
-        		if(in.read(buf, 0, 512) != -1)
-        		{
-        			String json = new String(buf);
-        			JSONObject net = new JSONObject(json);
-        			if(net.has("ip") && net.has("id") && net.has("port") && net.has("pword"))
-        			{
-        				m_ip.setText(net.get("ip").toString());
-        				m_port.setText(net.get("port").toString());
-        				m_id.setText(net.get("id").toString());
-        				m_passwd.setText(net.get("pword").toString());
-        			}
-        		}
-        		else
-        		{
-                	if(in != null)
-                	{
-                		in.close();
-                	}
-        		}
-        	}
+			m_ip.setText(m_prefs.getString(CeresClient.SHAREDPREFS_IP, ""));
+			m_port.setText(m_prefs.getString(CeresClient.SHAREDPREFS_PORT, ""));
+			m_id.setText(m_prefs.getString(CeresClient.SHAREDPREFS_ID, ""));
+			m_keepMeLoggedIn = true;
+	        m_keepLogged.setChecked(m_keepMeLoggedIn);
         }
-        catch(IOException ioe)
+        if(m_prefs.contains(CeresClient.SHAREDPREFS_USESELFSIGNED) && m_prefs.contains(CeresClient.SHAREDPREFS_KSPASS))
         {
-        }
-        catch(JSONException jse)
-        {
+        	m_useSSC.setChecked(true);
+            m_global.setUseSelfSignedCert(true);
+            m_keystorePass.setText(m_prefs.getString(CeresClient.SHAREDPREFS_KSPASS, ""));
+    		Animation slideDown = AnimationUtils.loadAnimation(m_ctx, R.anim.slide_down);
+    		findViewById(R.id.slideMenu).setVisibility(View.VISIBLE);
+    		findViewById(R.id.slideMenu).startAnimation(slideDown);
         }
         super.onRestart();
     }
@@ -285,7 +304,7 @@ public class MainActivity extends Activity {
     		{
     			m_global.setURL(params[0]);
     			m_global.clearXmlReceive();
-    			NetworkHandler.setSSL(m_ctx, R.raw.test, m_passwd.getText().toString(), m_id.getText().toString());
+    			NetworkHandler.setSSL(m_ctx, R.raw.ceres, m_passwd.getText().toString(), m_id.getText().toString(), m_global.getUseSelfSignedCert());
     			NetworkHandler.get(("https://" + m_global.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
     				@Override
     				public void onSuccess(String xml)

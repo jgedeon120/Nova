@@ -20,29 +20,27 @@ public class NetworkHandler {
 	private static AsyncHttpClient m_client = new AsyncHttpClient();
 	private static Header m_headerParam;
 	private static Context m_ctx;
+	private static char[] m_kspass;
 	
-	public static void setSSL(Context ctx, int keyid, String pass, String user)
+	public static void setKSPass(String kspass)
+	{
+		m_kspass = kspass.toCharArray();
+	}
+	
+	public static void setSSL(Context ctx, int keyid, String pass, String user, Boolean useSelfSigned)
 	{
 		try
 		{
+			m_client = new AsyncHttpClient();
 			m_ctx = ctx;
-			KeyStore keystore = KeyStore.getInstance("BKS");
-			// TODO: When/If this app goes out to the world, have to find some way to procure
-			// and store the password for the keystore; we're going to have basic authentication
-			// (username and password) as well as the password for the keystore, which should only 
-			// be entered once (if at all)
-			char[] kspass = "toortoor".toCharArray();
-			keystore.load(ctx.getResources().openRawResource(keyid), kspass);
-			SSLSocketFactory sslsf = new SSLSocketFactory(keystore);
-			// TODO: This will have to go away when the app hits production; a workaround will have to 
-			// be formed. What this statement does, right now, is use SSL only as data encryption, without
-			// authenticating that the server you're connecting to is the actual server. Unfortunately, to create
-			// a development version of this app that acts as it should in a production environment, there would 
-			// be a lot of code rewrite and probably required rewriting of some library code. In the meantime I 
-			// intend to find a way to do this that will satisfy both a debug environment as well as a production one,
-			// but for now this will have to suffice.
-			sslsf.setHostnameVerifier((X509HostnameVerifier)SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-			m_client.setSSLSocketFactory(sslsf);
+			if(useSelfSigned)
+			{
+				KeyStore keystore = KeyStore.getInstance("BKS");
+				keystore.load(ctx.getResources().openRawResource(keyid), m_kspass);
+				SSLSocketFactory sslsf = new SSLSocketFactory(keystore);
+				sslsf.setHostnameVerifier((X509HostnameVerifier)SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+				m_client.setSSLSocketFactory(sslsf);
+			}
 			UsernamePasswordCredentials creds = new UsernamePasswordCredentials(user, pass);
 			m_headerParam = BasicScheme.authenticate(creds, "UTF-8", false);
 		}

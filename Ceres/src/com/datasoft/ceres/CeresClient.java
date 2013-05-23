@@ -15,10 +15,18 @@ public class CeresClient extends Application {
 	Boolean m_isInForeground;
 	Activity m_onUiThread;
 	String m_serverUrl;	
+	Boolean m_useSelfSignedCert;
+	public static final String SHAREDPREFS_FILE = "com.datasoft.ceres";
+	public static final String SHAREDPREFS_IP = "com.datasoft.ceres.ip";
+	public static final String SHAREDPREFS_PORT = "com.datasoft.ceres.port";
+	public static final String SHAREDPREFS_ID = "com.datasoft.ceres.id";
+	public static final String SHAREDPREFS_USESELFSIGNED = "com.datasoft.ceres.usessc";
+	public static final String SHAREDPREFS_KSPASS = "com.datasoft.ceres.kspass";
 	
 	@Override
 	public void onCreate()
 	{
+		m_useSelfSignedCert = false;
 		m_messageReceived = false;
 		m_clientId = "";
 		m_pass = "";
@@ -38,6 +46,16 @@ public class CeresClient extends Application {
 		{
 			m_gridCache.add(s);
 		}
+	}
+	
+	public void setUseSelfSignedCert(Boolean newValue)
+	{
+		m_useSelfSignedCert = newValue;
+	}
+
+	public Boolean getUseSelfSignedCert()
+	{
+		return m_useSelfSignedCert;
 	}
 	
 	/*

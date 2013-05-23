@@ -20,5 +20,7 @@
     <string name="ifaceLabel">Network Interface: </string>
     <string name="classificationLabel">Classification: </string>
     <string name="lastSeenLabel">Last Seen:</string>
+    <string name="selfSigned">Use Self Signed Certificate</string>
+    <string name="keystorePassHint">Keystore Password</string>
 
 </resources>

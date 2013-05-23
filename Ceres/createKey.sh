@@ -1,24 +1,30 @@
 #!/bin/bash
 
-shopt -s expand_aliases
-source ~/.bash_aliases
+BKSNAME=''
+PEMNAME=''
+STOREPASS=''
 
-cd keys/
-openssl genrsa -out privatekey.pem 1024
-openssl req -new -key privatekey.pem -out certrequest.csr
-openssl x509 -req -in certrequest.csr -signkey privatekey.pem -out certificate.pem
+if [ $# -ne 3 ]; then
+  echo 'Usage: createKey.sh BKS_NAME PEM_NAME STOREPASS'
+  exit 1
+else
+  BKSNAME=$1
+  PEMNAME=$2
+  STOREPASS=$3
+fi
 
-ceresa
+CURRENT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-echo | openssl s_client -connect 192.168.11.221:8443 2>&1 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > mycert.pem
-
-cd ../
+if [ "$CURRENT" != "$HOME/Code/Nova/Ceres" ]; then
+  echo 'Run this in the Ceres Directory'
+  exit 1
+fi
 
 export CLASSPATH=libs/bcprov-jdk15on-146.jar
-CERTSTORE=res/raw/test.bks
+CERTSTORE=res/raw/$BKSNAME.bks
 if [ -a $CERTSTORE ]; then
 	rm $CERTSTORE || exit 1
 fi
 
-keytool -import -v -trustcacerts -alias 0 -file <(openssl x509 -in keys/mycert.pem) -keystore $CERTSTORE -storetype BKS -provider org.bouncycastle.jce.provider.BouncyCastleProvider -providerpath /usr/share/java/bcprov.jar -storepass toortoor
+keytool -import -v -trustcacerts -alias 0 -file <(openssl x509 -in keys/$PEMNAME) -keystore $CERTSTORE -storetype BKS -provider org.bouncycastle.jce.provider.BouncyCastleProvider -providerpath /usr/share/java/bcprov.jar -storepass $STOREPASS
 
