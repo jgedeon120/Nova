@@ -26,83 +26,59 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 public class GridActivity extends ListActivity {
-	CeresClient m_global;
-	ProgressDialog m_wait;
-	ClassificationGridAdapter m_gridAdapter;
-	Context m_gridContext;
-	String m_selected;
-	ArrayList<String> m_gridValues;
+	private static ProgressDialog m_wait;
+	private static ClassificationGridAdapter m_gridAdapter;
+	private Context m_gridContext;
+	private static String m_selected;
+	private static ArrayList<String> m_gridValues;
+	private static Integer m_refreshTimer = 60000;
 	
-	final Handler m_handler = new Handler();
+	public static Thread.State cancelThread()
+	{
+		m_updateThread.interrupt();
+		return m_updateThread.getState();
+	}
 	
-	final Runnable m_updateGrid = new Runnable() {
+	public static Thread.State startThread()
+	{
+		if(m_updateThread.getState() == Thread.State.TERMINATED)
+		{
+			m_updateThread = new Thread() {
+				public void run() {
+					runCalled();
+				}
+			};
+			m_updateThread.start();
+		}
+		else if(m_updateThread.getState() != Thread.State.NEW
+			 && m_updateThread.getState() != Thread.State.TERMINATED)
+		{
+			m_updateThread.interrupt();
+			m_updateThread = new Thread() {
+				public void run() {
+					runCalled();
+				}
+			};
+			m_updateThread.start();
+		}
+		else
+		{
+			m_updateThread.start();
+		}
+		return m_updateThread.getState();
+	}
+	
+	private static final Handler m_handler = new Handler();
+	
+	private static final Runnable m_updateGrid = new Runnable() {
 		public void run() {
 			resetAdapter();
 		}
 	};
 	
-	Thread m_updateThread = new Thread() {
+	private static Thread m_updateThread = new Thread() {
 		public void run() {
-			try
-			{
-				while(true)
-				{
-					sleep(60000);
-					m_global.clearXmlReceive();
-					try
-		    		{
-		    			NetworkHandler.get(("https://" + m_global.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
-		    				@Override
-		    				public void onSuccess(String xml)
-		    				{
-		    					m_global.setXmlBase(xml);
-		    					m_global.setMessageReceived(true);
-		    				}
-		    				
-		    				@Override
-		    				public void onFailure(Throwable err, String content)
-		    				{
-		    					m_global.setXmlBase("");
-		    					m_global.setMessageReceived(true);
-		    				}
-		    			});
-		    			while(!m_global.checkMessageReceived()){};
-		    		}
-		    		catch(Exception e)
-		    		{
-		    			e.printStackTrace();
-		    			return;
-		    		}
-		    		
-		    		if(m_global.getXmlBase() != "")
-		    		{
-						m_gridValues = constructGridValues();
-						if(m_gridValues != null)
-						{
-							m_handler.post(m_updateGrid);
-						}
-		    			System.out.println("returning 1");
-		    			return;
-		    		}
-		    		else
-		    		{
-		    			System.out.println("returning 0");
-		    			return;
-		    		}
-				}
-			}
-			catch(InterruptedException ie)
-			{
-				return;
-			}
-			catch(IOException ioe)
-			{
-				return;
-			}
-			catch(XmlPullParserException xpe)
-			{
-				return;
-			}
+			runCalled();
 		}
 	};
 	
@@ -121,12 +97,15 @@ public class GridActivity extends ListActivity {
     		case R.id.refresh:
     			new CeresClientConnect().execute();
     			return true;
+    		case R.id.search:
+    			onSearchRequested();
+    			return true;
     		default:
     			return super.onOptionsItemSelected(item);
     	}
     }
     
-	private void resetAdapter()
+	private static void resetAdapter()
 	{
 		if(m_wait.isShowing())
 		{
@@ -137,15 +116,15 @@ public class GridActivity extends ListActivity {
 		m_gridAdapter.notifyDataSetChanged();
 	}
 	
-	private ArrayList<String> constructGridValues() throws XmlPullParserException, IOException 
+	private static ArrayList<String> constructGridValues() throws XmlPullParserException, IOException 
 	{
 		XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
 		factory.setNamespaceAware(true);
 		XmlPullParser xpp;
-		if(m_global.checkMessageReceived())
+		if(CeresClient.checkMessageReceived())
 		{
 			xpp = factory.newPullParser();
-			xpp.setInput(m_global.getXmlReceive());
+			xpp.setInput(CeresClient.getXmlReceive());
 			int evt = xpp.getEventType();
 			ArrayList<String> al = new ArrayList<String>();
 			// On this page, we're receiving a format containing three things:
@@ -178,13 +157,13 @@ public class GridActivity extends ListActivity {
 			}
 			if(al.size() > 0)
 			{
-				m_global.setGridCache(al);
+				CeresClient.setGridCache(al);
 			}
 			return al;
 		}
-		else if(m_global.getGridCache().size() != 0)
+		else if(CeresClient.getGridCache().size() != 0)
 		{
-			return m_global.getGridCache();
+			return CeresClient.getGridCache();
 		}
 		else
 		{
@@ -197,14 +176,14 @@ public class GridActivity extends ListActivity {
 	{
 		super.onPause();
 		m_updateThread.interrupt();
-		m_global.setForeground(false);
+		CeresClient.setForeground(false);
 	}
 	
 	@Override
 	protected void onResume()
 	{
 		super.onResume();
-		m_global.setForeground(true);
+		CeresClient.setForeground(true);
 	}
 	
 	@Override
@@ -221,10 +200,10 @@ public class GridActivity extends ListActivity {
 	protected void onRestart()
 	{
 		super.onRestart();
-		if(m_global.getGridCache().size() > 0)
+		if(CeresClient.getGridCache().size() > 0)
 		{
 			m_gridAdapter.clear();
-			m_gridAdapter.addAll(m_global.getGridCache());
+			m_gridAdapter.addAll(CeresClient.getGridCache());
 			m_gridAdapter.notifyDataSetChanged();
 		}
 		else
@@ -239,64 +218,7 @@ public class GridActivity extends ListActivity {
 			m_updateThread.interrupt();
 			m_updateThread = new Thread() {
 				public void run() {
-					try
-					{
-						while(true)
-						{
-							sleep(60000);
-							m_global.clearXmlReceive();
-							try
-				    		{
-				    			NetworkHandler.get(("https://" + m_global.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
-				    				@Override
-				    				public void onSuccess(String xml)
-				    				{
-				    					m_global.setXmlBase(xml);
-				    					m_global.setMessageReceived(true);
-				    				}
-				    				
-				    				@Override
-				    				public void onFailure(Throwable err, String content)
-				    				{
-				    					m_global.setXmlBase("");
-				    					m_global.setMessageReceived(true);
-				    				}
-				    			});
-				    			while(!m_global.checkMessageReceived()){};
-				    		}
-				    		catch(Exception e)
-				    		{
-				    			e.printStackTrace();
-				    			return;
-				    		}
-				    		
-				    		if(m_global.getXmlBase() != "")
-				    		{
-								m_gridValues = constructGridValues();
-								if(m_gridValues != null)
-								{
-									m_handler.post(m_updateGrid);
-								}
-				    			return;
-				    		}
-				    		else
-				    		{
-				    			return;
-				    		}
-						}
-					}
-					catch(InterruptedException ie)
-					{
-						return;
-					}
-					catch(IOException ioe)
-					{
-						return;
-					}
-					catch(XmlPullParserException xpe)
-					{
-						return;
-					}
+					runCalled();
 				}
 			};
 			m_updateThread.start();
@@ -304,6 +226,68 @@ public class GridActivity extends ListActivity {
 		else
 		{
 			m_updateThread.start();
+		}
+	}
+	
+	private static void runCalled()
+	{
+		try
+		{
+			while(true)
+			{
+				Thread.sleep(m_refreshTimer);
+				CeresClient.clearXmlReceive();
+				try
+	    		{
+	    			NetworkHandler.get(("https://" + CeresClient.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
+	    				@Override
+	    				public void onSuccess(String xml)
+	    				{
+	    					CeresClient.setXmlBase(xml);
+	    					CeresClient.setMessageReceived(true);
+	    				}
+	    				
+	    				@Override
+	    				public void onFailure(Throwable err, String content)
+	    				{
+	    					CeresClient.setXmlBase("");
+	    					CeresClient.setMessageReceived(true);
+	    				}
+	    			});
+	    			while(!CeresClient.checkMessageReceived()){};
+	    		}
+	    		catch(Exception e)
+	    		{
+	    			e.printStackTrace();
+	    			return;
+	    		}
+	    		
+	    		if(CeresClient.getXmlBase() != "")
+	    		{
+					m_gridValues = constructGridValues();
+					if(m_gridValues != null)
+					{
+						m_handler.post(m_updateGrid);
+					}
+	    			return;
+	    		}
+	    		else
+	    		{
+	    			return;
+	    		}
+			}
+		}
+		catch(InterruptedException ie)
+		{
+			return;
+		}
+		catch(IOException ioe)
+		{
+			return;
+		}
+		catch(XmlPullParserException xpe)
+		{
+			return;
 		}
 	}
 	
@@ -323,7 +307,6 @@ public class GridActivity extends ListActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        m_global = (CeresClient)getApplicationContext();
         m_wait = new ProgressDialog(this);
 		m_gridContext = this;
 		LayoutInflater inf = getLayoutInflater();
@@ -345,7 +328,7 @@ public class GridActivity extends ListActivity {
 		@Override
 		protected void onPreExecute()
 		{
-			m_global.clearXmlReceive();
+			CeresClient.clearXmlReceive();
 			m_wait.setCancelable(true);
 			m_wait.setMessage("Retrieving details for " + m_selected);
 			m_wait.setProgressStyle(ProgressDialog.STYLE_SPINNER);
@@ -358,22 +341,22 @@ public class GridActivity extends ListActivity {
 			try
     		{
 				RequestParams params = new RequestParams("suspect", m_selected);
-    			NetworkHandler.get(("https://" + m_global.getURL() + "/getSuspect"), params, new AsyncHttpResponseHandler(){
+    			NetworkHandler.get(("https://" + CeresClient.getURL() + "/getSuspect"), params, new AsyncHttpResponseHandler(){
     				@Override
     				public void onSuccess(String xml)
     				{
-    					m_global.setXmlBase(xml);
-    					m_global.setMessageReceived(true);
+    					CeresClient.setXmlBase(xml);
+    					CeresClient.setMessageReceived(true);
     				}
     				
     				@Override
     				public void onFailure(Throwable err, String content)
     				{
-    					m_global.setXmlBase("");
-    					m_global.setMessageReceived(true);
+    					CeresClient.setXmlBase("");
+    					CeresClient.setMessageReceived(true);
     				}
     			});
-    			while(!m_global.checkMessageReceived()){};
+    			while(!CeresClient.checkMessageReceived()){};
     		}
     		catch(Exception e)
     		{
@@ -381,7 +364,7 @@ public class GridActivity extends ListActivity {
     			return 0;
     		}
     		
-    		if(m_global.getXmlBase() != "")
+    		if(CeresClient.getXmlBase() != "")
     		{
     			return 1;
     		}
@@ -421,23 +404,23 @@ public class GridActivity extends ListActivity {
     	{
     		try
     		{
-    			m_global.clearXmlReceive();
-    			NetworkHandler.get(("https://" + m_global.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
+    			CeresClient.clearXmlReceive();
+    			NetworkHandler.get(("https://" + CeresClient.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
     				@Override
     				public void onSuccess(String xml)
     				{
-    					m_global.setXmlBase(xml);
-    					m_global.setMessageReceived(true);
+    					CeresClient.setXmlBase(xml);
+    					CeresClient.setMessageReceived(true);
     				}
     				
     				@Override
     				public void onFailure(Throwable err, String content)
     				{
-    					m_global.setXmlBase("");
-    					m_global.setMessageReceived(true);
+    					CeresClient.setXmlBase("");
+    					CeresClient.setMessageReceived(true);
     				}
     			});
-    			while(!m_global.checkMessageReceived()){};
+    			while(!CeresClient.checkMessageReceived()){};
     		}
     		catch(Exception e)
     		{
@@ -445,7 +428,7 @@ public class GridActivity extends ListActivity {
     			return 0;
     		}
     		
-    		if(m_global.getXmlBase() != "")
+    		if(CeresClient.getXmlBase() != "")
     		{
     			System.out.println("returning 1");
     			return 1;
@@ -507,7 +490,7 @@ public class GridActivity extends ListActivity {
 					@Override
 					public void onClick(DialogInterface dialog, int id)
 					{
-						m_global.clearXmlReceive();
+						CeresClient.clearXmlReceive();
 						m_updateThread.interrupt();
 					}
 				})
@@ -515,7 +498,7 @@ public class GridActivity extends ListActivity {
 					@Override
 					public void onClick(DialogInterface dialog, int which)
 					{
-						m_global.clearXmlReceive();
+						CeresClient.clearXmlReceive();
 						m_updateThread.interrupt();
 		    			Intent nextPage = new Intent(getApplicationContext(), MainActivity.class);
 		    			nextPage.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -531,10 +514,7 @@ public class GridActivity extends ListActivity {
 				Toast.makeText(m_gridContext, gridPop.size() + " suspects loaded", Toast.LENGTH_SHORT).show();
 				m_gridAdapter = new ClassificationGridAdapter(m_gridContext, gridPop);
 		        setListAdapter(m_gridAdapter);
-		        if(!m_updateThread.isAlive())
-		        {
-		        	m_updateThread.start();
-		        }
+		        startThread();
 				m_wait.cancel();
 			}
 		}

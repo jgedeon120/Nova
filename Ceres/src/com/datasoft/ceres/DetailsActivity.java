@@ -35,7 +35,6 @@ public class DetailsActivity extends Activity
 	TextView m_lpt;
 	ProgressDialog m_wait;
 	Context m_detailsContext;
-	CeresClient m_global;
 	
 	GraphicalView m_protocolPie;
 	GraphicalView m_flagsPie;
@@ -44,14 +43,14 @@ public class DetailsActivity extends Activity
 	protected void onPause()
 	{
 		super.onPause();
-		m_global.setForeground(false);
+		CeresClient.setForeground(false);
 	}
 
 	@Override
 	protected void onResume()
 	{
 		super.onResume();
-		m_global.setForeground(true);
+		CeresClient.setForeground(true);
 	}
 	
 	@Override
@@ -59,7 +58,6 @@ public class DetailsActivity extends Activity
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_details);
-		m_global = (CeresClient)getApplicationContext();
 		m_wait = new ProgressDialog(this);
 		m_ip = (TextView)findViewById(R.id.suspectIP);
 		m_iface = (TextView)findViewById(R.id.suspectIface);
@@ -74,7 +72,7 @@ public class DetailsActivity extends Activity
 	{
     	if(keyCode == KeyEvent.KEYCODE_BACK)
     	{
-    		m_global.clearXmlReceive();
+    		CeresClient.clearXmlReceive();
     	}
     	return super.onKeyDown(keyCode, keyEvent);
 	}
@@ -100,10 +98,10 @@ public class DetailsActivity extends Activity
 				factory.setNamespaceAware(true);
 				XmlPullParser xpp;
 				
-				if(m_global.checkMessageReceived())
+				if(CeresClient.checkMessageReceived())
 				{
 					xpp = factory.newPullParser();
-					xpp.setInput(m_global.getXmlReceive());
+					xpp.setInput(CeresClient.getXmlReceive());
 					Suspect parsed = new Suspect();
 					int evt = xpp.getEventType();
 					// On this page, we're receiving a format containing three things:
@@ -175,7 +173,7 @@ public class DetailsActivity extends Activity
 				@Override
 				public void onClick(DialogInterface dialog, int id)
 				{
-					m_global.clearXmlReceive();
+					CeresClient.clearXmlReceive();
 					Intent nextPage = new Intent(getApplicationContext(), DetailsActivity.class);
 					nextPage.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 					nextPage.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -186,7 +184,7 @@ public class DetailsActivity extends Activity
 				@Override
 				public void onClick(DialogInterface dialog, int which)
 				{
-					m_global.clearXmlReceive();
+					CeresClient.clearXmlReceive();
 					Intent nextPage = new Intent(getApplicationContext(), GridActivity.class);
 					nextPage.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 					nextPage.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);

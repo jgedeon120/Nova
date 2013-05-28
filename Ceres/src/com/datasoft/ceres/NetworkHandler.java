@@ -21,19 +21,30 @@ public class NetworkHandler {
 	private static Header m_headerParam;
 	private static Context m_ctx;
 	private static char[] m_kspass;
+	private static Boolean m_useSelfSigned;
 	
 	public static void setKSPass(String kspass)
 	{
 		m_kspass = kspass.toCharArray();
 	}
 	
-	public static void setSSL(Context ctx, int keyid, String pass, String user, Boolean useSelfSigned)
+	public static void setUseSelfSigned(Boolean use)
+	{
+		m_useSelfSigned = use;
+	}
+	
+	public static Boolean usingSelfSigned()
+	{
+		return m_useSelfSigned;
+	}
+	
+	public static void setSSL(Context ctx, int keyid, String pass, String user)
 	{
 		try
 		{
 			m_client = new AsyncHttpClient();
 			m_ctx = ctx;
-			if(useSelfSigned)
+			if(m_useSelfSigned)
 			{
 				KeyStore keystore = KeyStore.getInstance("BKS");
 				keystore.load(ctx.getResources().openRawResource(keyid), m_kspass);

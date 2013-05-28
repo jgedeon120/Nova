@@ -2,20 +2,15 @@ package com.datasoft.ceres;
 
 import java.io.StringReader;
 import java.util.ArrayList;
-import android.app.Activity;
 import android.app.Application;
 
 public class CeresClient extends Application {
-	String m_clientId;
-	String m_pass;
-	String m_xmlBase;
-	StringReader m_xmlReceive;
-	Boolean m_messageReceived;
-	ArrayList<String> m_gridCache;
-	Boolean m_isInForeground;
-	Activity m_onUiThread;
-	String m_serverUrl;	
-	Boolean m_useSelfSignedCert;
+	private static String m_xmlBase;
+	private static StringReader m_xmlReceive;
+	private static Boolean m_messageReceived;
+	private static ArrayList<String> m_gridCache;
+	private static Boolean m_isInForeground;
+	private static String m_serverUrl;	
 	public static final String SHAREDPREFS_FILE = "com.datasoft.ceres";
 	public static final String SHAREDPREFS_IP = "com.datasoft.ceres.ip";
 	public static final String SHAREDPREFS_PORT = "com.datasoft.ceres.port";
@@ -26,20 +21,17 @@ public class CeresClient extends Application {
 	@Override
 	public void onCreate()
 	{
-		m_useSelfSignedCert = false;
 		m_messageReceived = false;
-		m_clientId = "";
-		m_pass = "";
 		m_gridCache = new ArrayList<String>();
 		super.onCreate();
 	}
 	
-	public ArrayList<String> getGridCache()
+	public static ArrayList<String> getGridCache()
 	{
 		return m_gridCache;
 	}
 	
-	public void setGridCache(ArrayList<String> newCache)
+	public static void setGridCache(ArrayList<String> newCache)
 	{
 		m_gridCache.clear();
 		for(String s : newCache)
@@ -48,100 +40,54 @@ public class CeresClient extends Application {
 		}
 	}
 	
-	public void setUseSelfSignedCert(Boolean newValue)
-	{
-		m_useSelfSignedCert = newValue;
-	}
-
-	public Boolean getUseSelfSignedCert()
-	{
-		return m_useSelfSignedCert;
-	}
-	
-	/*
-	Context ctx = getApplicationContext();
-	Notification.Builder build = new Notification.Builder(ctx)
-		.setSmallIcon(R.drawable.ic_launcher)
-		.setContentTitle("Ceres Lost Connection")
-		.setContentText("The Ceres app has lost connection with the server")
-		.setAutoCancel(true);
-	Intent intent = new Intent(ctx, MainActivity.class);
-	TaskStackBuilder tsbuild = TaskStackBuilder.create(ctx);
-	tsbuild.addParentStack(MainActivity.class);
-	tsbuild.addNextIntent(intent);
-	PendingIntent rpintent = tsbuild.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-	build.setContentIntent(rpintent);
-	NotificationManager nm = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-	nm.notify(0, build.build());*/
-	
-	public void setURL(String url)
+	public static void setURL(String url)
 	{
 		m_serverUrl = url;
 	}
 	
-	public String getURL()
+	public static String getURL()
 	{
 		return m_serverUrl;
 	}
 	
-	public Boolean checkMessageReceived()
+	public static Boolean checkMessageReceived()
 	{
 		return m_messageReceived;
 	}
 	
-	public void setMessageReceived(Boolean msgRecv)
+	public static void setMessageReceived(Boolean msgRecv)
 	{
 		m_messageReceived = msgRecv;
 	}
 	
-	public StringReader getXmlReceive()
+	public static StringReader getXmlReceive()
 	{
 		m_xmlReceive = new StringReader(m_xmlBase);
 		return m_xmlReceive;
 	}
 	
-	public void setXmlBase(String base)
+	public static void setXmlBase(String base)
 	{
 		m_xmlBase = base;
 	}
 	
-	public String getXmlBase()
+	public static String getXmlBase()
 	{
 		return m_xmlBase;
 	}
 	
-	public void clearXmlReceive()
+	public static void clearXmlReceive()
 	{
 		m_xmlReceive = null;
 		m_messageReceived = false;
 	}
 	
-	public String getClientId()
-	{
-		return m_clientId;
-	}
-	
-	public void setClientId(String id)
-	{
-		m_clientId = id;
-	}
-	
-	public String getPass()
-	{
-		return m_pass;
-	}
-	
-	public void setPass(String newPass)
-	{
-		m_pass = newPass;
-	}
-	
-	public Boolean isInForeground()
+	public static Boolean isInForeground()
 	{
 		return m_isInForeground;
 	}
 	
-	public void setForeground(Boolean inForeground)
+	public static void setForeground(Boolean inForeground)
 	{
 		m_isInForeground = inForeground;
 	}

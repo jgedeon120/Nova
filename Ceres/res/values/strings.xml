@@ -9,7 +9,7 @@
     <string name="credPort">Ceres Port</string>
     <string name="credPW">Password</string>
     <string name="keepLogged">Keep my log in info</string>
-    <string name="error">Could not connect to Ceres</string>
+    <string name="error">Connection failed</string>
     <string name="success">Connection successful!</string>
     <string name="ipHeader">IP Address</string>
     <string name="ifHeader">Interface</string>
@@ -22,5 +22,6 @@
     <string name="lastSeenLabel">Last Seen:</string>
     <string name="selfSigned">Use Self Signed Certificate</string>
     <string name="keystorePassHint">Keystore Password</string>
+    <string name="searchText">Search by IP or Interface</string>
 
 </resources>
