@@ -44,6 +44,7 @@ public class MainActivity extends Activity {
         m_ctx = this;
         m_ceresClient = new CeresClientConnect();
         CeresClient.setForeground(true);
+        NetworkHandler.initClient();
         m_id = (EditText)findViewById(R.id.credID);
         m_passwd = (EditText)findViewById(R.id.credPW);
         m_ip = (EditText)findViewById(R.id.credIP);

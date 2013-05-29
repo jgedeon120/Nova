@@ -14,14 +14,24 @@ import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.impl.auth.BasicScheme;
 import android.content.Context;
 import android.content.res.Resources.NotFoundException;
-import com.loopj.android.http.*;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.RequestParams;
+import com.loopj.android.http.AsyncHttpResponseHandler;
 
 public class NetworkHandler {
-	private static AsyncHttpClient m_client = new AsyncHttpClient();
+	private static AsyncHttpClient m_client = null;
 	private static Header m_headerParam;
 	private static Context m_ctx;
 	private static char[] m_kspass;
 	private static Boolean m_useSelfSigned;
+	
+	public static void initClient()
+	{
+		if(m_client == null)
+		{
+			m_client = new AsyncHttpClient();
+		}
+	}
 	
 	public static void setKSPass(String kspass)
 	{
