@@ -1,49 +1,41 @@
 package com.datasoft.ceres;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import org.apache.http.Header;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.X509HostnameVerifier;
-import org.apache.http.impl.auth.BasicScheme;
+import java.security.cert.CertificateFactory;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+
+import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
+
+import android.util.Base64;
+
 import android.content.Context;
 import android.content.res.Resources.NotFoundException;
-import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.RequestParams;
-import com.loopj.android.http.AsyncHttpResponseHandler;
 
 public class NetworkHandler {
-	private static AsyncHttpClient m_client = null;
-	private static Header m_headerParam;
-	private static Context m_ctx;
-	private static char[] m_kspass;
-	private static Boolean m_useSelfSigned;
+	private static boolean m_useSelfSigned;
+	private static String m_basicAuthEncoded;
+	private static SSLContext m_sslctx;
 	
-	public static void initClient()
-	{
-		if(m_client == null)
-		{
-			m_client = new AsyncHttpClient();
-		}
-	}
-	
-	public static void setKSPass(String kspass)
-	{
-		m_kspass = kspass.toCharArray();
-	}
-	
-	public static void setUseSelfSigned(Boolean use)
+	public static void setUseSelfSigned(boolean use)
 	{
 		m_useSelfSigned = use;
 	}
 	
-	public static Boolean usingSelfSigned()
+	public static boolean usingSelfSigned()
 	{
 		return m_useSelfSigned;
 	}
@@ -52,18 +44,33 @@ public class NetworkHandler {
 	{
 		try
 		{
-			m_client = new AsyncHttpClient();
-			m_ctx = ctx;
 			if(m_useSelfSigned)
 			{
-				KeyStore keystore = KeyStore.getInstance("BKS");
-				keystore.load(ctx.getResources().openRawResource(keyid), m_kspass);
-				SSLSocketFactory sslsf = new SSLSocketFactory(keystore);
-				sslsf.setHostnameVerifier((X509HostnameVerifier)SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-				m_client.setSSLSocketFactory(sslsf);
+				CertificateFactory cf = CertificateFactory.getInstance("X.509");
+				InputStream caInput = ctx.getResources().openRawResource(keyid);
+				Certificate ca;
+				try
+				{
+					ca = cf.generateCertificate(caInput);
+				}
+				finally
+				{
+					caInput.close();
+				}
+				
+				String keyStoreType = KeyStore.getDefaultType();
+				KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+				keyStore.load(null, null);
+				keyStore.setCertificateEntry("ca", ca);
+				
+				String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
+				TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
+				tmf.init(keyStore);
+				
+				m_sslctx = SSLContext.getInstance("TLS");
+				m_sslctx.init(null, tmf.getTrustManagers(), null);
 			}
-			UsernamePasswordCredentials creds = new UsernamePasswordCredentials(user, pass);
-			m_headerParam = BasicScheme.authenticate(creds, "UTF-8", false);
+			m_basicAuthEncoded = Base64.encodeToString((user + ":" + pass).getBytes(), 0);
 		}
 		catch(KeyStoreException e)
 		{
@@ -89,15 +96,41 @@ public class NetworkHandler {
 		{
 			e.printStackTrace();
 		}
-		catch (UnrecoverableKeyException e)
-		{
-			e.printStackTrace();
-		}
 	}
 	
-	public static void get(String url, RequestParams params, AsyncHttpResponseHandler response)
+	public static String get(String url)
 	{
-		Header[] pass = {m_headerParam};
-		m_client.get(m_ctx, url, pass, params, response);
+		CeresClient.setMessageReceived(false);
+		StringBuilder ret = new StringBuilder();
+		URL sslurl;
+		try
+		{
+			sslurl = new URL(url);
+			HttpsURLConnection urlconn = (HttpsURLConnection)sslurl.openConnection();
+			if(m_useSelfSigned)
+			{
+				urlconn.setSSLSocketFactory(m_sslctx.getSocketFactory());
+				urlconn.setHostnameVerifier(new BrowserCompatHostnameVerifier());
+			}
+			urlconn.setRequestProperty("Authorization", "Basic " + m_basicAuthEncoded);
+			urlconn.connect();
+			InputStreamReader in = new InputStreamReader((InputStream)urlconn.getContent());
+			BufferedReader buff = new BufferedReader(in);
+			String line;
+			while((line = buff.readLine()) != null)
+			{
+				ret.append(line);
+			}
+			CeresClient.setMessageReceived(true);
+		}
+		catch(MalformedURLException mue)
+		{
+			mue.printStackTrace();
+		}
+		catch(IOException ioe)
+		{
+			ioe.printStackTrace();
+		}
+		return ret.toString();
 	}
 }

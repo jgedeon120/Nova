@@ -2,9 +2,6 @@ package com.datasoft.ceres;
 
 import java.util.ArrayList;
 
-import com.loopj.android.http.AsyncHttpResponseHandler;
-import com.loopj.android.http.RequestParams;
-
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
@@ -24,7 +21,6 @@ public class GridSearchActivity extends ListActivity {
 	private ProgressDialog m_wait;
 	private String m_selected;
 	private Context m_gridContext;
-	private String m_regexIp = "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -93,23 +89,7 @@ public class GridSearchActivity extends ListActivity {
 		{
 			try
     		{
-				RequestParams params = new RequestParams("suspect", m_selected);
-    			NetworkHandler.get(("https://" + CeresClient.getURL() + "/getSuspect"), params, new AsyncHttpResponseHandler(){
-    				@Override
-    				public void onSuccess(String xml)
-    				{
-    					CeresClient.setXmlBase(xml);
-    					CeresClient.setMessageReceived(true);
-    				}
-    				
-    				@Override
-    				public void onFailure(Throwable err, String content)
-    				{
-    					CeresClient.setXmlBase("");
-    					CeresClient.setMessageReceived(true);
-    				}
-    			});
-    			while(!CeresClient.checkMessageReceived()){};
+    			CeresClient.setXmlBase(NetworkHandler.get(("https://" + CeresClient.getURL() + "/getSuspect?suspect=" + m_selected)));
     		}
     		catch(Exception e)
     		{
