@@ -25,8 +25,8 @@ var NovaHomePath = NovaCommon.config.GetPathHome();
 
 var options = {
   // TODO: These need to be gotten from Config variables
-  key:  fs.readFileSync('keys/privatekey.pem'),
-  cert: fs.readFileSync('keys/certificate.pem')
+  key:  fs.readFileSync('keys/privatekey.key'),
+  cert: fs.readFileSync('keys/certificate.crt')
 };
 
 NovaCommon.nova.CheckConnection();

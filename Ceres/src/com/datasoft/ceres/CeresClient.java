@@ -7,9 +7,9 @@ import android.app.Application;
 public class CeresClient extends Application {
 	private static String m_xmlBase;
 	private static StringReader m_xmlReceive;
-	private static Boolean m_messageReceived;
+	private static boolean m_messageReceived;
 	private static ArrayList<String> m_gridCache;
-	private static Boolean m_isInForeground;
+	private static boolean m_isInForeground;
 	private static String m_serverUrl;	
 	public static final String SHAREDPREFS_FILE = "com.datasoft.ceres";
 	public static final String SHAREDPREFS_IP = "com.datasoft.ceres.ip";
@@ -50,12 +50,12 @@ public class CeresClient extends Application {
 		return m_serverUrl;
 	}
 	
-	public static Boolean checkMessageReceived()
+	public static boolean checkMessageReceived()
 	{
 		return m_messageReceived;
 	}
 	
-	public static void setMessageReceived(Boolean msgRecv)
+	public static void setMessageReceived(boolean msgRecv)
 	{
 		m_messageReceived = msgRecv;
 	}
@@ -82,12 +82,12 @@ public class CeresClient extends Application {
 		m_messageReceived = false;
 	}
 	
-	public static Boolean isInForeground()
+	public static boolean isInForeground()
 	{
 		return m_isInForeground;
 	}
 	
-	public static void setForeground(Boolean inForeground)
+	public static void setForeground(boolean inForeground)
 	{
 		m_isInForeground = inForeground;
 	}

@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
-import com.loopj.android.http.AsyncHttpResponseHandler;
-import com.loopj.android.http.RequestParams;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
@@ -31,7 +29,7 @@ public class GridActivity extends ListActivity {
 	private Context m_gridContext;
 	private static String m_selected;
 	private static ArrayList<String> m_gridValues;
-	private static Integer m_refreshTimer = 60000;
+	private static int m_refreshTimer = 60000;
 	
 	public static Thread.State cancelThread()
 	{
@@ -121,6 +119,7 @@ public class GridActivity extends ListActivity {
 		XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
 		factory.setNamespaceAware(true);
 		XmlPullParser xpp;
+		System.out.println("xmlBase == " + CeresClient.getXmlBase());
 		if(CeresClient.checkMessageReceived())
 		{
 			xpp = factory.newPullParser();
@@ -239,22 +238,7 @@ public class GridActivity extends ListActivity {
 				CeresClient.clearXmlReceive();
 				try
 	    		{
-	    			NetworkHandler.get(("https://" + CeresClient.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
-	    				@Override
-	    				public void onSuccess(String xml)
-	    				{
-	    					CeresClient.setXmlBase(xml);
-	    					CeresClient.setMessageReceived(true);
-	    				}
-	    				
-	    				@Override
-	    				public void onFailure(Throwable err, String content)
-	    				{
-	    					CeresClient.setXmlBase("");
-	    					CeresClient.setMessageReceived(true);
-	    				}
-	    			});
-	    			while(!CeresClient.checkMessageReceived()){};
+					CeresClient.setXmlBase(NetworkHandler.get(("https://" + CeresClient.getURL() + "/getAll")));
 	    		}
 	    		catch(Exception e)
 	    		{
@@ -340,23 +324,7 @@ public class GridActivity extends ListActivity {
 		{
 			try
     		{
-				RequestParams params = new RequestParams("suspect", m_selected);
-    			NetworkHandler.get(("https://" + CeresClient.getURL() + "/getSuspect"), params, new AsyncHttpResponseHandler(){
-    				@Override
-    				public void onSuccess(String xml)
-    				{
-    					CeresClient.setXmlBase(xml);
-    					CeresClient.setMessageReceived(true);
-    				}
-    				
-    				@Override
-    				public void onFailure(Throwable err, String content)
-    				{
-    					CeresClient.setXmlBase("");
-    					CeresClient.setMessageReceived(true);
-    				}
-    			});
-    			while(!CeresClient.checkMessageReceived()){};
+				CeresClient.setXmlBase(NetworkHandler.get(("https://" + CeresClient.getURL() + "/getSuspect?suspect=" + m_selected)));
     		}
     		catch(Exception e)
     		{
@@ -405,22 +373,7 @@ public class GridActivity extends ListActivity {
     		try
     		{
     			CeresClient.clearXmlReceive();
-    			NetworkHandler.get(("https://" + CeresClient.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
-    				@Override
-    				public void onSuccess(String xml)
-    				{
-    					CeresClient.setXmlBase(xml);
-    					CeresClient.setMessageReceived(true);
-    				}
-    				
-    				@Override
-    				public void onFailure(Throwable err, String content)
-    				{
-    					CeresClient.setXmlBase("");
-    					CeresClient.setMessageReceived(true);
-    				}
-    			});
-    			while(!CeresClient.checkMessageReceived()){};
+    			CeresClient.setXmlBase(NetworkHandler.get(("https://" + CeresClient.getURL() + "/getAll")));
     		}
     		catch(Exception e)
     		{

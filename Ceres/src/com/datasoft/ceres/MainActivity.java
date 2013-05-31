@@ -11,13 +11,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.Animation.AnimationListener;
-import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import com.loopj.android.http.AsyncHttpResponseHandler;
 
 public class MainActivity extends Activity {
 	Context m_ctx;
@@ -32,7 +28,7 @@ public class MainActivity extends Activity {
 	CheckBox m_keepLogged;
 	CheckBox m_useSSC;
 	ProgressDialog m_dialog;
-	Boolean m_keepMeLoggedIn;
+	boolean m_keepMeLoggedIn;
 	CeresClientConnect m_ceresClient;
 	SharedPreferences m_prefs;
 	String m_regexIp = "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
@@ -44,7 +40,6 @@ public class MainActivity extends Activity {
         m_ctx = this;
         m_ceresClient = new CeresClientConnect();
         CeresClient.setForeground(true);
-        NetworkHandler.initClient();
         m_id = (EditText)findViewById(R.id.credID);
         m_passwd = (EditText)findViewById(R.id.credPW);
         m_ip = (EditText)findViewById(R.id.credIP);
@@ -66,15 +61,10 @@ public class MainActivity extends Activity {
         m_keystorePass = (EditText)findViewById(R.id.keystorePass);
         NetworkHandler.setUseSelfSigned(false);
         
-        if(m_prefs.contains(CeresClient.SHAREDPREFS_USESELFSIGNED) 
-        && m_prefs.contains(CeresClient.SHAREDPREFS_KSPASS))
+        if(m_prefs.contains(CeresClient.SHAREDPREFS_USESELFSIGNED))
         {
         	m_useSSC.setChecked(true);
         	NetworkHandler.setUseSelfSigned(true);
-            m_keystorePass.setText(m_prefs.getString(CeresClient.SHAREDPREFS_KSPASS, ""));
-    		Animation slideDown = AnimationUtils.loadAnimation(m_ctx, R.anim.slide_down);
-    		findViewById(R.id.slideMenu).setVisibility(View.VISIBLE);
-    		findViewById(R.id.slideMenu).startAnimation(slideDown);
         }
         
         m_keepLogged = (CheckBox)findViewById(R.id.keepLogged);
@@ -134,10 +124,6 @@ public class MainActivity extends Activity {
 	        			editor.putString(CeresClient.SHAREDPREFS_PORT, m_port.getText().toString());
 	        			editor.putString(CeresClient.SHAREDPREFS_ID, m_id.getText().toString());
 	        			editor.putBoolean(CeresClient.SHAREDPREFS_USESELFSIGNED, m_useSSC.isChecked());
-	        			if(m_useSSC.isChecked())
-	        			{
-	        				editor.putString(CeresClient.SHAREDPREFS_KSPASS, m_keystorePass.getText().toString());
-	        			}
 	        			editor.commit();
 	        		}
 	        		else
@@ -162,10 +148,6 @@ public class MainActivity extends Activity {
 	        		}
 	        		else
 	        		{
-	        			if(NetworkHandler.usingSelfSigned())
-	        			{
-	        				NetworkHandler.setKSPass(m_keystorePass.getText().toString());
-	        			}
 	        			if(m_ceresClient.getStatus() == AsyncTask.Status.FINISHED)
 	        			{
 	        				m_ceresClient = new CeresClientConnect();
@@ -188,23 +170,20 @@ public class MainActivity extends Activity {
     
     public void onUseSelfSigned(View view)
     {
-    	Boolean checkValue = ((CheckBox)view).isChecked();
+    	boolean checkValue = ((CheckBox)view).isChecked();
     	if(checkValue)
     	{
     		AlertDialog.Builder builder = new AlertDialog.Builder(m_ctx);
     		builder.setMessage(
     				"WARNING: You are electing to use a self signed certificate!" 
-    				+ " In order for this to work, you must generate a new ceres.bks file (using your self-signed cert)," 
-    				+ " place it in res/raw, and sideload the app onto your device. Note: the filename MUST be 'ceres.bks'."
+    				+ " In order for this to work, you must use your server's certificate.crt file," 
+    				+ " place it in res/raw, and sideload the app onto your device."
     				+ " It is not recommended to use this feature.")
     		       .setCancelable(false)
     		       .setPositiveButton("I understand.", new DialogInterface.OnClickListener() {
     		           public void onClick(DialogInterface dialog, int id) {
     		                dialog.cancel();
     		                NetworkHandler.setUseSelfSigned(true);
-    		        		Animation slideDown = AnimationUtils.loadAnimation(m_ctx, R.anim.slide_down);
-    		        		findViewById(R.id.slideMenu).setVisibility(View.VISIBLE);
-    		        		findViewById(R.id.slideMenu).startAnimation(slideDown);
     		           }
     		       })
     		       .setNegativeButton("Scary! Take me back!", new DialogInterface.OnClickListener() {
@@ -217,22 +196,6 @@ public class MainActivity extends Activity {
     		       });
     		AlertDialog alert = builder.create();
     		alert.show();
-    	}
-    	else
-    	{
-    		Animation slideUp = AnimationUtils.loadAnimation(this, R.anim.slide_up);
-    		slideUp.setAnimationListener(new AnimationListener(){
-    			@Override
-    			public void onAnimationEnd(Animation animation)
-    			{
-    				findViewById(R.id.slideMenu).setVisibility(View.GONE);
-    			}
-    			@Override
-    			public void onAnimationRepeat(Animation animation) {}
-    			@Override
-    			public void onAnimationStart(Animation animation) {}
-    		});
-    		findViewById(R.id.slideMenu).startAnimation(slideUp);
     	}
     }
     
@@ -264,14 +227,10 @@ public class MainActivity extends Activity {
 			m_keepMeLoggedIn = true;
 	        m_keepLogged.setChecked(m_keepMeLoggedIn);
         }
-        if(m_prefs.contains(CeresClient.SHAREDPREFS_USESELFSIGNED) && m_prefs.contains(CeresClient.SHAREDPREFS_KSPASS))
+        if(m_prefs.contains(CeresClient.SHAREDPREFS_USESELFSIGNED))
         {
         	m_useSSC.setChecked(true);
         	NetworkHandler.setUseSelfSigned(true);
-            m_keystorePass.setText(m_prefs.getString(CeresClient.SHAREDPREFS_KSPASS, ""));
-    		Animation slideDown = AnimationUtils.loadAnimation(m_ctx, R.anim.slide_down);
-    		findViewById(R.id.slideMenu).setVisibility(View.VISIBLE);
-    		findViewById(R.id.slideMenu).startAnimation(slideDown);
         }
         super.onRestart();
     }
@@ -300,23 +259,8 @@ public class MainActivity extends Activity {
     		{
     			CeresClient.setURL(params[0]);
     			CeresClient.clearXmlReceive();
-    			NetworkHandler.setSSL(m_ctx, R.raw.ceres, m_passwd.getText().toString(), m_id.getText().toString());
-    			NetworkHandler.get(("https://" + CeresClient.getURL() + "/getAll"), null, new AsyncHttpResponseHandler(){
-    				@Override
-    				public void onSuccess(String xml)
-    				{
-    					CeresClient.setXmlBase(xml);
-    					CeresClient.setMessageReceived(true);
-    				}
-    				
-    				@Override
-    				public void onFailure(Throwable err, String content)
-    				{
-    					CeresClient.setXmlBase("");
-    					CeresClient.setMessageReceived(true);
-    				}
-    			});
-    			while(!CeresClient.checkMessageReceived()){};
+    			NetworkHandler.setSSL(m_ctx, R.raw.certificate, m_passwd.getText().toString(), m_id.getText().toString());
+    			CeresClient.setXmlBase(NetworkHandler.get(("https://" + CeresClient.getURL() + "/getAll")));
     		}
     		catch(Exception e)
     		{
