@@ -3,6 +3,12 @@
   outline: none !important;
 }
 
+.title {
+  font-size:1.5em;
+  color: #E8A02F;
+  text-shadow: black 1px 1px 1px;
+}
+
 body {
   margin: 0;
   padding: 2em;
@@ -11,6 +17,17 @@ body {
   color: #333;
 }
 p {
+}
+.contentBox {
+    background-color: white;
+    overflow: auto;
+	margin-bottom: 10px;
+
+    border: 2px solid #769DC0;
+    box-shadow: 0 0 2px 2px #888;
+    border-radius: 10px;
+
+    padding: 10px;
 }
 
 hr {
@@ -54,6 +71,11 @@ input[type=button], input[type=submit], button, .button, .sideBarButton {
 	color: black;
 	margin-left: 2px;
 	margin-right: 2px;
+	
+	-ms-transition:.2s;
+	-moz-transition:.2s;
+	-webkit-transition:.2s;
+	transition:.2s;
 }
 
 .sideBarButton {
@@ -69,8 +91,13 @@ input[type=button], input[type=submit], button, .button, .sideBarButton {
 .sideBarButton, .button:visited {color:black;}
 
 input[type=button]:hover, input[type=submit]:hover, .sideBarButton:hover, button:hover, .button:hover {
-  background-color: #AFD9FF;
-  color: #000000;
+	-o-transition:.2s;
+	-ms-transition:.2s;
+	-moz-transition:.2s;
+	-webkit-transition:.2s;
+	transition:.2s;
+	background-color: #AFD9FF;
+	color: #000000;
 }
 
 input {
@@ -91,9 +118,7 @@ h2 {
 }
 
 html, body {
-  height: 100%;
   margin: 0;
-  overflow: hidden;
   padding: 0;
 }
  
@@ -270,3 +295,58 @@ button::-moz-focus-inner {
 }
 
 
+.prettyContainer {
+	background-color: white;
+    display: inline-block;
+    vertical-align: top;
+    
+	border: 2px solid #769DC0;
+    box-shadow: 0 0 2px 2px #888;
+    border-radius: 10px;
+
+    margin-right: 20px;
+    margin-left: 20px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    padding: 20px;
+}
+
+
+.cardOuter {
+	background-color: white;
+	position: relative;
+	bottom: 0;
+	top: 0;
+	left: 0;
+	right: 0;
+	display: block;
+	vertical-align: top;
+	margin-bottom: 10px;
+    
+	border: 2px solid #769DC0;
+	border-radius: 15px;
+	border-top-right-radius: 0;
+	border-top-left-radius: 0; 
+}
+
+.cardInner {
+	margin: 10px;
+}
+
+.cardHeader {
+	text-align: center;
+	left: 0;
+	right: 0;
+	position: relative;
+	margin: 0;
+	padding-bottom: 5px;
+	padding-top: 5px;
+	background-repeat: repeat-x;
+	background-color: #ABD6FF;
+	background-image: url('images/gradient.jpg');
+	
+	border: 2px solid #769DC0;
+	border-bottom: 0px;
+	border-top-right-radius: 15px;
+	border-top-left-radius: 15px;
+}
