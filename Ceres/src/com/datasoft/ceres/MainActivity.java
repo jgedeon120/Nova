@@ -14,7 +14,6 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import org.json.*;
-import com.loopj.android.http.AsyncHttpResponseHandler;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -285,7 +284,6 @@ public class MainActivity extends Activity {
     		{
     			m_global.setURL(params[0]);
     			m_global.clearXmlReceive();
-    			NetworkHandler.setSSL(m_ctx, R.raw.test, m_passwd.getText().toString(), m_id.getText().toString());
     		}
     		catch(Exception e)
     		{
