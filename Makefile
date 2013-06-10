@@ -80,6 +80,9 @@ nodejsmodule:
 pulsar:
 	cd Pulsar;npm --unsafe-perm install
 
+ceres:
+	cd Ceres;npm --unsafe-perm install
+
 #Honeyd AutoConfig
 hhconfig-release:
 	$(MAKE) -C HaystackAutoConfig/Release
@@ -201,6 +204,9 @@ clean-quasar-modules:
 clean-pulsar-modules:
 	-rm -rf Pulsar/node_modules
 
+clean-ceres-modules:
+	-rm -rf Ceres/node_modules
+
 clean-hhconfig: clean-hhconfig-debug clean-hhconfig-release
 	
 clean-hhconfig-debug:
@@ -282,6 +288,10 @@ install-quasar:
 install-pulsar:
 	cp -frup Pulsar "$(DESTDIR)/usr/share/nova/sharedFiles"
 	-install Pulsar/pulsar "$(DESTDIR)/usr/bin/pulsar"	
+
+install-ceres:
+	cp -frup Ceres "$(DESTDIR)/usr/share/nova/sharedFiles"
+	-install Ceres/ceres "$(DESTDIR)/usr/bin/ceres"
 
 install-hhconfig:
 	-install HaystackAutoConfig/haystackautoconfig "$(DESTDIR)/usr/bin/haystackautoconfig"

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+SHARED_PATH="/usr/share/nova/sharedFiles"
+MAIN_PATH="$SHARED_PATH/Ceres/main.js"
+MODULE_PATH="$SHARED_PATH/NodejsModule"
+
+cd "$SHARED_PATH/Ceres"
+
+echo "Starting Ceres Server"
+NODE_PATH="$MODULE_PATH" node $MAIN_PATH
+exit
+
