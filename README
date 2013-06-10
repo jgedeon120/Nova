@@ -121,6 +121,15 @@ Getting Dependencies on Ubuntu
 
     sudo apt-get install dpkg-dev
 
+- If you plan on using the Ceres Android App/Server combo, you'll have to get ant:
+
+    sudo apt-get install ant
+
+  This will also pull in some java packages if you don't have them (openjdk). If
+  you're looking at fiddling with the source for Ceres, it is suggested to use the
+  Android Developer Tools (ADT). This will get you the latest SDK and an Eclipse-like
+  IDE catered to Android development. 
+
 
 =============================== 
 Building Honeyd
@@ -165,6 +174,49 @@ To build and install Nova run the commands,
     Step 6: Log out and log back in
 
 Refer to the Nova wiki on github for more information.
+
+===============================
+Working with Ceres
+===============================
+
+Ceres, as it stands now, contains two elements: the server and the app.
+The server startup script is called, simply, 'ceres' and it can be installed
+to /usr/bin/ by using the make target 
+
+  make install-ceres
+
+Some things of note about the server:
+
+Ceres starts off with a default (read: UNSAFE) private key and certificate. Need
+to change CERES_PRIVATE_KEY_PATH and CERES_CERTIFICATE_PATH to reflect correct
+path. If you're using self-signed certs, you'll need to generate a new private key
+and certificate. You'll want your certificate file in .crt format for the next part.
+If you're using a certificate that's trusted natively in Android's trust store, no need 
+for the next part.
+
+If you're using self signed certs, you'll need to do two things: move your .crt file into 
+Ceres/res/raw/ (making sure it's named "certificate.crt") and select the 'Use Self Signed Certs'
+checkbox on the MainActivity page. This will tell the App to look for certificate.crt and 
+add it to the Android truststore for Ceres. If this checkbox is not selected, it will be
+assumed that the server has a certificate signed by a trusted CA and proceed with normal
+SSL attempts.
+
+For the app, there are two options for compiling and uploading to the device. 
+The first is to download the ADT. Doing so will get all of the proper SDK 
+info and tools needed to get developing, as well as an Eclipse interface that
+will allow you to compile and sideload the application onto your selected device.
+The other option is to use ant, as noted in the Getting Dependencies on Ubuntu 
+section. By using the command 
+
+  ant [debug | release] install
+
+in the Ceres root directory, you will compile, regenerate R.java, build and sign
+the Ceres-*.apk file, and install it to the connected device. 
+
+If you want to have Ceres start up when it's installed to the device, use the 
+following line in your terminal:
+
+  ant [debug | release] install && adb shell 'am start -n com.datasoft.ceres/.MainActivity'
 
 =============================== 
 User's Manual
