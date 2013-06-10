@@ -191,15 +191,15 @@ Ceres starts off with a default (read: UNSAFE) private key and certificate. Need
 to change CERES_PRIVATE_KEY_PATH and CERES_CERTIFICATE_PATH to reflect correct
 path. If you're using self-signed certs, you'll need to generate a new private key
 and certificate. You'll want your certificate file in .crt format for the next part.
-If you're using a certificate that's trusted natively in Android's trust store, no need 
-for the next part.
+If you're using a certificate that's trusted natively in Android's trust store, no 
+need for the next part.
 
-If you're using self signed certs, you'll need to do two things: move your .crt file into 
-Ceres/res/raw/ (making sure it's named "certificate.crt") and select the 'Use Self Signed Certs'
-checkbox on the MainActivity page. This will tell the App to look for certificate.crt and 
-add it to the Android truststore for Ceres. If this checkbox is not selected, it will be
-assumed that the server has a certificate signed by a trusted CA and proceed with normal
-SSL attempts.
+If you're using self signed certs, you'll need to do two things: move your .crt file
+into Ceres/res/raw/ (making sure it's named "certificate.crt") and select the
+'Use Self Signed Certs' checkbox on the MainActivity page. This will tell the App
+to look for certificate.crt and add it to the Android truststore for Ceres. If this
+checkbox is not selected, it will be assumed that the server has a certificate
+signed by a trusted CA and proceed with normal SSL attempts.
 
 For the app, there are two options for compiling and uploading to the device. 
 The first is to download the ADT. Doing so will get all of the proper SDK 
@@ -216,7 +216,8 @@ the Ceres-*.apk file, and install it to the connected device.
 If you want to have Ceres start up when it's installed to the device, use the 
 following line in your terminal:
 
-  ant [debug | release] install && adb shell 'am start -n com.datasoft.ceres/.MainActivity'
+  ant [debug | release] install 
+  \ && adb shell 'am start -n com.datasoft.ceres/.MainActivity'
 
 =============================== 
 User's Manual
