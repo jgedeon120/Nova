@@ -527,6 +527,13 @@ QUASAR_TETHER_TLS_PASSPHRASE toor
 TRAINING_DATA_PATH /config/training/data.txt
 
 ############################################
+# Ceres server cert and key locations
+############################################
+# 
+CERES_PRIVATE_KEY_PATH /config/keys/ceresKey.key
+CERES_CERTIFICATE_PATH /config/keys/ceresCert.crt
+
+############################################
 # Quasar start/stop command options
 ############################################
 # These are the commands that Quasar will use

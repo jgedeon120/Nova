@@ -24,9 +24,8 @@ var url = require('url');
 var NovaHomePath = NovaCommon.config.GetPathHome();
 
 var options = {
-  // TODO: These need to be gotten from Config variables
-  key:  fs.readFileSync('keys/privatekey.key'),
-  cert: fs.readFileSync('keys/certificate.crt')
+  key:  fs.readFileSync(NovaHomePath + NovaCommon.config.ReadSetting('CERES_PRIVATE_KEY_PATH')),
+  cert: fs.readFileSync(NovaHomePath + NovaCommon.config.ReadSetting('CERES_CERTIFICATE_PATH'))
 };
 
 NovaCommon.nova.CheckConnection();
