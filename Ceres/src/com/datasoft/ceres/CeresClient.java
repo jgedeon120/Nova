@@ -16,7 +16,7 @@ public class CeresClient extends Application {
 	public static final String SHAREDPREFS_PORT = "com.datasoft.ceres.port";
 	public static final String SHAREDPREFS_ID = "com.datasoft.ceres.id";
 	public static final String SHAREDPREFS_USESELFSIGNED = "com.datasoft.ceres.usessc";
-	public static final String SHAREDPREFS_KSPASS = "com.datasoft.ceres.kspass";
+	public static final String SHAREDPREFS_CERTNAME = "com.datasoft.ceres.certname";
 	
 	@Override
 	public void onCreate()

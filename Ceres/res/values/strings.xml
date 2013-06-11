@@ -21,7 +21,7 @@
     <string name="classificationLabel">Classification: </string>
     <string name="lastSeenLabel">Last Seen:</string>
     <string name="selfSigned">Use Self Signed Certificate</string>
-    <string name="keystorePassHint">Keystore Password</string>
+    <string name="certHint">Cert name without .crt</string>
     <string name="searchText">Search by IP or Interface</string>
 
 </resources>

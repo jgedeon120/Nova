@@ -195,11 +195,16 @@ If you're using a certificate that's trusted natively in Android's trust store, 
 need for the next part.
 
 If you're using self signed certs, you'll need to do two things: move your .crt file
-into Ceres/res/raw/ (making sure it's named "certificate.crt") and select the
+into Ceres/res/raw/ (can ONLY have [a-z0-9_.]) and select the
 'Use Self Signed Certs' checkbox on the MainActivity page. This will tell the App
-to look for certificate.crt and add it to the Android truststore for Ceres. If this
+to look for $YOURCERT.crt and add it to the Android truststore for Ceres. If this
 checkbox is not selected, it will be assumed that the server has a certificate
-signed by a trusted CA and proceed with normal SSL attempts.
+signed by a trusted CA and proceed with normal SSL attempts. An important note:
+if you do not rebuild after placing your .crt file in the right place, the app 
+will fail to use your cert even if you do anything else right. You MUST rebuild
+so that the generated R.java file has an id value for your certificate file.
+This will also be where you see any errors in file naming for the certificate,
+so it's a good idea all around.
 
 For the app, there are two options for compiling and uploading to the device. 
 The first is to download the ADT. Doing so will get all of the proper SDK 

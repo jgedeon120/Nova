@@ -9,8 +9,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -24,7 +28,7 @@ public class MainActivity extends Activity {
 	EditText m_passwd;
 	EditText m_notify;
 	EditText m_success;
-	EditText m_keystorePass;
+	EditText m_certName;
 	CheckBox m_keepLogged;
 	CheckBox m_useSSC;
 	ProgressDialog m_dialog;
@@ -58,12 +62,16 @@ public class MainActivity extends Activity {
         }
         
         m_useSSC = (CheckBox)findViewById(R.id.useSelfSigned);
-        m_keystorePass = (EditText)findViewById(R.id.keystorePass);
+        m_certName = (EditText)findViewById(R.id.certName);
         NetworkHandler.setUseSelfSigned(false);
         
         if(m_prefs.contains(CeresClient.SHAREDPREFS_USESELFSIGNED))
         {
         	m_useSSC.setChecked(true);
+        	m_certName.setText(m_prefs.getString(CeresClient.SHAREDPREFS_CERTNAME, ""));
+        	Animation slideDown = AnimationUtils.loadAnimation(m_ctx, R.anim.slide_down);
+        	findViewById(R.id.slideMenu).setVisibility(View.VISIBLE);
+        	findViewById(R.id.slideMenu).startAnimation(slideDown);
         	NetworkHandler.setUseSelfSigned(true);
         }
         
@@ -114,6 +122,20 @@ public class MainActivity extends Activity {
         			AlertDialog alert = builder.create();
         			alert.show();
         		}
+        		else if(m_prefs.contains(CeresClient.SHAREDPREFS_USESELFSIGNED) 
+        		     && m_certName.getText().toString().isEmpty())
+        		{
+        			AlertDialog.Builder builder = new AlertDialog.Builder(m_ctx);
+        			builder.setMessage("If using self-signed certs, must provide cert name (without file extension)!")
+        			       .setCancelable(false)
+        			       .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+        			           public void onClick(DialogInterface dialog, int id) {
+        			                dialog.cancel();
+        			           }
+        			       });
+        			AlertDialog alert = builder.create();
+        			alert.show();
+        		}
         		else
         		{
 	        		m_keepMeLoggedIn = ((CheckBox)findViewById(R.id.keepLogged)).isChecked();
@@ -124,6 +146,7 @@ public class MainActivity extends Activity {
 	        			editor.putString(CeresClient.SHAREDPREFS_PORT, m_port.getText().toString());
 	        			editor.putString(CeresClient.SHAREDPREFS_ID, m_id.getText().toString());
 	        			editor.putBoolean(CeresClient.SHAREDPREFS_USESELFSIGNED, m_useSSC.isChecked());
+	        			editor.putString(CeresClient.SHAREDPREFS_CERTNAME, m_certName.getText().toString());
 	        			editor.commit();
 	        		}
 	        		else
@@ -176,13 +199,16 @@ public class MainActivity extends Activity {
     		AlertDialog.Builder builder = new AlertDialog.Builder(m_ctx);
     		builder.setMessage(
     				"WARNING: You are electing to use a self signed certificate!" 
-    				+ " In order for this to work, you must use your server's certificate.crt file," 
+    				+ " In order for this to work, you must use your server's certificate file," 
     				+ " place it in res/raw, and sideload the app onto your device."
     				+ " It is not recommended to use this feature.")
     		       .setCancelable(false)
     		       .setPositiveButton("I understand.", new DialogInterface.OnClickListener() {
     		           public void onClick(DialogInterface dialog, int id) {
     		                dialog.cancel();
+    		            	Animation slideDown = AnimationUtils.loadAnimation(m_ctx, R.anim.slide_down);
+    		            	findViewById(R.id.slideMenu).setVisibility(View.VISIBLE);
+    		            	findViewById(R.id.slideMenu).startAnimation(slideDown);
     		                NetworkHandler.setUseSelfSigned(true);
     		           }
     		       })
@@ -196,6 +222,21 @@ public class MainActivity extends Activity {
     		       });
     		AlertDialog alert = builder.create();
     		alert.show();
+    	}
+    	else
+    	{
+			Animation slideUp = AnimationUtils.loadAnimation(this, R.anim.slide_up);
+			slideUp.setAnimationListener(new AnimationListener(){
+				@Override
+				public void onAnimationEnd(Animation animation)
+				{
+					findViewById(R.id.slideMenu).setVisibility(View.GONE);
+				}
+				@Override
+				public void onAnimationRepeat(Animation animation){}
+				@Override
+				public void onAnimationStart(Animation animation){}
+			});
     	}
     }
     
@@ -230,11 +271,30 @@ public class MainActivity extends Activity {
         if(m_prefs.contains(CeresClient.SHAREDPREFS_USESELFSIGNED))
         {
         	m_useSSC.setChecked(true);
+        	m_certName.setText(m_prefs.getString(CeresClient.SHAREDPREFS_CERTNAME, ""));
+        	Animation slideDown = AnimationUtils.loadAnimation(m_ctx, R.anim.slide_down);
+        	findViewById(R.id.slideMenu).setVisibility(View.VISIBLE);
+        	findViewById(R.id.slideMenu).startAnimation(slideDown);
         	NetworkHandler.setUseSelfSigned(true);
         }
         super.onRestart();
     }
  
+    @Override
+    public void onConfigurationChanged(Configuration newConfig)
+    {
+    	super.onConfigurationChanged(newConfig);
+        if(m_prefs.contains(CeresClient.SHAREDPREFS_USESELFSIGNED))
+        {
+        	m_useSSC.setChecked(true);
+        	m_certName.setText(m_prefs.getString(CeresClient.SHAREDPREFS_CERTNAME, ""));
+        	Animation slideDown = AnimationUtils.loadAnimation(m_ctx, R.anim.slide_down);
+        	findViewById(R.id.slideMenu).setVisibility(View.VISIBLE);
+        	findViewById(R.id.slideMenu).startAnimation(slideDown);
+        	NetworkHandler.setUseSelfSigned(true);
+        }
+    }
+    
     private class CeresClientConnect extends AsyncTask<String, Void, Integer> {
     	@Override
     	protected void onPreExecute()
@@ -259,7 +319,9 @@ public class MainActivity extends Activity {
     		{
     			CeresClient.setURL(params[0]);
     			CeresClient.clearXmlReceive();
-    			NetworkHandler.setSSL(m_ctx, R.raw.certificate, m_passwd.getText().toString(), m_id.getText().toString());
+    			String cleanCertName = m_certName.getText().toString();
+    			NetworkHandler.setSSL(m_ctx, getResources().getIdentifier(cleanCertName, "raw", "com.datasoft.ceres"), 
+    								  m_passwd.getText().toString(), m_id.getText().toString());
     			CeresClient.setXmlBase(NetworkHandler.get(("https://" + CeresClient.getURL() + "/getAll")));
     		}
     		catch(Exception e)

@@ -74,12 +74,12 @@
         android:visibility="gone" >
 
         <EditText
-            android:id="@+id/keystorePass"
+            android:id="@+id/certName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="24sp"
-            android:inputType="textPassword"
-            android:hint="@string/keystorePassHint" />
+            android:hint="@string/certHint"
+            android:textSize="24sp" />
+
     </LinearLayout>
     
     <Button
