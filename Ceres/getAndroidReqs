@@ -1,0 +1,9 @@
+#!/bin/bash
+
+cd libs/
+wget https://achartengine.googlecode.com/files/achartengine-1.0.0.jar
+cd ../
+
+wget https://dl.google.com/android/android-sdk_r22.0.1-linux.tgz
+tar xvzf android-sdk_r22.0.1-linux.tgz
+cd android-sdk-linux/tools

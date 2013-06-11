@@ -125,11 +125,31 @@ Getting Dependencies on Ubuntu
 
     sudo apt-get install ant
 
-  This will also pull in some java packages if you don't have them (openjdk). If
-  you're looking at fiddling with the source for Ceres, it is suggested to use the
-  Android Developer Tools (ADT). This will get you the latest SDK and an Eclipse-like
-  IDE catered to Android development. 
+- You will also need to get the openjdk-6-jdk, if you don't have it; to do so, 
+  simply use:
 
+    sudo apt-get install openjdk-6-jdk
+
+- Last, but not least, you'll have to get the Android SDK and the proper SDK 
+  version for your device. There is a script that will get the SDK tools in 
+  the Ceres folder; it's called getAndroidReqs, and it has no arguments. After
+  running this, you'll be in the android-sdk-linux/tools folder. From here,
+  use
+    
+    android list sdk
+
+  and find the number that corresponds the SDK version you require. Then, 
+  use the following to get the required information (if you're using Ubuntu
+  Server, add the --no-ui flag)
+
+    android update sdk [--no-ui] --filter $SDKNUM,tool,platform-tool,doc
+  
+  and
+
+    android update project -p path/to/your/project
+
+  This should get you all you need to follow along in the next section on Ceres,
+  "Working with Ceres".
 
 =============================== 
 Building Honeyd
