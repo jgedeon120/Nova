@@ -420,7 +420,12 @@ block headerAdditions
 
           for (var ethinterface in nodesPerInterface)
           {
-            var p = {name: ethinterface, value: nodesPerInterface[ethinterface]};
+            var aliasedName = ethinterface;
+            var interfaceIndex = interfaces.indexOf(ethinterface);
+            if (interfaceIndex != -1) {
+                aliasedName = interfaceAliases[interfaceIndex];
+            }
+            var p = {name: aliasedName, value: nodesPerInterface[ethinterface]};
             piChartRender2.push(p);
           }
           
@@ -549,9 +554,9 @@ block headerAdditions
     {
       var configToRemove = $('#configurations').val();
       
-      if(configToRemove == 'default')
+      if($("#configurations option").size() == 1)
       {
-        alert('Cannot remove default configuration');
+        alert('Cannot remove all haystack configurations! Must have at least one.');
         return;
       }
       else if(confirm('Are you sure you want to remove configuration ' + configToRemove + '? This cannot be undone.'))
@@ -636,6 +641,11 @@ block headerAdditions
     function confirmHaystackRestart()
     {
       now.IsHaystackUp(function(status){
+        // Nothing to do if the haystack is already down
+        if (!status) {
+            return;
+        }
+
         var restartHaystack = confirm('You must restart the haystack for this to take effect. Restart it now?');
         if(status == true && restartHaystack)
         {
@@ -852,6 +862,11 @@ block headerAdditions
     function deleteSelectedItems()
     {
       var items = grid.GetSelected();
+
+      if (items.length == 0) {
+        alert("No nodes were selected to delete!");
+        return;
+      }
      
       for(var i in items)
       {
@@ -1015,6 +1030,10 @@ block headerAdditions
     function deleteSelectedProfileItems()
     {
       var names = GetSelectedProfiles();
+      if (names.length == 0) {
+        alert("No profiles selected to delete!");
+        return;
+      }
      
       try 
       {
@@ -1055,12 +1074,10 @@ block headerAdditions
         gridStructure.push({name: 'MAC'});
         gridStructure.push({name: 'Profile'});
         
-        grid = new NovaGrid(gridStructure, 3, $('#nodeTable')[0], 'grid', true);
+        grid = new NovaGrid(gridStructure, 3, document.getElementById('nodeTable'), 'grid', true);
         
         grid.SetSortByKey(1);
         grid.SetRowsPerPage(25);
-        var tablePages = $('#tablePages')[0];
-        grid.SetPageNumberDiv(tablePages);
       
          for(var i in nodeList)
          {
@@ -1141,7 +1158,7 @@ block content
     button.unselectedTab#bsettingsScripts(onclick='showTab("settingsScripts")') Scripts
 
     
-    div.tabDiv#settingsGroups
+    div.contentBox#settingsGroups
       h1 Edit Haystacks
       button#addConfig(onclick='showLightBox("0")', title='Create a new configuration group from scratch')
         img.buttonIcon(src='images/add.png') 
@@ -1169,8 +1186,8 @@ block content
       br
 
 
-    div.tabDiv#settingsProfiles(style='display: none;')
-      h1 Profiles
+    div.contentBox#settingsProfiles(style='display: none;')
+      h1 Edit Profiles
 
       div#treeDiv
       br
@@ -1189,14 +1206,10 @@ block content
         img.buttonIcon(src='images/add.png')
         span.buttonSpan Add Child Profile
     
-    div.tabDiv#settingsNodes(style='display: none;')
-      h1 Current Node Configuration
+    div.contentBox#settingsNodes(style='display: none;')
+      h1 Edit Nodes
       div#node_header
-        br
-        div#tablePages
-        br
-      div.novaGrid
-        div#nodeTable
+      span#nodeTable(style="display: inline-block;")
       br
       br
       
@@ -1237,7 +1250,7 @@ block content
 
       br
 
-    div.tabDiv#settingsScripts(style='display: none;')
+    div.contentBox#settingsScripts(style='display: none;')
       h1 Current Script Usage
       button(onclick='window.location="/scripts"')
         img.buttonIcon(src='images/edit.png') 
@@ -1259,7 +1272,9 @@ block content
         br
         input#newName(name='newName', onkeypress='if(event.keyCode == 13){document.getElementById("addConfig").submit()}')
         br
-        button#submitAdd Submit
+        button#submitAdd
+          img.buttonIcon(src='images/add.png')
+          span.buttonSpan Create new haystack
     div#cloneConfigForm
       form(method='post', id='cloneConfig', onsubmit='return checkParametersClone();')
         label Select Haystack to Clone:
@@ -1270,7 +1285,9 @@ block content
         br
         input#newNameClone(name='newNameClone', onkeypress='if(event.keyCode == 13){document.getElementById("cloneConfig").submit()}')
         br
-        button#submitClone Submit
+        button#submitClone
+          img.buttonIcon(src='images/add.png')
+          span.buttonSpan Create new haystack
     div#profileInfo
       h1#profileName(style='font-weight: bold;')
       h2 Misc. Information
@@ -1292,7 +1309,6 @@ block content
       select#portsetSelect(onchange='redoGrid()', style='width: 200px')
       br
       br
-      div#tablePages(style='width: 100%; display: block;')
       br
       div(style='width:100%; height: 200px; overflow-y: scroll;')
         table(border='1')

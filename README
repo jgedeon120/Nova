@@ -15,11 +15,22 @@ What is Nova?
   searching manually through your honeypot's log files.
 
 =============================== 
+Enterprise Hardware and Support
+=============================== 
+
+- DataSoft can provide preconfigured and ready to use out of the box appliance 
+  servers as well as Enterprise level support. Please visit our store page for 
+  more information,
+
+  http://projectnova.org/store
+
+
+=============================== 
 The Installation Guide
 ===============================
 
 - The first thing to note is that Nova is currently only compatible with Linux.
-  All of our development is done on Ubuntu 12.04, so we suggest using that to
+  All of our development is done on Ubuntu 12.04+, so we suggest using that to
   make installation easiest. We provide a helper script which should get all
   dependencies and download, build, and install Nova and Honeyd. 
 
@@ -27,8 +38,13 @@ The Installation Guide
         sudo bash novaInstallHelper.sh
 
 - This script has only been tested on the most recent stable version of Ubuntu.
-  Any other distributions or versions should manually compile using the
-  instructions below.
+  Any other distributions should manually compile using the instructions below.
+
+- NOTE: The above will install the newest stable version of Nova. If you want
+  the current unstable version, instead run,
+        
+		wget https://raw.github.com/DataSoft/Nova/master/debian/novaInstallHelper.sh
+        sudo bash novaInstallHelper.sh integration
 
 =============================== 
 Getting the newest code
@@ -66,7 +82,7 @@ Getting Dependencies on Ubuntu
 
 - Install required dependencies with the following command:
 
-    sudo apt-get install git build-essential libcap2-bin libann-dev libpcap0.8-dev libboost-program-options-dev libboost-serialization-dev sqlite3 libsqlite3-dev libcurl3 libcurl4-gnutls-dev iptables libboost-system-dev libboost-filesystem-dev libevent-dev libprotoc-dev protobuf-compiler
+    sudo apt-get install git build-essential libcap2-bin libann-dev libpcap0.8-dev libboost-program-options-dev libboost-serialization-dev sqlite3 libsqlite3-dev libcurl3 libcurl4-gnutls-dev iptables libboost-system-dev libboost-filesystem-dev libevent-dev libprotoc-dev protobuf-compiler liblinux-inotify2-perl libfile-readbackwards-perl
 
 - Now, we'll have to take a quick detour to get another integral component of
   Nova: Honeyd. We will have to download some extra libraries for Honeyd as
@@ -149,6 +165,14 @@ To build and install Nova run the commands,
     Step 6: Log out and log back in
 
 Refer to the Nova wiki on github for more information.
+
+=============================== 
+User's Manual
+=============================== 
+
+- The Nova User's Manual can be found at,
+
+  https://raw.github.com/DataSoft/NovaCollaborate/master/Nova%20User%20Manual.odt
 
 =============================== 
 Daemonizing with Upstart

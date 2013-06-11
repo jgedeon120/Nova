@@ -24,6 +24,11 @@ block headerAdditions
    
     var interfaceList = Interfaces.split(',');
     var interfaceAliasList = InterfaceAliases.split(',');
+
+    var interfaceChoices = [];
+    for (var i = 0; i < interfaceList.length; i++) {
+        interfaceChoices.push({text: interfaceAliasList[i], value: interfaceList[i]});
+    }
     
     function viewModelApp() {
         var self = this;
@@ -46,7 +51,7 @@ block headerAdditions
         self.subnetsToScan = ko.observableArray();
         self.interfaceSubnets = ko.observableArray();
 
-        self.interfaceList = interfaceList;
+        self.interfaceChoices = interfaceChoices;
 
         self.removeSubnet = function(subnet){
             self.subnetsToScan.remove(subnet);
@@ -77,7 +82,7 @@ block headerAdditions
           else if(self.nodeCreationType() == 'range')
           {
             num = self.nodeCountRange();
-            var regex = new RegExp('^([0-255]\\.){3}([0-255])\\-([0-255]\\.){3}([0-255])$');
+            var regex = new RegExp('^([0-255]\.){3}([0-255])\-([0-255]\.){3}([0-255])$');
             if(regex.test(num) == 'false')
             {
               num = -1;
@@ -281,8 +286,13 @@ block headerAdditions
       }
     }
 
-    function autoscancb(text)
+    function autoscancb(err, text)
     {
+        if (err) {
+            alert("Error: " + err);
+            window.location = window.location;
+            return;
+        }
         var p = document.createElement('p');
         var appText = $('#appendText');
         p.value = text;
@@ -344,7 +354,7 @@ block content
   if(SCANERROR !== undefined)
     label(id='scanError', style='color: red;') #{SCANERROR}
     
-  div#setup
+  div.contentBox#setup
     h1 Haystack Autoconfig
     
     table
@@ -365,7 +375,7 @@ block content
           input(data-bind='visible: isNewHaystack, value: newHaystackName, valueUpdate: "afterkeydown"', type='text')
           select(data-bind='visible: !isNewHaystack(), value: oldHaystackName')
             - for(var i = 0; i < GROUPS.length; i++)
-              - if(GROUPS[i] != '' && GROUPS[i] != undefined && GROUPS[i] != 'default')
+              - if(GROUPS[i] != '' && GROUPS[i] != undefined)
                 option #{GROUPS[i]}
       tr
         td
@@ -388,7 +398,7 @@ block content
           td
             label(style='font-weight: bold') Interface for new nodes
           td
-            select#nodeInterface(data-bind='options: interfaceList')
+            select#nodeInterface(data-bind="options: interfaceChoices, optionsHtml: 'text', optionsValue: 'value'")
     br
     br
     label(style='font-weight: bold;') Subnets to Scan
@@ -396,7 +406,7 @@ block content
     table
       tbody(data-bind='foreach: interfaceSubnets')
         tr
-          td(data-bind='text: text', style='width: 200px')
+          td(data-bind='html: text', style='width: 200px')
           td
             button(data-bind='click: $root.addSubnet')
               img.buttonIcon(src='images/add.png')
