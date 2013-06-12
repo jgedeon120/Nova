@@ -60,12 +60,10 @@ block headerAdditions
       font-size: 20px;
       cursor: pointer;
     }
-
-  script(type='text/javascript', src='scripts/jquery-ui-1.10.1.custom.js')
+    
   script(type='text/javascript', src='scripts/jquery.ui.selectable.js')
   script(type='text/javascript', src='https://flexicontent.googlecode.com/svn-history/r1517/trunk/com_flexicontent_v2.x/site/librairies/fancybox/lib/jquery.mousewheel-3.0.6.pack.js')
   script
-    window.jQuery.ui || document.write('<script type="text/javascript" src="scripts/jquery-ui-1.10.1.custom.js"><\\/script>');
     window.jQuery.mousewheel || document.write('<script type="text/javascript" src="scripts/jquery-mousewheel.min.js"><\\/script>');
     var configurationList = !{JSON.stringify(configurations)};
     var nodeList = !{JSON.stringify(nodes)};
