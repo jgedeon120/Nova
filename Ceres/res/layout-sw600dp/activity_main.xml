@@ -49,14 +49,38 @@
         android:hint="@string/credPort"
         android:inputType="number" />
 
-    <CheckBox 
+    <CheckBox
         android:id="@+id/keepLogged"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
-        android:hint="@string/keepLogged"
         android:onClick="onCheckboxClicked"
+        android:text="@string/keepLogged"
         android:textSize="40sp" />
+
+    <CheckBox
+        android:id="@+id/useSelfSigned"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="40sp"
+        android:onClick="onUseSelfSigned"
+        android:text="@string/selfSigned" />
+
+    <LinearLayout
+        android:id="@+id/slideMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone" >
+
+        <EditText
+            android:id="@+id/certName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/certHint"
+            android:textSize="40sp" />
+
+    </LinearLayout>
     
     <Button
         android:id="@+id/ceresConnect"

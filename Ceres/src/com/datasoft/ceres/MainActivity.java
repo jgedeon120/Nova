@@ -10,6 +10,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -33,7 +36,6 @@ public class MainActivity extends Activity {
 	EditText m_success;
 	CheckBox m_keepLogged;
 	ProgressDialog m_dialog;
-	CeresClient m_global;
 	Boolean m_keepMeLoggedIn;
 	CeresClientConnect m_ceresClient;
 	String m_regexIp = "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
@@ -44,8 +46,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         m_ctx = this;
         m_ceresClient = new CeresClientConnect();
-        m_global = (CeresClient)getApplicationContext();
-        m_global.setForeground(true);
+        CeresClient.setForeground(true);
         m_id = (EditText)findViewById(R.id.credID);
         m_passwd = (EditText)findViewById(R.id.credPW);
         m_ip = (EditText)findViewById(R.id.credIP);
@@ -208,7 +209,7 @@ public class MainActivity extends Activity {
     protected void onPause()
     {
     	super.onPause();
-    	m_global.setForeground(false);
+    	CeresClient.setForeground(false);
     }
     
     @Override
@@ -216,7 +217,54 @@ public class MainActivity extends Activity {
     {
     	super.onResume();
     	m_notify.setVisibility(View.INVISIBLE);
-    	m_global.setForeground(true);
+    	CeresClient.setForeground(true);
+    }
+    
+    public void onUseSelfSigned(View view)
+    {
+    	boolean checkValue = ((CheckBox)view).isChecked();
+    	if(checkValue)
+    	{
+    		AlertDialog.Builder builder = new AlertDialog.Builder(m_ctx);
+    		builder.setMessage(
+    				"WARNING: You are electing to use a self signed certificate!" 
+    				+ " In order for this to work, you must use your server's certificate file," 
+    				+ " place it in res/raw, and sideload the app onto your device."
+    				+ " It is not recommended to use this feature.")
+    		       .setCancelable(false)
+    		       .setPositiveButton("I understand.", new DialogInterface.OnClickListener() {
+    		           public void onClick(DialogInterface dialog, int id) {
+    		                dialog.cancel();
+    		            	Animation slideDown = AnimationUtils.loadAnimation(m_ctx, R.anim.slide_down);
+    		            	findViewById(R.id.slideMenu).setVisibility(View.VISIBLE);
+    		            	findViewById(R.id.slideMenu).startAnimation(slideDown);
+    		           }
+    		       })
+    		       .setNegativeButton("Scary! Take me back!", new DialogInterface.OnClickListener() {
+    					@Override
+    					public void onClick(DialogInterface dialog, int which) {
+    						((CheckBox)findViewById(R.id.useSelfSigned)).setChecked(false);
+    						dialog.cancel();
+    					}
+    		       });
+    		AlertDialog alert = builder.create();
+    		alert.show();
+    	}
+    	else
+    	{
+			Animation slideUp = AnimationUtils.loadAnimation(this, R.anim.slide_up);
+			slideUp.setAnimationListener(new AnimationListener(){
+				@Override
+				public void onAnimationEnd(Animation animation)
+				{
+					findViewById(R.id.slideMenu).setVisibility(View.GONE);
+				}
+				@Override
+				public void onAnimationRepeat(Animation animation){}
+				@Override
+				public void onAnimationStart(Animation animation){}
+			});
+    	}
     }
     
     @Override
@@ -282,8 +330,8 @@ public class MainActivity extends Activity {
     	{
     		try
     		{
-    			m_global.setURL(params[0]);
-    			m_global.clearXmlReceive();
+    			CeresClient.setURL(params[0]);
+    			CeresClient.clearXmlReceive();
     		}
     		catch(Exception e)
     		{

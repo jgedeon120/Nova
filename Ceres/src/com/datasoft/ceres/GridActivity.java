@@ -27,7 +27,6 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 public class GridActivity extends ListActivity {
-	CeresClient m_global;
 	ProgressDialog m_wait;
 	ClassificationGridAdapter m_gridAdapter;
 	Context m_gridContext;
@@ -67,7 +66,7 @@ public class GridActivity extends ListActivity {
 			isr.close();
 			is.close();
 			br.close();
-			m_global.setXmlBase(append);
+			CeresClient.setXmlBase(append);
 		}
 		catch(IOException ioe)
 		{
@@ -82,11 +81,11 @@ public class GridActivity extends ListActivity {
 				while(true)
 				{
 					sleep(60000);
-					m_global.clearXmlReceive();
+					CeresClient.clearXmlReceive();
 					
 					loadGridFile();
 					
-		    		if(m_global.getXmlBase() != "")
+		    		if(CeresClient.getXmlBase() != "")
 		    		{
 						m_gridValues = constructGridValues();
 						if(m_gridValues != null)
@@ -131,7 +130,10 @@ public class GridActivity extends ListActivity {
     	switch(item.getItemId())
     	{
     		case R.id.refresh:
-    			new ParseXml().execute();
+    			loadGridFile();
+    			return true;
+    		case R.id.search:
+    			onSearchRequested();
     			return true;
     		default:
     			return super.onOptionsItemSelected(item);
@@ -156,7 +158,7 @@ public class GridActivity extends ListActivity {
 		XmlPullParser xpp;
 		
 		xpp = factory.newPullParser();
-		xpp.setInput(m_global.getXmlReceive());
+		xpp.setInput(CeresClient.getXmlReceive());
 		int evt = xpp.getEventType();
 		ArrayList<String> al = new ArrayList<String>();
 		// On this page, we're receiving a format containing three things:
@@ -189,7 +191,7 @@ public class GridActivity extends ListActivity {
 		}
 		if(al.size() > 0)
 		{
-			m_global.setGridCache(al);
+			CeresClient.setGridCache(al);
 		}
 		return al;
 	}
@@ -199,14 +201,14 @@ public class GridActivity extends ListActivity {
 	{
 		super.onPause();
 		m_updateThread.interrupt();
-		m_global.setForeground(false);
+		CeresClient.setForeground(false);
 	}
 	
 	@Override
 	protected void onResume()
 	{
 		super.onResume();
-		m_global.setForeground(true);
+		CeresClient.setForeground(true);
 	}
 	
 	@Override
@@ -223,10 +225,10 @@ public class GridActivity extends ListActivity {
 	protected void onRestart()
 	{
 		super.onRestart();
-		if(m_global.getGridCache().size() > 0)
+		if(CeresClient.getGridCache().size() > 0)
 		{
 			m_gridAdapter.clear();
-			m_gridAdapter.addAll(m_global.getGridCache());
+			m_gridAdapter.addAll(CeresClient.getGridCache());
 			m_gridAdapter.notifyDataSetChanged();
 		}
 		else
@@ -246,11 +248,11 @@ public class GridActivity extends ListActivity {
 						while(true)
 						{
 							sleep(60000);
-							m_global.clearXmlReceive();
+							CeresClient.clearXmlReceive();
 	
 							loadGridFile();
 				    		
-				    		if(m_global.getXmlBase() != "")
+				    		if(CeresClient.getXmlBase() != "")
 				    		{
 								m_gridValues = constructGridValues();
 								if(m_gridValues != null)
@@ -303,7 +305,6 @@ public class GridActivity extends ListActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        m_global = (CeresClient)getApplicationContext();
         m_wait = new ProgressDialog(this);
 		m_gridContext = this;
 		LayoutInflater inf = getLayoutInflater();
@@ -350,7 +351,7 @@ public class GridActivity extends ListActivity {
 			isr.close();
 			is.close();
 			br.close();
-			m_global.setXmlBase(append);
+			CeresClient.setXmlBase(append);
 		}
 		catch(IOException ioe)
 		{
@@ -362,7 +363,7 @@ public class GridActivity extends ListActivity {
 		@Override
 		protected void onPreExecute()
 		{
-			m_global.clearXmlReceive();
+			CeresClient.clearXmlReceive();
 			m_wait.setCancelable(true);
 			m_wait.setMessage("Retrieving details for " + m_selected);
 			m_wait.setProgressStyle(ProgressDialog.STYLE_SPINNER);
@@ -373,8 +374,7 @@ public class GridActivity extends ListActivity {
 		protected Integer doInBackground(Void... vd)
 		{
 			loadSuspectXml();
-			System.out.println("xml == " + m_global.getXmlBase());
-    		if(m_global.getXmlBase() != "")
+    		if(CeresClient.getXmlBase() != "")
     		{
     			return 1;
     		}
@@ -447,7 +447,7 @@ public class GridActivity extends ListActivity {
 					@Override
 					public void onClick(DialogInterface dialog, int id)
 					{
-						m_global.clearXmlReceive();
+						CeresClient.clearXmlReceive();
 						m_updateThread.interrupt();
 					}
 				})
@@ -455,7 +455,7 @@ public class GridActivity extends ListActivity {
 					@Override
 					public void onClick(DialogInterface dialog, int which)
 					{
-						m_global.clearXmlReceive();
+						CeresClient.clearXmlReceive();
 						m_updateThread.interrupt();
 		    			Intent nextPage = new Intent(getApplicationContext(), MainActivity.class);
 		    			nextPage.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
