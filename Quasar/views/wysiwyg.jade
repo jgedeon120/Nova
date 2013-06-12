@@ -37,6 +37,7 @@ block headerAdditions
       margin-right: 10px;
       height: 25px;
       font-size: 20px;
+      cursor: pointer;
     }
 
     .unselectedTab {
@@ -57,6 +58,7 @@ block headerAdditions
       margin-right: 10px;
       height: 25px;
       font-size: 20px;
+      cursor: pointer;
     }
 
   script(type='text/javascript', src='scripts/jquery-ui-1.10.1.custom.js')
@@ -203,8 +205,8 @@ block headerAdditions
                 }
               }
               
-              var pointerCss = {top:($(source).position().top + $(source).height() + 14),
-                                left:($(source).position().left + $(source).outerWidth() + 20)};
+              var pointerCss = {top:($(source).position().top + $(source).height() - 5),
+                                left:($(source).position().left + $(source).outerWidth() + 10)};
               $profileInfo.css(pointerCss).fadeIn(200);
             });
           });
@@ -1847,18 +1849,18 @@ block content
             span.kbk Shift
             + 
             span.kbk S
-            \: Save Topology
+            span : Save Topology
           p(style='margin-left: 5px') 
             span(style='font-weight: bold;') Middle Mouse Drag: 
             Move all nodes
           p(style='margin-left: 5px;') User can drag lasso over nodes to capture them for:
           p(style='margin-left: 10px; font-weight: bold;') 
             span.kbk Del
-            \: Delete Selected Nodes
+            span : Delete Selected Nodes
           p(style='margin-left: 10px;') 
             span(style='font-weight: bold;') Left Click Mouse Drag: 
             Move all selected nodes 
-          p(style='margin-left: 10px;') Right-Click menu:
+          p(style='margin-left: 10px; font-size: 24px;') Right-Click menu:
           p(style='margin-left: 15px;') 
             span(style='font-weight: bold;') Delete Selected: 
             Delete all selected nodes
@@ -1870,21 +1872,21 @@ block content
             Split selected node into two nodes (will only appear if one node is selected)
           p(style='margin-left: 5px;') Making a new Node:
           p(style='margin-left: 10px;') 
-            span(style='font-weight: bold;') 1\) 
+            span(style='font-weight: bold;') 1) 
             span Select Configuration from Dropdown
           p(style='margin-left: 10px;') 
-            span(style='font-weight: bold;') 2\) 
+            span(style='font-weight: bold;') 2) 
             span Select number of Nodes to create
           p(style='margin-left: 10px;') 
-            span(style='font-weight: bold;') 3\) 
+            span(style='font-weight: bold;') 3) 
             span Click on desired profile - configure as desired, Save Parameters
           p(style='margin-left: 10px;') 
-            span(style='font-weight: bold;') 4\) 
+            span(style='font-weight: bold;') 4) 
             span Drag highlighted node in left bar onto Canvas
           br
     br
     div(style='margin-left: 152px')
-      button.selectedTab#bnodeCanvasEth0(onclick='changeTab("nodeCanvaseth0")') Eth0
+      button.selectedTab#bnodeCanvasEth0(onclick='changeTab("nodeCanvaseth0")') eth0
     div#modalDialog(title='Split Nodes')
       div#rangeDiv
       button#splitAccept
