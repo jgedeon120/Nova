@@ -23,7 +23,7 @@ block headerAdditions
     .selectedTab {
       width: 100px;
       background-color: #AFD9FF;
-      border-color: black;
+      border-color: #769DC0;
       border-width: 2px;
       border-bottom-style: none;
       border-radius: 0px;
@@ -43,7 +43,7 @@ block headerAdditions
     .unselectedTab {
       width: 100px;
       background-color: #E4F2FF;
-      border-color: black;
+      border-color: #769DC0;
       border-width: 2px;
       border-left-style: none;
       border-right-style: none;
@@ -540,6 +540,7 @@ block headerAdditions
     {
       console.log('changeTab called');
       now.WriteWysiwygTopology(function(){
+        console.log('in WriteWysiwyg Topology callback');
         $topology.fadeOut(400);
         $topology = $('#' + e);
         appendTopoListeners($topology);
@@ -575,7 +576,7 @@ block headerAdditions
       .draggable({tolerance: 'pointer',
         cursorAt: {top:25,left:15},
         cursor: 'move',
-        containment:'#nodeCanvas',
+        containment: ('#nodeCanvas' + nodeObj.mac),
         revert: 'invalid'});
 
       if((xEleCount != undefined) && (yEleCount != undefined))
@@ -598,7 +599,7 @@ block headerAdditions
             .css(prepopCss)
             .css(zoom)
             .attr('class', 'ui-draggable canvasElement');
-      if((nodeObj.mac != undefined) && (type == 'prepop'))
+      if((nodeObj.mac != undefined) && (type == 'prepopDHCP' || type == 'prepopStatic'))
       {
         $(div).data('mac', nodeObj.mac)
               .data('preexisting', true);
@@ -691,6 +692,52 @@ block headerAdditions
           alert('Could not create honeyd nodes: No connection to server');
         }
       }
+      else if(type == 'prepopDHCP')
+      {
+        var macSplit = nodeObj.mac.split(',')[0];
+        for(var j in nodeList)
+        {
+          if(nodeList[j].mac == macSplit)
+          {
+            nodeTopology[eleCount] = {};
+            nodeTopology[eleCount].iface = nodeList[j].interface;
+            nodeTopology[eleCount].count = nodeObj.count.toString();
+            nodeTopology[eleCount].portset = nodeList[j].portset.toString();
+            nodeTopology[eleCount].vendor = nodeList[j].vendor;
+            nodeTopology[eleCount].ip = nodeList[j].ip;
+            nodeTopology[eleCount].selectedProfile = nodeObj.selectedProfile;
+            nodeTopology[eleCount].mac = nodeObj.mac;
+            nodeTopology[eleCount].coordinates = {x:x, y:y};
+            $('#nodeCanvas' + nodeList[j].interface).append(div);
+            break;
+          }
+        }
+        
+        eleCount++;
+      }
+      else if(type == 'prepopStatic')
+      {
+        var macSplit = nodeObj.mac.split(',')[0];
+        for(var j in nodeList)
+        {
+          if(nodeList[j].mac == macSplit)
+          {
+            nodeTopology[eleCount] = {};
+            nodeTopology[eleCount].iface = nodeList[j].interface;
+            nodeTopology[eleCount].count = nodeObj.count.toString();
+            nodeTopology[eleCount].portset = nodeList[j].portset.toString();
+            nodeTopology[eleCount].vendor = nodeList[j].vendor;
+            nodeTopology[eleCount].ip = nodeList[j].ip;
+            nodeTopology[eleCount].selectedProfile = nodeObj.selectedProfile;
+            nodeTopology[eleCount].mac = nodeObj.mac;
+            nodeTopology[eleCount].coordinates = {x:x, y:y};
+            $('#nodeCanvasstatic').append(div);
+            break;
+          }
+        }
+        
+        eleCount++;
+      }
       else if(type == 'prepop')
       {
         var macSplit = nodeObj.mac.split(',')[0];
@@ -707,10 +754,17 @@ block headerAdditions
             nodeTopology[eleCount].selectedProfile = nodeObj.selectedProfile;
             nodeTopology[eleCount].mac = nodeObj.mac;
             nodeTopology[eleCount].coordinates = {x:x, y:y};
+            if(nodeList[j].ip == 'DHCP')
+            {
+              $('#nodeCanvas' + nodeList[j].interface).append(div);
+            }
+            else
+            {
+              $('#nodeCanvasstatic').append(div);
+            }
             break;
           }
         }
-        $topology.append(div);
         
         eleCount++;
       }
@@ -754,7 +808,7 @@ block headerAdditions
       return undefined;
     }
     
-    function prepopulateCanvasWithNodes()
+    function prepopulateCanvasWithNodes(cb)
     {
       var xEleCount = 0;
       var yEleCount = 0;
@@ -765,32 +819,65 @@ block headerAdditions
         now.ReadWysiwygTopology(function(topo){
           if((topo != undefined) && (topo.length > 0))
           {
-            switch(group.type)
+            for(var i in topo)
             {
-              case 'DHCP':
-                for(var i in topo)
+              if(topo[i].ip == 'DHCP')
+              {
+                // button.selectedTab#bnodeCanvasEth0(onclick='changeTab("nodeCanvaseth0")') eth0
+                if($('#' + topo[i].iface + 'tab').length == 0)
                 {
-                  if(topo[i].ip == 'DHCP' && topo[i].iface == group.iface)
+                  var tab = document.createElement('button');
+                  tab.className = 'unselectedTab';
+                  tab.id = 'bnodeCanvas' + topo[i].iface;
+                  tab.setAttribute('onclick', 'changeTab("nodeCanvas' + topo[i].iface + '")');
+                  tab.innerHTML = topo[i].iface;
+                  $('#tabDock').append(tab);
+                  var tabDiv = document.createElement('div');
+                  tabDiv.id = topo[i].iface + 'tab';
+                  tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
+                  var canvasDiv = document.createElement('div');
+                  canvasDiv.id = 'nodeCanvas' + topo[i].iface;
+                  canvasDiv.className = 'canvas sameHeight';
+                  tabDiv.appendChild(canvasDiv);
+                  $topoHook.append(tabDiv);
+                  if($topology == '')
                   {
-                    addNodeToCanvas(topo[i], 'prepop', topo[i].coordinates.x, topo[i].coordinates.y);
+                    tab.className = 'selectedTab';
+                    $topology = $(canvasDiv);
                   }
                 }
-                break;
-              case 'static':
-                for(var i in topo)
+                addNodeToCanvas(topo[i], 'prepopDHCP', topo[i].coordinates.x, topo[i].coordinates.y); 
+              }
+              else
+              {
+                if($('#statictab').length == 0)
                 {
-                  if(topo[i].ip != 'DHCP')
+                  // button.selectedTab#bnodeCanvasEth0(onclick='changeTab("nodeCanvaseth0")') eth0
+                  var tab = document.createElement('button');
+                  tab.className = 'unselectedTab';
+                  tab.id = 'bnodeCanvasstatic';
+                  tab.setAttribute('onclick', 'changeTab("nodeCanvasstatic")');
+                  tab.innerHTML = 'Static';
+                  $('#tabDock').append(tab);
+                  var tabDiv = document.createElement('div');
+                  tabDiv.id = 'statictab';
+                  tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
+                  var canvasDiv = document.createElement('div');
+                  canvasDiv.id = 'novaCanvasstatic';
+                  canvasDiv.className = 'canvas sameHeight';
+                  tabDiv.appendChild(canvasDiv);
+                  $topoHook.append(tabDiv);
+                  if($topology == '')
                   {
-                    addNodeToCanvas(topo[i], 'prepop', topo[i].coordinates.x, topo[i].coordinates.y);
+                    tab.className = 'selectedTab';
+                    $topology = $(canvasDiv);
                   }
                 }
-                break;
-              default:
-                for(var i in topo)
-                {
-                   addNodeToCanvas(topo[i], 'prepop', topo[i].coordinates.x, topo[i].coordinates.y);
-                }
+                addNodeToCanvas(topo[i], 'prepopStatic', topo[i].coordinates.x, topo[i].coordinates.y);
+              }
             }
+            handleOffscreenIndicators();
+            cb && cb();
           }
           else
           {
@@ -800,6 +887,58 @@ block headerAdditions
                 nodeList = nodesList;
                 for(var i in nodeList)
                 {
+                  if(nodeList[i].ip == 'DHCP')
+                  {
+                    //div#eth0tab(onclick='clearSelectedCanvas()')
+                    //  div.canvas#nodeCanvaseth0(class='sameHeight')
+                    if($('#' + nodeList[i].interface + 'tab').length == 0)
+                    {
+                      var tab = document.createElement('button');
+                      tab.className = 'unselectedTab';
+                      tab.id = 'bnodeCanvas' + nodeList[i].interface;
+                      tab.setAttribute('onclick', 'changeTab("nodeCanvas' + nodeList[i].interface + '")');
+                      tab.innerHTML = nodeList[i].interface;
+                      $('#tabDock').append(tab);
+                      var tabDiv = document.createElement('div');
+                      tabDiv.id = nodeList[i].interface + 'tab';
+                      tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
+                      var canvasDiv = document.createElement('div');
+                      canvasDiv.id = 'nodeCanvas' + nodeList[i].interface;
+                      canvasDiv.className = 'canvas sameHeight';
+                      tabDiv.appendChild(canvasDiv);
+                      $topoHook.append(tabDiv);
+                      if($topology == '')
+                      {
+                        tab.className = 'selectedTab';
+                        $topology = $(canvasDiv);
+                      }
+                    }
+                  }
+                  else
+                  {
+                    if($('#statictab').length == 0)
+                    {
+                      var tab = document.createElement('button');
+                      tab.className = 'unselectedTab';
+                      tab.id = 'bnodeCanvasstatic';
+                      tab.setAttribute('onclick', 'changeTab("nodeCanvasstatic")');
+                      tab.innerHTML = 'Static';
+                      $('#tabDock').append(tab);
+                      var tabDiv = document.createElement('div');
+                      tabDiv.id = 'statictab';
+                      tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
+                      var canvasDiv = document.createElement('div');
+                      canvasDiv.id = 'novaCanvasstatic';
+                      canvasDiv.className = 'canvas sameHeight';
+                      tabDiv.appendChild(canvasDiv);
+                      $topoHook.append(tabDiv);
+                      if($topology == '')
+                      {
+                        tab.className = 'selectedTab';
+                        $topology = $(canvasDiv);
+                      }
+                    }
+                  }
                   haveMac.push(nodeList[i].mac);
                   var key = nodeList[i].pfile + nodeList[i].portset + nodeList[i].interface + nodeList[i].ip;
                   if(nodeCount[key] == undefined)
@@ -829,6 +968,8 @@ block headerAdditions
                   }
                 }
                 nodeCount = {};
+                handleOffscreenIndicators();
+                cb && cb();
               });
             }
             else
@@ -836,6 +977,58 @@ block headerAdditions
               for(var i in nodeList)
               {
                 haveMac.push(nodeList[i].mac);
+                if(nodeList[i].ip == 'DHCP')
+                {
+                  //div#eth0tab(onclick='clearSelectedCanvas()')
+                  //  div.canvas#nodeCanvaseth0(class='sameHeight')
+                  if($('#' + nodeList[i].interface + 'tab').length == 0)
+                  {
+                    var tab = document.createElement('button');
+                    tab.className = 'unselectedTab';
+                    tab.id = 'bnodeCanvas' + nodeList[i].interface;
+                    tab.setAttribute('onclick', 'changeTab("nodeCanvas' + nodeList[i].interface + '")');
+                    tab.innerHTML = nodeList[i].interface;
+                    $('#tabDock').append(tab);
+                    var tabDiv = document.createElement('div');
+                    tabDiv.id = nodeList[i].interface + 'tab';
+                    tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
+                    var canvasDiv = document.createElement('div');
+                    canvasDiv.id = 'nodeCanvas' + nodeList[i].interface;
+                    canvasDiv.className = 'canvas sameHeight';
+                    tabDiv.appendChild(canvasDiv);
+                    $topoHook.append(tabDiv);
+                    if($topology == '')
+                    {
+                      tab.className = 'selectedTab';
+                      $topology = $(canvasDiv);
+                    }
+                  }
+                }
+                else
+                {
+                  if($('#statictab').length == 0)
+                  {
+                    var tab = document.createElement('button');
+                    tab.className = 'unselectedTab';
+                    tab.id = 'bnodeCanvasstatic';
+                    tab.setAttribute('onclick', 'changeTab("nodeCanvasstatic")');
+                    tab.innerHTML = 'Static';
+                    $('#tabDock').append(tab);
+                    var tabDiv = document.createElement('div');
+                    tabDiv.id = 'statictab';
+                    tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
+                    var canvasDiv = document.createElement('div');
+                    canvasDiv.id = 'novaCanvasstatic';
+                    canvasDiv.className = 'canvas sameHeight';
+                    tabDiv.appendChild(canvasDiv);
+                    $topoHook.append(tabDiv);
+                    if($topology == '')
+                    {
+                      tab.className = 'selectedTab';
+                      $topology = $(canvasDiv);
+                    }                
+                  }
+                }
                 var key = nodeList[i].pfile + nodeList[i].portset + nodeList[i].interface + nodeList[i].ip;
                 if(nodeCount[key] == undefined)
                 {
@@ -864,9 +1057,10 @@ block headerAdditions
                 }
               }
               nodeCount = {};
+              handleOffscreenIndicators();
+              cb && cb();
             }
           }
-          handleOffscreenIndicators();
         });
       }
       else
@@ -1748,7 +1942,8 @@ block headerAdditions
       $profileInfo.hide();
       $contextMenu = $('#nodeContextMenu');
       $contextMenu.hide();
-      $topology = $('#nodeCanvaseth0');
+      $topoHook = $('#canvasContainer');
+      $topology = '';
       $modalSplit = $('#modalDialog');
       $modalSplit.dialog({
         appendTo: '#container',
@@ -1777,17 +1972,15 @@ block headerAdditions
       now.ready(function(){
         setUpSelects();
         updateDragHeader();
-        
-        appendTopoListeners($topology);
               
         repopulateNodeCanvas(function(){
-          prepopulateCanvasWithNodes();
-          handleOffscreenIndicators();
+          prepopulateCanvasWithNodes(function(){
+            appendTopoListeners($topology);
+            handleOffscreenIndicators();
+            adjustColumns();
+          });
         });
       });
-      setTimeout(function(){
-        adjustColumns();
-      }, 1000);
       setInterval(function(){
         if(typeof now.WriteWysiwygTopology == 'function')
         {
@@ -1890,8 +2083,7 @@ block content
             span Drag highlighted node in left bar onto Canvas
           br
     br
-    div(style='margin-left: 152px')
-      button.selectedTab#bnodeCanvasEth0(onclick='changeTab("nodeCanvaseth0")') eth0
+    div(id='tabDock', style='margin-left: 152px')
     div#modalDialog(title='Split Nodes')
       div#rangeDiv
       button#splitAccept
@@ -1953,8 +2145,7 @@ block content
         br
         div#dragMe(class='notDraggableYet')
           header#setNumNodes
-      div#eth0tab(onclick='clearSelectedCanvas()')
-        div.canvas#nodeCanvaseth0(class='sameHeight')
+      div#canvasContainer
       div#nodeContextMenu
         div#deleteNodes Delete Selected
         div#mergeNodes Merge Selected
