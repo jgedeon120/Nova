@@ -61,7 +61,6 @@ block headerAdditions
       cursor: pointer;
     }
     
-  script(type='text/javascript', src='scripts/jquery.ui.selectable.js')
   script(type='text/javascript', src='https://flexicontent.googlecode.com/svn-history/r1517/trunk/com_flexicontent_v2.x/site/librairies/fancybox/lib/jquery.mousewheel-3.0.6.pack.js')
   script
     window.jQuery.mousewheel || document.write('<script type="text/javascript" src="scripts/jquery-mousewheel.min.js"><\\/script>');
@@ -203,7 +202,7 @@ block headerAdditions
                 }
               }
               
-              var pointerCss = {top:($(source).position().top + $(source).height() - 5),
+              var pointerCss = {top:($(source).position().top + $(source).height() - 3),
                                 left:($(source).position().left + $(source).outerWidth() + 10)};
               $profileInfo.css(pointerCss).fadeIn(200);
             });
@@ -1340,7 +1339,6 @@ block headerAdditions
     {
       var droppableOptions = {accept:'.ui-draggable'};
       topo
-        .css('width', '1')
         .selectable({appendTo:'#' + topo.attr('id'),
                      distance:30,
                      cancel:'.canvasElement',
@@ -1369,7 +1367,7 @@ block headerAdditions
             handleCanvasEleHover(e);
           });
         })
-        .mousewheel(function(e, delta){
+        /*.mousewheel(function(e, delta){
           $('.canvasElement').each(function(){
             var d = parseInt(delta);
             var bWidth = isNaN(parseInt($(this).css('border-width'))) ? 0 
@@ -1388,7 +1386,7 @@ block headerAdditions
               $(this).css(zoom).css('background-size', bgSize);
             }
           });
-        })
+        })*/
         .mousedown(function(e){
           var evt = (e ? e : window.event);
           var source = evt.target || evt.srcElement;
@@ -1764,6 +1762,11 @@ block headerAdditions
         hide: 200
       })
       
+      var fix = $('#pageWrap')[0];
+      fix = fix.parentNode;
+      fix = $(fix);
+      fix.css('height', '100%');
+      
       $(document).keydown(function(e){
         if(e.keyCode == 46)
         {
@@ -1779,10 +1782,12 @@ block headerAdditions
               
         repopulateNodeCanvas(function(){
           prepopulateCanvasWithNodes();
+          handleOffscreenIndicators();
         });
       });
-      setTimeout(function(){adjustColumns();}, 1000);
-      // TODO: Make setInterval interval value configurable
+      setTimeout(function(){
+        adjustColumns();
+      }, 1000);
       setInterval(function(){
         if(typeof now.WriteWysiwygTopology == 'function')
         {
@@ -1799,6 +1804,8 @@ block headerAdditions
     
     $(window).resize(function(){
       handleOffscreenIndicators();
+      var $sameHeightDivs = $('.sameHeight');
+      $sameHeightDivs.css({height:'auto'});
       adjustColumns();
     });
     $(window).keydown(function(event){
@@ -1825,7 +1832,7 @@ block headerAdditions
       if(typeof now.WriteWysiwygTopology == 'function')
       {
         now.WriteWysiwygTopology(nodeTopology, function(){
-          console.log('WriteWysiwygTopology finished');
+          console.log('onUnload WriteWysiwygTopology finished');
         });
       }
       else

@@ -91,8 +91,9 @@
   border-top: 2px solid #769DC0;
   border-bottom: 2px solid #769DC0;
   border-right: 1px solid #769DC0;
-  box-shadow: 0 0 2px 2px #888;
   float: left;
+  margin-left: auto;
+  margin-right: auto;
   background-color: #E4F2FF;
   text-align: center;
   min-height: 80%;
@@ -106,6 +107,7 @@
 #container {
   height: 100%;
   width: 100%;
+  border-radius: 5px;
   display: inline-block;
   overflow-y: hidden;
 }
@@ -268,7 +270,7 @@
   width: auto;
   min-height: 80%;
   height: auto;
-  margin-right: 10px;
+  margin-right: auto;
   margin-bottom: 0px;
   box-shadow: 0px 0px 5px 5px #E4F2FF inset;
   background:url(data:image/gif;base64,R0lGODlhFAAUAIAAAMDAwP///yH5BAEAAAEALAAAAAAUABQAAAImhI+pwe3vAJxQ0hssnnq/7jVgmJGfGaGiyoyh68GbjNGXTeEcGxQAOw==) fixed;

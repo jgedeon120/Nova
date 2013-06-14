@@ -3800,10 +3800,11 @@ $.widget("ui.selectable", $.ui.mouse, {
 		this._trigger("start", event);
 
 		$(options.appendTo).append(this.helper);
+		
 		// position helper (lasso)
 		this.helper.css({
-			"left": event.pageX,
-			"top": event.pageY,
+      "left": event.pageX - $(options.appendTo).offset().left,
+      "top": event.pageY - $(options.appendTo).offset().top,
 			"width": 0,
 			"height": 0
 		});
@@ -3872,7 +3873,7 @@ $.widget("ui.selectable", $.ui.mouse, {
 
 		if (x1 > x2) { tmp = x2; x2 = x1; x1 = tmp; }
 		if (y1 > y2) { tmp = y2; y2 = y1; y1 = tmp; }
-		this.helper.css({left: x1, top: y1, width: x2-x1, height: y2-y1});
+		this.helper.css({left: x1-$(options.appendTo).offset().left, top: y1-$(options.appendTo).offset().top, width: x2-x1, height: y2-y1});
 
 		this.selectees.each(function() {
 			var selectee = $.data(this, "selectable-item"),
