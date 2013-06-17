@@ -279,7 +279,8 @@ block headerAdditions
       });
       if((typeof now.GetConfigSummary == 'function') && (typeof now.WriteWysiwygTopology == 'function'))
       { 
-        console.log('WriteWysiwygTopology finished');
+        console.log('In if for repopulateNodeCanvas');
+        console.log("currentConfig == " + currentConfig);
         now.GetConfigSummary(currentConfig, function(scriptProfileBindings, profileObj, profiles, nodes){
           var profHook = $('#profilesHook');
           profHook.empty();
@@ -287,6 +288,8 @@ block headerAdditions
           for(var i in profileObj)
           {
             var profile = {};
+            console.log('name == ' + profileObj[i].name);
+            console.log('parent == ' + profileObj[i].parent);
             profile.name = profileObj[i].name;
             profile.parent = profileObj[i].parent;
             profile.children = [];

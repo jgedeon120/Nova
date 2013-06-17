@@ -242,10 +242,10 @@
 
 .middle {
   border-top: 1px dashed;
-  border-bottom: 1px dashed;
 }
 
 .last {
+  border-top: 1px dashed;
   border-bottom: 2px solid #000;
 }
 
