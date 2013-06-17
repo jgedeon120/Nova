@@ -61,9 +61,9 @@ block headerAdditions
       cursor: pointer;
     }
     
-  script(type='text/javascript', src='https://flexicontent.googlecode.com/svn-history/r1517/trunk/com_flexicontent_v2.x/site/librairies/fancybox/lib/jquery.mousewheel-3.0.6.pack.js')
+  //script(type='text/javascript', src='https://flexicontent.googlecode.com/svn-history/r1517/trunk/com_flexicontent_v2.x/site/librairies/fancybox/lib/jquery.mousewheel-3.0.6.pack.js')
   script
-    window.jQuery.mousewheel || document.write('<script type="text/javascript" src="scripts/jquery-mousewheel.min.js"><\\/script>');
+    //window.jQuery.mousewheel || document.write('<script type="text/javascript" src="scripts/jquery-mousewheel.min.js"><\\/script>');
     var configurationList = !{JSON.stringify(configurations)};
     var nodeList = !{JSON.stringify(nodes)};
     var interfaces = !{JSON.stringify(interfaces)};
@@ -91,6 +91,19 @@ block headerAdditions
     var noclick = false;
     var hoverhold = false;
     var group = {type:'DHCP', iface:'eth0'};
+    
+    jQuery.expr[':'].regex = function(elem, index, match) {
+      var matchParams = match[3].split(','),
+      validLabels = /^(data|css):/,
+      attr = {
+          method: matchParams[0].match(validLabels) ? 
+                      matchParams[0].split(':')[0] : 'attr',
+          property: matchParams.shift().replace(validLabels,'')
+      },
+      regexFlags = 'ig',
+      regex = new RegExp(matchParams.join('').replace(/^\s+|\s+$/g,''), regexFlags);
+      return regex.test(jQuery(elem)[attr.method](attr.property));
+    }
     
     function setUpSelects()
     {
@@ -277,6 +290,9 @@ block headerAdditions
       $('.canvasElement').each(function(){
         $(this).remove();
       });
+      $(':regex(class, ^[.*osi.*])').each(function(){
+        $(this).remove();
+      });
       if((typeof now.GetConfigSummary == 'function') && (typeof now.WriteWysiwygTopology == 'function'))
       { 
         now.GetConfigSummary(currentConfig, function(scriptProfileBindings, profileObj, profiles, nodes){
@@ -303,6 +319,7 @@ block headerAdditions
           }
           profHook.find('td').last().toggleClass('last');
           
+          //handleOffscreenIndicators();
           cb && cb();
         });
       }
@@ -919,8 +936,6 @@ block headerAdditions
                 {
                   if(nodeList[i].ip == 'DHCP')
                   {
-                    //div#eth0tab(onclick='clearSelectedCanvas()')
-                    //  div.canvas#nodeCanvaseth0(class='sameHeight')
                     if($('#' + nodeList[i].interface + 'tab').length == 0)
                     {
                       var tab = document.createElement('button');
@@ -1009,8 +1024,6 @@ block headerAdditions
                 haveMac.push(nodeList[i].mac);
                 if(nodeList[i].ip == 'DHCP')
                 {
-                  //div#eth0tab(onclick='clearSelectedCanvas()')
-                  //  div.canvas#nodeCanvaseth0(class='sameHeight')
                   if($('#' + nodeList[i].interface + 'tab').length == 0)
                   {
                     var tab = document.createElement('button');
@@ -1991,7 +2004,7 @@ block headerAdditions
       fix = fix.parentNode;
       fix = $(fix);
       fix.css('height', '100%');
-      
+         
       $(document).keydown(function(e){
         if(e.keyCode == 46)
         {
