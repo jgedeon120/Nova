@@ -71,6 +71,7 @@ block headerAdditions
     var theDoc = document;
     var haveMac = [];
     var nodes = {};
+    var configIfaces = {};
     var $topology = '';
     var $dragMe = '';
     var $hoverInfo = '';
@@ -290,7 +291,7 @@ block headerAdditions
       $('.canvasElement').each(function(){
         $(this).remove();
       });
-      $(':regex(class, ^[.*osi.*])').each(function(){
+      $('div.canvas div:regex(id, ^[0-9]?osi[blt]?$)').each(function(){
         $(this).remove();
       });
       if((typeof now.GetConfigSummary == 'function') && (typeof now.WriteWysiwygTopology == 'function'))
@@ -319,7 +320,6 @@ block headerAdditions
           }
           profHook.find('td').last().toggleClass('last');
           
-          //handleOffscreenIndicators();
           cb && cb();
         });
       }
@@ -407,13 +407,7 @@ block headerAdditions
           
           if(nodeTopology[id].ip != 'DHCP')
           {
-            var address = '';
-            for(var i in nodeTopology[id].ip)
-            {
-              address += nodeTopology[id].ip[i] + '.';
-            }
-            address = address.substring(0, address.length - 1);
-            $hAddress.html('IP Range starting at: ' + address);
+            $hAddress.html('IP Range starting at: ' + nodeTopology[id].ip);
           }
           else
           {
@@ -554,13 +548,15 @@ block headerAdditions
     
     function changeTab(e)
     {
-      console.log('changeTab called');
-      now.WriteWysiwygTopology(function(){
-        console.log('in WriteWysiwyg Topology callback');
-        $topology.fadeOut(400);
+      now.WriteWysiwygTopology(nodeTopology, function(){
+        $('#b' + $topology.attr('id')).removeClass('selectedTab').addClass('unselectedTab');
+        clearTopoListeners($topology);
+        $('#b' + e).removeClass('unselectedTab').addClass('selectedTab');
+        $topology.css({'display':'none'});
         $topology = $('#' + e);
         appendTopoListeners($topology);
-        $topology.fadeIn(400);
+        $topology.css({'display':'block'});
+        handleOffscreenIndicators();
       });
     }
     
@@ -857,11 +853,46 @@ block headerAdditions
       return undefined;
     }
     
+    function generateTab(iface)
+    {
+      if($('#bnodeCanvas' + iface).length != 0)
+      {
+        return;
+      }
+      var tab = document.createElement('button');
+      tab.className = 'unselectedTab';
+      tab.id = 'bnodeCanvas' + iface;
+      tab.setAttribute('onclick', 'changeTab("nodeCanvas' + iface + '")');
+      tab.innerHTML = iface;
+      if($('.selectedTab').length == 0)
+      {
+        tab.className = 'selectedTab';
+      }
+      $('#tabDock').append(tab);
+    }
+    
+    function regenTabDock()
+    {
+      $('#tabDock').empty();
+      console.log('cfgIf == ' + configIfaces[currentConfig]);
+      for(var i in configIfaces[currentConfig])
+      {
+        console.log('configIfaces[' + currentConfig + '] == ' + configIfaces[currentConfig]);
+        generateTab(configIfaces[currentConfig][i]);
+      }
+    }
+    
     function prepopulateCanvasWithNodes(cb)
     {
       var xEleCount = 0;
       var yEleCount = 0;
       var eleCountUpdate = {};
+      console.log('currentConfig == ' + currentConfig);
+      if(configIfaces[currentConfig] == undefined)
+      {
+        console.log('setting to [] with currentConfig == ' + currentConfig);
+        configIfaces[currentConfig] = [];
+      }
       
       if(typeof now.ReadWysiwygTopology == 'function')
       {
@@ -872,25 +903,26 @@ block headerAdditions
             {
               if(topo[i].ip == 'DHCP')
               {
+                console.log('topo[i].iface == ' + topo[i].iface);
+                if(configIfaces[currentConfig].indexOf(topo[i].iface) == -1)
+                {
+                  console.log('adding ' + topo[i].iface + ' to currentConfig index');
+                  configIfaces[currentConfig].push(topo[i].iface);  
+                }
                 if($('#' + topo[i].iface + 'tab').length == 0)
                 {
-                  var tab = document.createElement('button');
-                  tab.className = 'unselectedTab';
-                  tab.id = 'bnodeCanvas' + topo[i].iface;
-                  tab.setAttribute('onclick', 'changeTab("nodeCanvas' + topo[i].iface + '")');
-                  tab.innerHTML = topo[i].iface;
-                  $('#tabDock').append(tab);
                   var tabDiv = document.createElement('div');
                   tabDiv.id = topo[i].iface + 'tab';
                   tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
                   var canvasDiv = document.createElement('div');
                   canvasDiv.id = 'nodeCanvas' + topo[i].iface;
+                  canvasDiv.style.display = 'none';
                   canvasDiv.className = 'canvas sameHeight';
                   tabDiv.appendChild(canvasDiv);
                   $topoHook.append(tabDiv);
                   if($topology == '')
                   {
-                    tab.className = 'selectedTab';
+                    canvasDiv.style.display = 'block';
                     $topology = $(canvasDiv);
                   }
                 }
@@ -898,25 +930,24 @@ block headerAdditions
               }
               else
               {
+                if(configIfaces[currentConfig].indexOf('static') == -1)
+                {
+                  configIfaces[currentConfig].push('static');  
+                }
                 if($('#statictab').length == 0)
                 {
-                  var tab = document.createElement('button');
-                  tab.className = 'unselectedTab';
-                  tab.id = 'bnodeCanvasstatic';
-                  tab.setAttribute('onclick', 'changeTab("nodeCanvasstatic")');
-                  tab.innerHTML = 'Static';
-                  $('#tabDock').append(tab);
                   var tabDiv = document.createElement('div');
                   tabDiv.id = 'statictab';
                   tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
                   var canvasDiv = document.createElement('div');
-                  canvasDiv.id = 'novaCanvasstatic';
+                  canvasDiv.id = 'nodeCanvasstatic';
+                  canvasDiv.style.display = 'none';
                   canvasDiv.className = 'canvas sameHeight';
                   tabDiv.appendChild(canvasDiv);
                   $topoHook.append(tabDiv);
                   if($topology == '')
                   {
-                    tab.className = 'selectedTab';
+                    canvasDiv.style.display = 'block';
                     $topology = $(canvasDiv);
                   }
                 }
@@ -924,6 +955,7 @@ block headerAdditions
               }
             }
             handleOffscreenIndicators();
+            regenTabDock();
             cb && cb();
           }
           else
@@ -936,50 +968,49 @@ block headerAdditions
                 {
                   if(nodeList[i].ip == 'DHCP')
                   {
+                    if(configIfaces[currentConfig].indexOf(nodeList[i].interface) == -1)
+                    {
+                      console.log('adding ' + nodeList[i].interface + ' to currentConfig index');
+                      configIfaces[currentConfig].push(nodeList[i].interface);  
+                    }
                     if($('#' + nodeList[i].interface + 'tab').length == 0)
                     {
-                      var tab = document.createElement('button');
-                      tab.className = 'unselectedTab';
-                      tab.id = 'bnodeCanvas' + nodeList[i].interface;
-                      tab.setAttribute('onclick', 'changeTab("nodeCanvas' + nodeList[i].interface + '")');
-                      tab.innerHTML = nodeList[i].interface;
-                      $('#tabDock').append(tab);
                       var tabDiv = document.createElement('div');
                       tabDiv.id = nodeList[i].interface + 'tab';
                       tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
                       var canvasDiv = document.createElement('div');
                       canvasDiv.id = 'nodeCanvas' + nodeList[i].interface;
+                      canvasDiv.style.display = 'none';
                       canvasDiv.className = 'canvas sameHeight';
                       tabDiv.appendChild(canvasDiv);
                       $topoHook.append(tabDiv);
                       if($topology == '')
                       {
-                        tab.className = 'selectedTab';
+                        canvasDiv.style.display = 'block';
                         $topology = $(canvasDiv);
                       }
                     }
                   }
                   else
                   {
+                    if(configIfaces[currentConfig].indexOf('static') == -1)
+                    {
+                      configIfaces[currentConfig].push('static');  
+                    }
                     if($('#statictab').length == 0)
                     {
-                      var tab = document.createElement('button');
-                      tab.className = 'unselectedTab';
-                      tab.id = 'bnodeCanvasstatic';
-                      tab.setAttribute('onclick', 'changeTab("nodeCanvasstatic")');
-                      tab.innerHTML = 'Static';
-                      $('#tabDock').append(tab);
                       var tabDiv = document.createElement('div');
                       tabDiv.id = 'statictab';
                       tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
                       var canvasDiv = document.createElement('div');
-                      canvasDiv.id = 'novaCanvasstatic';
+                      canvasDiv.id = 'nodeCanvasstatic';
+                      canvasDiv.style.display = 'none';
                       canvasDiv.className = 'canvas sameHeight';
                       tabDiv.appendChild(canvasDiv);
                       $topoHook.append(tabDiv);
                       if($topology == '')
                       {
-                        tab.className = 'selectedTab';
+                        canvasDiv.style.display = 'block';
                         $topology = $(canvasDiv);
                       }
                     }
@@ -1014,6 +1045,7 @@ block headerAdditions
                 }
                 nodeCount = {};
                 handleOffscreenIndicators();
+                regenTabDock();
                 cb && cb();
               });
             }
@@ -1024,50 +1056,49 @@ block headerAdditions
                 haveMac.push(nodeList[i].mac);
                 if(nodeList[i].ip == 'DHCP')
                 {
+                  if(configIfaces[currentConfig].indexOf(nodeList[i].interface) == -1)
+                  {
+                    console.log('adding ' + nodeList[i].interface + ' to currentConfig index');
+                    configIfaces[currentConfig].push(nodeList[i].interface);  
+                  }
                   if($('#' + nodeList[i].interface + 'tab').length == 0)
                   {
-                    var tab = document.createElement('button');
-                    tab.className = 'unselectedTab';
-                    tab.id = 'bnodeCanvas' + nodeList[i].interface;
-                    tab.setAttribute('onclick', 'changeTab("nodeCanvas' + nodeList[i].interface + '")');
-                    tab.innerHTML = nodeList[i].interface;
-                    $('#tabDock').append(tab);
                     var tabDiv = document.createElement('div');
                     tabDiv.id = nodeList[i].interface + 'tab';
                     tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
                     var canvasDiv = document.createElement('div');
                     canvasDiv.id = 'nodeCanvas' + nodeList[i].interface;
+                    canvasDiv.style.display = 'none';
                     canvasDiv.className = 'canvas sameHeight';
                     tabDiv.appendChild(canvasDiv);
                     $topoHook.append(tabDiv);
                     if($topology == '')
                     {
-                      tab.className = 'selectedTab';
+                      canvasDiv.style.display = 'block';
                       $topology = $(canvasDiv);
                     }
                   }
                 }
                 else
                 {
+                  if(configIfaces[currentConfig].indexOf('static') == -1)
+                  {
+                    configIfaces[currentConfig].push('static');  
+                  }
                   if($('#statictab').length == 0)
                   {
-                    var tab = document.createElement('button');
-                    tab.className = 'unselectedTab';
-                    tab.id = 'bnodeCanvasstatic';
-                    tab.setAttribute('onclick', 'changeTab("nodeCanvasstatic")');
-                    tab.innerHTML = 'Static';
-                    $('#tabDock').append(tab);
                     var tabDiv = document.createElement('div');
                     tabDiv.id = 'statictab';
                     tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
                     var canvasDiv = document.createElement('div');
-                    canvasDiv.id = 'novaCanvasstatic';
+                    canvasDiv.id = 'nodeCanvasstatic';
+                    canvasDiv.style.display = 'none';
                     canvasDiv.className = 'canvas sameHeight';
                     tabDiv.appendChild(canvasDiv);
                     $topoHook.append(tabDiv);
                     if($topology == '')
                     {
-                      tab.className = 'selectedTab';
+                      canvasDiv.style.display = 'block';
                       $topology = $(canvasDiv);
                     }                
                   }
@@ -1101,6 +1132,7 @@ block headerAdditions
               }
               nodeCount = {};
               handleOffscreenIndicators();
+              regenTabDock();
               cb && cb();
             }
           }
@@ -1572,6 +1604,16 @@ block headerAdditions
       $contextMenu.fadeOut(100);
     }
     
+    function clearTopoListeners(topo)
+    {
+      topo.off('mouseup')
+          .off('mousedown')
+          .off('mousemove')
+          .off('mouseout')
+          .selectable('destroy')
+          .droppable('destroy');
+    }
+    
     function appendTopoListeners(topo)
     {
       var droppableOptions = {accept:'.ui-draggable'};
@@ -1852,7 +1894,7 @@ block headerAdditions
         var vendor = nodeTopology[hoverNode].vendor;
         var ethInterface = nodeTopology[hoverNode].iface;
         var count = delta;
-        now.createHoneydNodes(ipType, ip.ip1, ip.ip2, ip.ip2, ip.ip3, profile, portset, vendor, ethInterface, count);
+        now.createHoneydNodes(ipType, ip.ip1, ip.ip2, ip.ip3, ip.ip4, profile, portset, vendor, ethInterface, count);
         nodes = [];
         var setMAC = [];
         
