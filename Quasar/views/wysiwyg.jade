@@ -61,9 +61,7 @@ block headerAdditions
       cursor: pointer;
     }
     
-  //script(type='text/javascript', src='https://flexicontent.googlecode.com/svn-history/r1517/trunk/com_flexicontent_v2.x/site/librairies/fancybox/lib/jquery.mousewheel-3.0.6.pack.js')
   script
-    //window.jQuery.mousewheel || document.write('<script type="text/javascript" src="scripts/jquery-mousewheel.min.js"><\\/script>');
     var configurationList = !{JSON.stringify(configurations)};
     var nodeList = !{JSON.stringify(nodes)};
     var interfaces = !{JSON.stringify(interfaces)};
@@ -74,7 +72,7 @@ block headerAdditions
     var configIfaces = {};
     var $topology = '';
     var $dragMe = '';
-    var $hoverInfo = '';
+    var $slideInfo = '';
     var $profileInfo = '';
     var $context = '';
     var $modalSplit = '';
@@ -235,7 +233,7 @@ block headerAdditions
       {
         if(e == undefined)
         {
-          $profileInfo.stop().fadeOut(100);
+          $profileInfo.stop(true).fadeOut(100);
           return;
         }
         var evt = (e ? e : window.event);
@@ -246,7 +244,7 @@ block headerAdditions
         }
         else
         {
-          $profileInfo.stop().fadeOut(100);
+          $profileInfo.stop(true).fadeOut(100);
         }
       }
     }
@@ -264,7 +262,7 @@ block headerAdditions
         $(source).css('background-color', '');
         selectedProfile = undefined;
         clicked = false;
-        $profileInfo.stop().fadeOut(100);
+        $profileInfo.stop(true).fadeOut(100);
         return;
       }
       $(source).css('background-color', '#E8A02F');
@@ -386,10 +384,7 @@ block headerAdditions
         {
           return;
         }
-        var hoverInfoCss = {top:($(source).position().top + $topology.position().top + 5),
-                            left:(($(source).position().left + $topology.position().left + $(source).outerWidth()))};
         var titleCss = {'font-weight':'bold', 'font-size':'18px'};
-        
         var $hName = $('#hoverName').css(titleCss).html($(source).data('profile'));
         var $hPortset = $('#hoverPortset').html('');
         var $hVendor = $('#hoverVendor').html('');
@@ -444,16 +439,16 @@ block headerAdditions
         
         if(fadeEleIn)
         {
-          $hoverInfo.css(hoverInfoCss).stop().fadeIn(200, function(){
-            fadeEleIn = false;
-          });
+          $slideInfo.stop(true).show('slide', {direction:'right'}, 200);
+          fadeEleIn = false;
         }
       }
       else if(e.type == 'mouseleave')
       {
         if(!hoverhold)
         {
-          $hoverInfo.stop().fadeOut(200, function(){
+          $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+            $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
             fadeEleIn = true;
           });
         }
@@ -464,14 +459,13 @@ block headerAdditions
         var source = evt.target || evt.srcElement;
         if(source.id.indexOf('delete') == -1)
         {
-          $hoverInfo.stop().fadeIn(200);
+          $slideInfo.stop(true).show('slide', {direction:'right'}, 200);
         }
       }
       else if(e.type == 'drag')
       {
-        $hoverInfo.fadeOut(100, function(){
-          fadeEleIn = true;
-        });
+        $slideInfo.hide('slide', {direction:'right'}, 200);
+        fadeEleIn = true;
         $contextMenu.fadeOut(100);
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
@@ -496,11 +490,7 @@ block headerAdditions
       else if(e.type == 'dragstop')
       {
         hoverhold = false;
-        var evt = (e ? e : window.event);
-        var source = evt.target || evt.srcElement;
-        var hoverInfoCss = {top:($(source).position().top + $topology.position().top + 5),
-                            left:(($(source).position().left + $topology.position().left + $(source).outerWidth()))};
-        $hoverInfo.css(hoverInfoCss).fadeIn(200);
+        $slideInfo.stop(true).show('slide', {direction:'right'}, 200);
       }
     }
     
@@ -533,9 +523,7 @@ block headerAdditions
         {
           $(source).css('border', '1px ridge red').addClass('ui-selected');
           selected.push(source);
-          var hoverInfoCss = {top:($(source).position().top + $topology.position().top + 5),
-                              left:(($(source).position().left + $topology.position().left + $(source).outerWidth()))};
-          $hoverInfo.css(hoverInfoCss).stop().fadeIn(200);
+          $slideInfo.stop(true).show('slide', {direction:'right'}, 200);
           hoverNode = source.id;
           hoverhold = true;
         }
@@ -565,7 +553,13 @@ block headerAdditions
       e.stopImmediatePropagation();
       delete nodeTopology[source];
       $('#' + source).remove();
-      $hoverInfo.stop().fadeOut(100);
+      if(hoverNode == source.id)
+      {
+        $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+          $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
+          fadeEleIn = true;
+        });
+      }
     }
     
     function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitData)
@@ -628,7 +622,7 @@ block headerAdditions
       var text = theDoc.createElement('label');
       text.innerHTML = nodeObj.count;
       text.style.fontSize = '18px';
-      text.style.float = 'left';
+      text.style.cssFloat = 'left';
       text.style.borderRight = '1px solid black';
       text.style.backgroundColor = '#F1CC91';
       text.id = eleCount + 'text';
@@ -637,7 +631,7 @@ block headerAdditions
       var deleteMe = theDoc.createElement('label');
       deleteMe.innerHTML = 'X';
       deleteMe.style.fontSize = '18px';
-      deleteMe.style.float = 'right';
+      deleteMe.style.cssFloat = 'right';
       deleteMe.style.borderLeft = '1px solid black';
       deleteMe.style.backgroundColor = 'red';
       deleteMe.setAttribute('onclick', 'deleteCanvasEleClick(event, ' + eleCount + ')');
@@ -887,10 +881,9 @@ block headerAdditions
       var xEleCount = 0;
       var yEleCount = 0;
       var eleCountUpdate = {};
-      console.log('currentConfig == ' + currentConfig);
+
       if(configIfaces[currentConfig] == undefined)
       {
-        console.log('setting to [] with currentConfig == ' + currentConfig);
         configIfaces[currentConfig] = [];
       }
       
@@ -903,10 +896,9 @@ block headerAdditions
             {
               if(topo[i].ip == 'DHCP')
               {
-                console.log('topo[i].iface == ' + topo[i].iface);
                 if(configIfaces[currentConfig].indexOf(topo[i].iface) == -1)
                 {
-                  console.log('adding ' + topo[i].iface + ' to currentConfig index');
+
                   configIfaces[currentConfig].push(topo[i].iface);  
                 }
                 if($('#' + topo[i].iface + 'tab').length == 0)
@@ -1394,14 +1386,20 @@ block headerAdditions
         })
         .on('contextmenu', function(e){
           e.preventDefault();
-          $hoverInfo.stop().fadeOut(100);
+          $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+            $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
+            fadeEleIn = true;
+          });
           toggleContextMenu(e);
         });
     }
     
     function toggleContextMenu(e)
     {
-      $hoverInfo.stop().fadeOut(100);
+      $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+        $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
+        fadeEleIn = true;
+      });
       
       var evt = (e ? e : window.event);
       var source = evt.target || evt.srcElement;
@@ -1677,11 +1675,14 @@ block headerAdditions
             oldY = e.clientY;
             $topology.off('mouseenter');
           }
-          else if((e.which == 1) && !$hoverInfo.is(':hidden') 
+          else if((e.which == 1) && !$slideInfo.is(':hidden') 
           && ($(source).attr('class') != undefined) 
           && ($(source).attr('class').indexOf('canvasElement') == -1))
           {
-            $hoverInfo.stop().fadeOut(100);
+            $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+              $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
+              fadeEleIn = true;
+            });
             $('.ui-selected').each(function(){
               $(this).removeClass('ui-selected').css('border', '');
             });
@@ -1869,7 +1870,10 @@ block headerAdditions
       {
         alert('Cannot change a node amount to a negative value!');
         $('#' + hoverNode).removeClass('ui-selected');
-        $hoverInfo.stop().fadeOut(100);
+        $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+          $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
+          fadeEleIn = true;
+        });
         return;
       }
       var delta = newValue - oldValue;
@@ -1968,7 +1972,10 @@ block headerAdditions
       }
       hoverhold = false;
       $('#' + hoverNode).removeClass('ui-selected').css('border', '');
-      $hoverInfo.stop().fadeOut(100);
+      $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+        $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
+        fadeEleIn = true;
+      });
     }
     
     function handleHelpPaneSlide()
@@ -2000,7 +2007,10 @@ block headerAdditions
       });
       
       $contextMenu.fadeOut(100);
-      $hoverInfo.stop().fadeOut(100);
+      $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+        $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
+        fadeEleIn = true;
+      });
       
       now.deleteNodes(deleteNodes);
     }
@@ -2016,13 +2026,19 @@ block headerAdditions
         handleCanvasEleHover(e);
       });
       $contextMenu.fadeOut(100);
+      $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+        $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
+        fadeEleIn = true;
+      });
+      fadeEleIn = true;
+      hoverhold = false;
       selected = [];
     }
     
     $(function(){
       $dragMe = $('#dragMe');
-      $hoverInfo = $('#hoverInfo');
-      $hoverInfo.hide();
+      $slideInfo = $('#slideInfo');
+      $slideInfo.hide();
       $profileInfo = $('#profileInfo');
       $profileInfo.hide();
       $contextMenu = $('#nodeContextMenu');
@@ -2057,6 +2073,8 @@ block headerAdditions
       now.ready(function(){
         setUpSelects();
         updateDragHeader();
+              
+        $('#slideInfo').hide();
               
         repopulateNodeCanvas(function(){
           prepopulateCanvasWithNodes(function(){
@@ -2231,31 +2249,38 @@ block content
         div#dragMe(class='notDraggableYet')
           header#setNumNodes
       div#canvasContainer
+        div#slideInfo(class='sameHeight')
+          div#pres
+            h1 Click Node to Edit:
+            label#hoverName
+            br
+            br
+            label Port Set: 
+            br
+            div#hoverPortset
+            br
+            label Ethernet Vendor:
+            br 
+            div#hoverVendor
+            br
+            label Ethernet Interface:
+            br 
+            div#hoverInterface
+            br
+            label Ip Address Type: 
+            br
+            div#hoverAddress
+            br
+            label New Amount Value:
+            br
+            input#changeCount(type='number', min='0', step='1')
+            br
+            button#updateCount(onclick='updateCount()')
+              img.buttonIcon(src='images/start.png', alt='Confirm button image')
+              span.buttonSpan Update Node Amount
       div#nodeContextMenu
         div#deleteNodes Delete Selected
         div#mergeNodes Merge Selected
         div#splitNodes Split Selected
-      div#hoverInfo
-        div#pres
-          label#hoverName
-          br
-          br
-          label Port Set: 
-          div#hoverPortset
-          br
-          label Ethernet Vendor: 
-          div#hoverVendor
-          br
-          label Ethernet Interface: 
-          div#hoverInterface
-          br
-          label Ip Address Allocation Type: 
-          div#hoverAddress
-          br
-          label New Amount Value:
-          input#changeCount(type='number', min='0', step='1')
-          br
-          button#updateCount(onclick='updateCount()')
-            img.buttonIcon(src='images/start.png', alt='Confirm button image')
-            span.buttonSpan Update Node Amount
+        
             
