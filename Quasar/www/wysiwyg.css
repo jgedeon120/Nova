@@ -318,13 +318,15 @@
 #slideInfo {
   position: absolute;
   z-index: 2001;
+  overflow: hidden;
   border-left: 2px solid #769DC0;
   border-top-right-radius: 10px;
   border-bottom-right-radius: 10px;
-  background-color: #769DC0;
+  background-color: #E4F2FF;
   float: left;
   right: 0px;
   margin-top: 2px;
+  margin-right: 2px;
 }
 
 .offscreenIndicatorRight {

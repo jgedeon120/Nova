@@ -437,7 +437,7 @@ block headerAdditions
           }
         }
         
-        if(fadeEleIn)
+        if(fadeEleIn || !$slideInfo.is(':hidden'))
         {
           $slideInfo.stop(true).show('slide', {direction:'right'}, 200);
           fadeEleIn = false;
@@ -445,9 +445,10 @@ block headerAdditions
       }
       else if(e.type == 'mouseleave')
       {
+        
         if(!hoverhold)
         {
-          $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+          $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
             $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
             fadeEleIn = true;
           });
@@ -555,7 +556,7 @@ block headerAdditions
       $('#' + source).remove();
       if(hoverNode == source.id)
       {
-        $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+        $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
           $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
           fadeEleIn = true;
         });
@@ -1386,7 +1387,7 @@ block headerAdditions
         })
         .on('contextmenu', function(e){
           e.preventDefault();
-          $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+          $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
             $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
             fadeEleIn = true;
           });
@@ -1396,7 +1397,7 @@ block headerAdditions
     
     function toggleContextMenu(e)
     {
-      $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+      $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
         $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
         fadeEleIn = true;
       });
@@ -1679,7 +1680,7 @@ block headerAdditions
           && ($(source).attr('class') != undefined) 
           && ($(source).attr('class').indexOf('canvasElement') == -1))
           {
-            $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+            $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
               $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
               fadeEleIn = true;
             });
@@ -1870,7 +1871,7 @@ block headerAdditions
       {
         alert('Cannot change a node amount to a negative value!');
         $('#' + hoverNode).removeClass('ui-selected');
-        $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+        $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
           $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
           fadeEleIn = true;
         });
@@ -1972,7 +1973,7 @@ block headerAdditions
       }
       hoverhold = false;
       $('#' + hoverNode).removeClass('ui-selected').css('border', '');
-      $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+      $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
         $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
         fadeEleIn = true;
       });
@@ -2007,7 +2008,7 @@ block headerAdditions
       });
       
       $contextMenu.fadeOut(100);
-      $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+      $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
         $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
         fadeEleIn = true;
       });
@@ -2026,7 +2027,7 @@ block headerAdditions
         handleCanvasEleHover(e);
       });
       $contextMenu.fadeOut(100);
-      $slideInfo.stop(true).hide('slide', {direction:'right'}, 200, function(){
+      $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
         $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
         fadeEleIn = true;
       });
