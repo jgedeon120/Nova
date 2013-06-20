@@ -380,7 +380,7 @@ block headerAdditions
       {
         var evt = (e ? e : window.event);
         var source = evt.target || evt.srcElement;
-        if(source.id.indexOf('delete') != -1)
+        if(source.id.indexOf('delete') != -1 || hoverhold)
         {
           return;
         }
@@ -439,7 +439,7 @@ block headerAdditions
         
         if(fadeEleIn || !$slideInfo.is(':hidden'))
         {
-          $slideInfo.stop(true).show('slide', {direction:'right'}, 200);
+          $slideInfo.stop(true).show('slide', {direction:'right'}, 100);
           fadeEleIn = false;
         }
       }
@@ -448,7 +448,7 @@ block headerAdditions
         
         if(!hoverhold)
         {
-          $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
+          $slideInfo.stop(true).hide('slide', {direction:'right'}, 100, function(){
             $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
             fadeEleIn = true;
           });
@@ -460,12 +460,12 @@ block headerAdditions
         var source = evt.target || evt.srcElement;
         if(source.id.indexOf('delete') == -1)
         {
-          $slideInfo.stop(true).show('slide', {direction:'right'}, 200);
+          $slideInfo.stop(true).show('slide', {direction:'right'}, 100);
         }
       }
       else if(e.type == 'drag')
       {
-        $slideInfo.hide('slide', {direction:'right'}, 200);
+        $slideInfo.hide('slide', {direction:'right'}, 100);
         fadeEleIn = true;
         $contextMenu.fadeOut(100);
         var evt = (e ? e : window.event);
@@ -491,7 +491,7 @@ block headerAdditions
       else if(e.type == 'dragstop')
       {
         hoverhold = false;
-        $slideInfo.stop(true).show('slide', {direction:'right'}, 200);
+        $slideInfo.stop(true).show('slide', {direction:'right'}, 100);
       }
     }
     
@@ -524,7 +524,7 @@ block headerAdditions
         {
           $(source).css('border', '1px ridge red').addClass('ui-selected');
           selected.push(source);
-          $slideInfo.stop(true).show('slide', {direction:'right'}, 200);
+          $slideInfo.stop(true).show('slide', {direction:'right'}, 100);
           hoverNode = source.id;
           hoverhold = true;
         }
@@ -554,9 +554,11 @@ block headerAdditions
       e.stopImmediatePropagation();
       delete nodeTopology[source];
       $('#' + source).remove();
-      if(hoverNode == source.id)
+      console.log('source == ' + source);
+      console.log('hoverNode == ' + hoverNode);
+      if(hoverNode == source || hoverNode == undefined)
       {
-        $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
+        $slideInfo.stop(true).hide('slide', {direction:'right'}, 100, function(){
           $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
           fadeEleIn = true;
         });
@@ -1387,7 +1389,7 @@ block headerAdditions
         })
         .on('contextmenu', function(e){
           e.preventDefault();
-          $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
+          $slideInfo.stop(true).hide('slide', {direction:'right'}, 100, function(){
             $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
             fadeEleIn = true;
           });
@@ -1397,7 +1399,7 @@ block headerAdditions
     
     function toggleContextMenu(e)
     {
-      $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
+      $slideInfo.stop(true).hide('slide', {direction:'right'}, 100, function(){
         $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
         fadeEleIn = true;
       });
@@ -1680,7 +1682,7 @@ block headerAdditions
           && ($(source).attr('class') != undefined) 
           && ($(source).attr('class').indexOf('canvasElement') == -1))
           {
-            $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
+            $slideInfo.stop(true).hide('slide', {direction:'right'}, 100, function(){
               $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
               fadeEleIn = true;
             });
@@ -1871,7 +1873,7 @@ block headerAdditions
       {
         alert('Cannot change a node amount to a negative value!');
         $('#' + hoverNode).removeClass('ui-selected');
-        $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
+        $slideInfo.stop(true).hide('slide', {direction:'right'}, 100, function(){
           $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
           fadeEleIn = true;
         });
@@ -1973,7 +1975,7 @@ block headerAdditions
       }
       hoverhold = false;
       $('#' + hoverNode).removeClass('ui-selected').css('border', '');
-      $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
+      $slideInfo.stop(true).hide('slide', {direction:'right'}, 100, function(){
         $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
         fadeEleIn = true;
       });
@@ -2008,7 +2010,7 @@ block headerAdditions
       });
       
       $contextMenu.fadeOut(100);
-      $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
+      $slideInfo.stop(true).hide('slide', {direction:'right'}, 100, function(){
         $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
         fadeEleIn = true;
       });
@@ -2027,7 +2029,7 @@ block headerAdditions
         handleCanvasEleHover(e);
       });
       $contextMenu.fadeOut(100);
-      $slideInfo.stop().hide('slide', {direction:'right'}, 100, function(){
+      $slideInfo.stop(true).hide('slide', {direction:'right'}, 100, function(){
         $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
         fadeEleIn = true;
       });
