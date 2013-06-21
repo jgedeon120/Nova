@@ -17,6 +17,11 @@
   transform-origin: top left;
 }
 
+.ui-effects-wrapper {
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
 .ui-selecting {
   border: 2px dotted black;
 }
