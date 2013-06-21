@@ -293,7 +293,7 @@ block headerAdditions
       $('div.canvas div:regex(id, ^[0-9]?osi[blt]?$)').each(function(){
         $(this).remove();
       });
-      if((typeof now.GetConfigSummary == 'function') && (typeof now.WriteWysiwygTopology == 'function'))
+      if(typeof now.GetConfigSummary == 'function')
       { 
         now.GetConfigSummary(currentConfig, function(scriptProfileBindings, profileObj, profiles, nodes){
           var profHook = $('#profilesHook');
@@ -547,6 +547,7 @@ block headerAdditions
         appendTopoListeners($topology);
         $topology.css({'display':'block'});
         handleOffscreenIndicators();
+        $('#saveMessage').stop().show().delay(1000).fadeOut('slow');
       });
     }
     
@@ -872,10 +873,8 @@ block headerAdditions
     function regenTabDock()
     {
       $('#tabDock').empty();
-      console.log('cfgIf == ' + configIfaces[currentConfig]);
       for(var i in configIfaces[currentConfig])
       {
-        console.log('configIfaces[' + currentConfig + '] == ' + configIfaces[currentConfig]);
         generateTab(configIfaces[currentConfig][i]);
       }
     }
@@ -2093,6 +2092,7 @@ block headerAdditions
         {
           now.WriteWysiwygTopology(nodeTopology, function(){
             console.log('WriteWysiwygTopology finished');
+            $('#saveMessage').stop().show().delay(1000).fadeOut('slow');
           });
         }
         else
@@ -2119,6 +2119,7 @@ block headerAdditions
         {
           now.WriteWysiwygTopology(nodeTopology, function(){
             console.log('WriteWysiwygTopology finished');
+            $('#saveMessage').stop().show().delay(1000).fadeOut('slow');
           });
         }
         else
@@ -2133,6 +2134,7 @@ block headerAdditions
       {
         now.WriteWysiwygTopology(nodeTopology, function(){
           console.log('onUnload WriteWysiwygTopology finished');
+          $('#saveMessage').stop().show().delay(1000).fadeOut('slow');    
         });
       }
       else
@@ -2252,6 +2254,8 @@ block content
         br
         div#dragMe(class='notDraggableYet')
           header#setNumNodes
+        br
+        div#saveMessage(style='font-weight: bold; color: green; font-size: 18px;') Topology Saved
       div#canvasContainer
         div#slideInfo(class='sameHeight')
           div#pres
