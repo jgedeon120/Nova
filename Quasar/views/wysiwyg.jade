@@ -858,7 +858,7 @@ block headerAdditions
       {
         return;
       }
-      var tab = document.createElement('button');
+      var tab = theDoc.createElement('button');
       tab.className = 'unselectedTab';
       tab.id = 'bnodeCanvas' + iface;
       tab.setAttribute('onclick', 'changeTab("nodeCanvas' + iface + '")');
@@ -906,10 +906,10 @@ block headerAdditions
                 }
                 if($('#' + topo[i].iface + 'tab').length == 0)
                 {
-                  var tabDiv = document.createElement('div');
+                  var tabDiv = theDoc.createElement('div');
                   tabDiv.id = topo[i].iface + 'tab';
                   tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
-                  var canvasDiv = document.createElement('div');
+                  var canvasDiv = theDoc.createElement('div');
                   canvasDiv.id = 'nodeCanvas' + topo[i].iface;
                   canvasDiv.style.display = 'none';
                   canvasDiv.className = 'canvas sameHeight';
@@ -931,10 +931,10 @@ block headerAdditions
                 }
                 if($('#statictab').length == 0)
                 {
-                  var tabDiv = document.createElement('div');
+                  var tabDiv = theDoc.createElement('div');
                   tabDiv.id = 'statictab';
                   tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
-                  var canvasDiv = document.createElement('div');
+                  var canvasDiv = theDoc.createElement('div');
                   canvasDiv.id = 'nodeCanvasstatic';
                   canvasDiv.style.display = 'none';
                   canvasDiv.className = 'canvas sameHeight';
@@ -970,10 +970,10 @@ block headerAdditions
                     }
                     if($('#' + nodeList[i].interface + 'tab').length == 0)
                     {
-                      var tabDiv = document.createElement('div');
+                      var tabDiv = theDoc.createElement('div');
                       tabDiv.id = nodeList[i].interface + 'tab';
                       tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
-                      var canvasDiv = document.createElement('div');
+                      var canvasDiv = theDoc.createElement('div');
                       canvasDiv.id = 'nodeCanvas' + nodeList[i].interface;
                       canvasDiv.style.display = 'none';
                       canvasDiv.className = 'canvas sameHeight';
@@ -994,10 +994,10 @@ block headerAdditions
                     }
                     if($('#statictab').length == 0)
                     {
-                      var tabDiv = document.createElement('div');
+                      var tabDiv = theDoc.createElement('div');
                       tabDiv.id = 'statictab';
                       tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
-                      var canvasDiv = document.createElement('div');
+                      var canvasDiv = theDoc.createElement('div');
                       canvasDiv.id = 'nodeCanvasstatic';
                       canvasDiv.style.display = 'none';
                       canvasDiv.className = 'canvas sameHeight';
@@ -1058,10 +1058,10 @@ block headerAdditions
                   }
                   if($('#' + nodeList[i].interface + 'tab').length == 0)
                   {
-                    var tabDiv = document.createElement('div');
+                    var tabDiv = theDoc.createElement('div');
                     tabDiv.id = nodeList[i].interface + 'tab';
                     tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
-                    var canvasDiv = document.createElement('div');
+                    var canvasDiv = theDoc.createElement('div');
                     canvasDiv.id = 'nodeCanvas' + nodeList[i].interface;
                     canvasDiv.style.display = 'none';
                     canvasDiv.className = 'canvas sameHeight';
@@ -1082,10 +1082,10 @@ block headerAdditions
                   }
                   if($('#statictab').length == 0)
                   {
-                    var tabDiv = document.createElement('div');
+                    var tabDiv = theDoc.createElement('div');
                     tabDiv.id = 'statictab';
                     tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
-                    var canvasDiv = document.createElement('div');
+                    var canvasDiv = theDoc.createElement('div');
                     canvasDiv.id = 'nodeCanvasstatic';
                     canvasDiv.style.display = 'none';
                     canvasDiv.className = 'canvas sameHeight';
@@ -2078,6 +2078,7 @@ block headerAdditions
         updateDragHeader();
               
         $('#slideInfo').hide();
+        $('#saveMessage').hide();
               
         repopulateNodeCanvas(function(){
           prepopulateCanvasWithNodes(function(){
