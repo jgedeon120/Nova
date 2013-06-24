@@ -5,6 +5,47 @@
   user-select: none;
 }
 
+.selectedWysiwygTab {
+  width: 100px;
+  background-color: #AFD9FF;
+  border-color: #769DC0;
+  border-width: 2px;
+  border-bottom-style: none;
+  border-radius: 0px;
+  border-top-left-radius: 15px;
+  border-top-right-radius: 15px;
+  border-bottom-right-radius: 0px;
+  border-bottom-left-radius: 0px;
+  padding-bottom: 0px;
+  margin-bottom: 0px;
+  margin-left: 0px;
+  margin-right: 10px;
+  height: 25px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.unselectedWysiwygTab {
+  width: 100px;
+  background-color: #E4F2FF;
+  border-color: #769DC0;
+  border-width: 2px;
+  border-left-style: none;
+  border-right-style: none;
+  border-bottom-style: none;
+  border-top-left-radius: 15px;
+  border-top-right-radius: 15px;
+  border-bottom-right-radius: 0px;
+  border-bottom-left-radius: 0px;
+  padding-bottom: 0px;
+  margin-bottom: 0px;
+  margin-left: 0px;
+  margin-right: 10px;
+  height: 25px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
 .route-line {
   position: absolute; 
   width: 3px;
