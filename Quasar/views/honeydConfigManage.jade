@@ -1135,7 +1135,7 @@ block headerAdditions
 
     function showTab(tab) {
         var tabNames = [];
-        tabNames.push('settingsGroups');
+        tabNames.push('settingsHaystacks');
         tabNames.push('settingsProfiles');
         tabNames.push('settingsNodes');
         tabNames.push('settingsScripts');
@@ -1154,13 +1154,13 @@ block headerAdditions
   
 block content
   div#setup(onclick='handleOnclick(event);')
-    button.selectedTab#bsettingsGroups(onclick='showTab("settingsGroups")') Haystacks
+    button.selectedTab#bsettingsHaystacks(onclick='showTab("settingsHaystacks")') Haystacks
     button.unselectedTab#bsettingsProfiles(onclick='showTab("settingsProfiles")') Profiles
     button.unselectedTab#bsettingsNodes(onclick='showTab("settingsNodes")') Nodes
     button.unselectedTab#bsettingsScripts(onclick='showTab("settingsScripts")') Scripts
     button.unselectedTab#bsettingsWysiwyg(onclick='showTab("settingsWysiwyg"); adjustColumns();') WYSIWYG
 
-    div.contentBox#settingsGroups
+    div.contentBox#settingsHaystacks
       h1 Edit Haystacks
       button#addConfig(onclick='showLightBox("0")', title='Create a new configuration group from scratch')
         img.buttonIcon(src='images/add.png') 
