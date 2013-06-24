@@ -524,11 +524,11 @@ function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitDa
     y = (yEleCount * zoom.height);
     x = (xEleCount * zoom.width);
     
-    if(x > $topology.outerWidth())
+    if(x > $topology.outerWidth() && !$topology.is(':hidden'))
     {
       yEleCount += 1;
       xEleCount = 0;
-      y = (yEleCount * zoom.width);
+      y = (yEleCount * zoom.height);
       x = (xEleCount * zoom.width);
     }
   }
