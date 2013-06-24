@@ -556,8 +556,6 @@ block headerAdditions
       e.stopImmediatePropagation();
       delete nodeTopology[source];
       $('#' + source).remove();
-      console.log('source == ' + source);
-      console.log('hoverNode == ' + hoverNode);
       if(hoverNode == source || hoverNode == undefined)
       {
         $slideInfo.stop(true).hide('slide', {direction:'right'}, showHideTime, function(){
@@ -587,7 +585,7 @@ block headerAdditions
       .draggable({tolerance: 'pointer',
         cursorAt: {top:25,left:15},
         cursor: 'move',
-        containment: ('#nodeCanvas' + nodeObj.mac),
+        containment: ('#nodeCanvas' + nodeObj.iface),
         revert: 'invalid'});
 
       if((xEleCount != undefined) && (yEleCount != undefined))
@@ -609,7 +607,7 @@ block headerAdditions
       $(div).data('profile', nodeObj.selectedProfile)
             .css(prepopCss)
             .css(zoom)
-            .attr('class', 'ui-draggable canvasElement');
+            .attr('class', 'canvasElement ui-draggable');
       if((nodeObj.mac != undefined) && (type == 'prepopDHCP' || type == 'prepopStatic' || type == 'prepop'))
       {
         $(div).data('mac', nodeObj.mac)
@@ -619,10 +617,10 @@ block headerAdditions
       {
         $(div).data('mac', splitData.splNodeMacs);
       }
+      div.id = eleCount;
+      
       placeBackgroundImage($(div), nodeObj.selectedProfile);
       setCanvasElementEventHandlers(div);
-      
-      div.id = eleCount;
       
       var text = theDoc.createElement('label');
       text.innerHTML = nodeObj.count;
