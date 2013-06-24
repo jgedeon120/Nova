@@ -46,21 +46,10 @@
   cursor: pointer;
 }
 
-.route-line {
-  position: absolute; 
-  width: 3px;
-  background-color: #06a;
-  z-index: 2000;
-  -webkit-transform-origin: top left;
-  -moz-transform-origin: top left;
-  -o-transform-origin: top left;
-  -ms-transform-origin: top left;
-  transform-origin: top left;
-}
-
 .ui-effects-wrapper {
   border-top-right-radius: 10px;
   border-bottom-right-radius: 10px;
+  margin-right: 14px;
 }
 
 .ui-selecting {
@@ -150,16 +139,49 @@
   position: relative;
 }
 
+#dragBar img {
+  cursor: move;
+}
+
+#dragBar p {
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+#dragBar table {
+  border-collapse: collapse;
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+}
+
+#dragBar table td {
+  -webkit-transition: background-color 0.1s linear;
+  cursor: default;
+  border-collapse: collapse;
+  border-left: 2px inset #000;
+  border-right: 2px inset #000;
+  background-color: #D0E9FC;
+  z-index: 1002;
+}
+
+#dragBar table td:hover {
+  border-right: 2px solid #E4F2FF;
+  background-color: #F1CC91;
+}
+
 #container {
   height: 100%;
   width: 100%;
   border-radius: 5px;
   display: inline-block;
   overflow-y: hidden;
-}
-
-#dragBar img {
-  cursor: move;
 }
 
 #nodeContextMenu {
@@ -249,39 +271,6 @@
   z-index: 1002;
 }
 
-#dragBar label {
-  font-weight: bold;
-  margin-bottom: 10px;
-  font-size: 16px;
-}
-
-#dragBar table {
-  border-collapse: collapse;
-  width: 80%;
-  margin-left: auto;
-  margin-right: auto;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  -o-user-select: none;
-}
-
-#dragBar table td {
-  -webkit-transition: background-color 0.1s linear;
-  cursor: default;
-  border-collapse: collapse;
-  border-left: 2px inset #000;
-  border-right: 2px inset #000;
-  background-color: #D0E9FC;
-  z-index: 1002;
-}
-
-#dragBar table td:hover {
-  border-right: 2px solid #E4F2FF;
-  background-color: #F1CC91;
-}
-
 .first {
   border-top: 2px solid #000;
 }
@@ -365,14 +354,16 @@
   position: absolute;
   z-index: 2001;
   overflow: hidden;
+  width: 200px;
   border-left: 2px solid #769DC0;
   border-top-right-radius: 10px;
   border-bottom-right-radius: 10px;
   background-color: #E4F2FF;
   float: left;
-  right: 0px;
+  right: 14px;
   margin-top: 2px;
-  margin-right: 2px;
+  padding-left: 10px;
+  /*margin-right: 14px;*/
 }
 
 .offscreenIndicatorRight {
@@ -624,8 +615,7 @@
 }
 
 #pres {
-  margin: 10px 10px 10px 10px;
-  text-align: left;
+  margin: 10px 10px 10px 0px;
 }
 
 #name {
@@ -653,6 +643,8 @@
   text-align: center;
   border: 2px solid black;
   border-radius: 5px;
+  position: absolute;
+  left: 250px;
 }
 
 #helpPane {

@@ -147,8 +147,8 @@ function showProfileInfo(e)
             }
           }
           
-          var pointerCss = {top:($(source).position().top + $(source).height() - 3),
-                            left:($(source).position().left + $(source).outerWidth() + 10)};
+          var pointerCss = {top:($(source).position().top + $(source).height() + 39),
+                            left:($(source).position().left + $(source).outerWidth() + 20)};
           $profileInfo.css(pointerCss).fadeIn(200);
         });
       });
@@ -195,7 +195,6 @@ function profileClicked(e)
     $(source).css('background-color', '');
     selectedProfile = undefined;
     clicked = false;
-    $profileInfo.stop(false, true).fadeOut(100);
     return;
   }
   $(source).css('background-color', '#E8A02F');
@@ -1557,6 +1556,11 @@ function appendTopoListeners(topo)
       e.preventDefault();
       $('.canvasElement').off('mouseenter');
     })
+    .on('click', function(){
+      $profileInfo.fadeOut(200);
+      clearProfileSelected();
+      clicked = false;
+    })
     .on('selectableselecting', function(e, ui){
       selected.push(ui.selecting);
       $(ui.selecting).css('border', '1px ridge red');
@@ -1577,26 +1581,6 @@ function appendTopoListeners(topo)
         handleCanvasEleHover(e);
       });
     })
-    /*.mousewheel(function(e, delta){
-      $('.canvasElement').each(function(){
-        var d = parseInt(delta);
-        var bWidth = isNaN(parseInt($(this).css('border-width'))) ? 0 
-          : parseInt($(this).css('border-width'));
-        if(((parseInt($(this).outerWidth()) <= parseInt(33 + bWidth)) && (d < 0))
-        || ((parseInt($(this).outerWidth()) >= parseInt(75 + bWidth)) && (d > 0)))
-        {
-          return;
-        }
-        else
-        {
-          var width = parseInt($(this).outerWidth()) + parseInt(delta) - 2;
-          var height = parseInt($(this).outerHeight()) + parseInt(delta) - 2;
-          zoom = {width:width, height:height};
-          var bgSize = width + 'px ' + height + 'px';
-          $(this).css(zoom).css('background-size', bgSize);
-        }
-      });
-    })*/
     .mousedown(function(e){
       var evt = (e ? e : window.event);
       var source = evt.target || evt.srcElement;
@@ -1994,7 +1978,7 @@ $(function(){
   var fix = $('#pageWrap')[0];
   fix = fix.parentNode;
   fix = $(fix);
-  fix.css('height', '100%');
+  fix.css('height', '800px');
      
   $(document).keydown(function(e){
     if(e.keyCode == 46)
@@ -2009,12 +1993,14 @@ $(function(){
           
     $('#slideInfo').hide();
     $('#saveMessage').hide();
+    $('#placeHolder').hide();
           
     repopulateNodeCanvas(function(){
       prepopulateCanvasWithNodes(function(){
         appendTopoListeners($topology);
         handleOffscreenIndicators();
         adjustColumns();
+        $('#pageWrap').attr('style', '');
       });
     });
   });
@@ -2039,6 +2025,7 @@ $(window).resize(function(){
   $sameHeightDivs.css({height:'auto'});
   adjustColumns();
 });
+
 $(window).keydown(function(event){
   if(!(event.shiftKey && event.ctrlKey && event.keyCode == 83) && !(event.which == 19))
   {
@@ -2060,6 +2047,7 @@ $(window).keydown(function(event){
     event.stopPropagation();
   }
 });
+
 window.addEventListener('beforeunload', function(){
   if(typeof now.WriteWysiwygTopology == 'function')
   {
