@@ -39,7 +39,7 @@ block content
     br
     br
       
-    button(type="button", title="Clear all data the packet classifier has gathered", onclick='if(confirm("Are you sure you want to clear all gathered suspect data? This is irreversible.")){ClearAllSuspects(function(){suspectGrid.Clear();});}else{return;}')
+    button(type="button", title="Clear all data the packet classifier has gathered", onclick='clearPrompt();')
       img.buttonIcon(src="images/erase.png")
       span.buttonSpan Clear All Suspects
 
@@ -71,6 +71,20 @@ block headerAdditions
       if(loc.indexOf('/suspects') != -1)
       {
         removeContextMenu(); 
+      }
+    }
+
+    function clearPrompt()
+    {
+      if(confirm("Are you sure you want to clear all gathered suspect data? This is irreversible."))
+      {
+        ClearAllSuspects(function(){
+          suspectGrid.Clear();
+        });
+      }
+      else
+      {
+        return;
       }
     }
 

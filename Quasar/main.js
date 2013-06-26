@@ -767,7 +767,7 @@ app.get('/honeydConfigManage', function(req, res){
   var tab;
   if(req.query["tab"] === undefined)
   {
-    tab = "settingsGroups";
+    tab = "settingsHaystacks";
   }
   else
   {
@@ -2420,7 +2420,6 @@ process.on('exit', function ()
     var execution = ['cleannovasendmail.sh'];
     var rm = spawn(execution, options); 
     rm.on('exit', function(code){
-      console.log('code == ' + code);
       LOG("ALERT", "Quasar is exiting cleanly.");
     });
 });

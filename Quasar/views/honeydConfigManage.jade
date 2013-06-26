@@ -1126,7 +1126,16 @@ block headerAdditions
         populateConfigSelect(configurationList);
         LoadNodeGrid();
 
-        setInterval(function() {now.GetHaystackDHCPStatus(dhcpStatusCallback);}, 2000);
+        setInterval(function(){
+            if(typeof now.GetHaystackDHCPStatus == 'function')
+            {
+              now.GetHaystackDHCPStatus(dhcpStatusCallback);
+            }
+            else
+            {
+              console.log('No connection to the server: Can not update Haystack DHCP Status');
+            }
+          }, 2000);
         checkForEditInterface();
       });
 
@@ -1323,42 +1332,6 @@ block content
           button#splitAccept
             img.buttonIcon(src='images/start.png', alt='Confirm button image')
             span.buttonSpan Split Nodes
-        div#profileInfo
-          div#pres
-            label#name
-            br
-            p(style='font-style: italic;') Click on the profile
-            label Port Sets
-            select#portSets
-            br
-            br
-            table#portsetTable
-              thead
-                tr
-                  th(class='left') Port
-                  th(class='right') Behavior
-              tbody#profileTableHook
-            br
-            label Ethernet Vendors
-            select#vendors
-            br
-            label Ethernet Interfaces
-            select#interfaces
-            br
-            label Ip Address Allocation Type
-            select#allocationType(onchange='showIpBlock()')
-              option DHCP
-              option IP Range
-            br
-            div#ipBlock(style='display: none;')
-              input#ip1(type='number', min='0', max='255', value='0', step='1')
-              input#ip2(type='number', min='0', max='255', value='0', step='1')
-              input#ip3(type='number', min='0', max='255', value='0', step='1')
-              input#ip4(type='number', min='0', max='255', value='0', step='1')
-            br
-            button(onclick='saveSelectedParameters()')
-              img.buttonIcon(src='images/start.png', alt='Confirm button image')
-              span.buttonSpan Save Parameters
         div#container
           div#dragBar(class='sameHeight')
             br
@@ -1369,7 +1342,7 @@ block content
             input#nodeNumber(type='number', min='1', max='50', value='1', onchange='updateDragHeader()')
             br
             p Profiles
-            table
+            table#profilesHookTable
               tbody#profilesHook(onmouseover='showProfileInfo(event)')
             br
             div#dragMe(class='notDraggableYet')
@@ -1410,6 +1383,42 @@ block content
             div#deleteNodes Delete Selected
             div#mergeNodes Merge Selected
             div#splitNodes Split Selected
+          div#profileFadeInfo
+            div#pres
+              label#name
+              br
+              p(style='font-style: italic;') Click on the profile
+              label Port Sets
+              select#portSets
+              br
+              br
+              table#portsetTable
+                thead
+                  tr
+                    th(class='left') Port
+                    th(class='right') Behavior
+                tbody#profileTableHook
+              br
+              label Ethernet Vendors
+              select#vendors
+              br
+              label Ethernet Interfaces
+              select#interfaces
+              br
+              label Ip Address Allocation Type
+              select#allocationType(onchange='showIpBlock()')
+                option DHCP
+                option IP Range
+              br
+              div#ipBlock(style='display: none;')
+                input#ip1(type='number', min='0', max='255', value='0', step='1')
+                input#ip2(type='number', min='0', max='255', value='0', step='1')
+                input#ip3(type='number', min='0', max='255', value='0', step='1')
+                input#ip4(type='number', min='0', max='255', value='0', step='1')
+              br
+              button(onclick='saveSelectedParameters()')
+                img.buttonIcon(src='images/start.png', alt='Confirm button image')
+                span.buttonSpan Save Parameters
   
   div#lightbox(class='white_content')
     div#addConfigForm

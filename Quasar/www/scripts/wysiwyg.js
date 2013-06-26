@@ -61,6 +61,7 @@ function showProfileInfo(e)
 {
   if(!clicked)
   {
+    $profileInfo.stop(false, true).hide();
     var evt = (e ? e : window.event);
     var source = evt.target || evt.srcElement;
     if(typeof now.GetProfile == 'function')
@@ -146,10 +147,11 @@ function showProfileInfo(e)
               break;
             }
           }
-          
-          var pointerCss = {top:($(source).position().top + $(source).height() + 39),
+
+          var pointerCss = {top:($(source).position().top - ($profileInfo.outerHeight() / 2) + 106),
                             left:($(source).position().left + $(source).outerWidth() + 20)};
-          $profileInfo.css(pointerCss).fadeIn(200);
+
+          $profileInfo.css(pointerCss).stop(false, true).fadeIn(400);
         });
       });
     }
@@ -478,7 +480,7 @@ function changeTab(e)
     appendTopoListeners($topology);
     $topology.css({'display':'block'});
     handleOffscreenIndicators();
-    $('#saveMessage').stop().show().delay(1000).fadeOut('slow');
+    $('#saveMessage').stop(false, true).show().delay(1000).fadeOut('slow');
   });
 }
 
@@ -894,7 +896,6 @@ function prepopulateCanvasWithNodes(cb)
               {
                 if(configIfaces[currentConfig].indexOf(nodeList[i].interface) == -1)
                 {
-                  console.log('adding ' + nodeList[i].interface + ' to currentConfig index');
                   configIfaces[currentConfig].push(nodeList[i].interface);  
                 }
                 if($('#' + nodeList[i].interface + 'tab').length == 0)
@@ -982,7 +983,6 @@ function prepopulateCanvasWithNodes(cb)
             {
               if(configIfaces[currentConfig].indexOf(nodeList[i].interface) == -1)
               {
-                console.log('adding ' + nodeList[i].interface + ' to currentConfig index');
                 configIfaces[currentConfig].push(nodeList[i].interface);  
               }
               if($('#' + nodeList[i].interface + 'tab').length == 0)
@@ -1956,7 +1956,7 @@ $(function(){
   $dragMe = $('#dragMe');
   $slideInfo = $('#slideInfo');
   $slideInfo.hide();
-  $profileInfo = $('#profileInfo');
+  $profileInfo = $('#profileFadeInfo');
   $profileInfo.hide();
   $contextMenu = $('#nodeContextMenu');
   $contextMenu.hide();
@@ -2009,7 +2009,7 @@ $(function(){
     {
       now.WriteWysiwygTopology(nodeTopology, function(){
         console.log('WriteWysiwygTopology finished');
-        $('#saveMessage').stop().show().delay(1000).fadeOut('slow');
+        $('#saveMessage').stop(false, true).show().delay(1000).fadeOut('slow');
       });
     }
     else
@@ -2037,7 +2037,7 @@ $(window).keydown(function(event){
     {
       now.WriteWysiwygTopology(nodeTopology, function(){
         console.log('WriteWysiwygTopology finished');
-        $('#saveMessage').stop().show().delay(1000).fadeOut('slow');
+        $('#saveMessage').stop(false, true).show().delay(1000).fadeOut('slow');
       });
     }
     else
@@ -2053,7 +2053,7 @@ window.addEventListener('beforeunload', function(){
   {
     now.WriteWysiwygTopology(nodeTopology, function(){
       console.log('onUnload WriteWysiwygTopology finished');
-      $('#saveMessage').stop().show().delay(1000).fadeOut('slow');    
+      $('#saveMessage').stop(false, true).show().delay(1000).fadeOut('slow');    
     });
   }
   else

@@ -139,17 +139,13 @@
   position: relative;
 }
 
-#dragBar img {
-  cursor: move;
-}
-
 #dragBar p {
   font-weight: bold;
   margin-bottom: 10px;
   font-size: 16px;
-}
+} 
 
-#dragBar table {
+#profilesHookTable {
   border-collapse: collapse;
   width: 80%;
   margin-left: auto;
@@ -161,7 +157,7 @@
   -o-user-select: none;
 }
 
-#dragBar table td {
+#profilesHookTable td {
   -webkit-transition: background-color 0.1s linear;
   cursor: default;
   border-collapse: collapse;
@@ -171,7 +167,7 @@
   z-index: 1002;
 }
 
-#dragBar table td:hover {
+#profilesHookTable td:hover {
   border-right: 2px solid #E4F2FF;
   background-color: #F1CC91;
 }
@@ -204,13 +200,13 @@
   border-top-right-radius: 5px;
 }
 
-.single {
+#splitNodes, #mergeNodes {
+  border-top: 1px solid rgb(118, 157, 192);
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
 }
 
-#splitNodes, #mergeNodes {
-  border-top: 1px solid rgb(118, 157, 192);
+.single {
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
 }
@@ -235,6 +231,7 @@
   margin: 0px auto;
   background: url('images/wysiwyg/unknown_75.png') no-repeat center;
   z-index: 1003;
+  cursor: move;
 }
 
 #dragMe header {
@@ -316,13 +313,13 @@
   box-shadow: 0px 0px 5px 5px #F1CC91 inset;
 }
 
-#profileInfo {
+#profileFadeInfo {
   width: 300px;
   height: auto;
   min-height: 300px;
   border: 2px solid #000;
   position: absolute;
-  z-index: 1003;
+  z-index: 3000;
   -webkit-transition: display 0.2s linear;
   -webkit-transition: top 0.2s linear;
   -moz-transition: display 0.2s linear;
@@ -333,11 +330,11 @@
   background-color: #E4F2FF;
 }
 
-#profileInfo:before {
+#profileFadeInfo:before {
   content: "";
   position: absolute;
   right: 100%;
-  top: 50px;
+  top: 50%;
   width: 0;
   height: 0;
   border-top: 10px solid transparent;
@@ -346,8 +343,13 @@
   z-index: 1001;
 }
 
-#profileInfo label {
-  margin-right: 10px;
+#profileFadeInfo label {
+  margin-left: -10px;
+}
+
+#pres {
+  margin: 10px 10px 10px 10px;
+  position: relative;
 }
 
 #slideInfo {
@@ -614,10 +616,6 @@
   font-weight: bold;
 }
 
-#pres {
-  margin: 10px 10px 10px 0px;
-}
-
 #name {
   font-weight: bold;
   font-size: 20px;
@@ -668,7 +666,3 @@
   padding: 1px 5px;
   background-color: white;
 }
-
-
-
-
