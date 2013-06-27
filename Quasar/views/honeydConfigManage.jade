@@ -19,7 +19,7 @@ extends layout
 block headerAdditions
   link(rel='stylesheet', type='text/css', href='novagrid.css', media='screen')
   link(rel='stylesheet', type='text/css', href='configstyle.css', media='screen')
-  link(rel="stylesheet", type="text/css", href="wysiwyg.css", media="screen")
+  link(rel='stylesheet', type='text/css', href='wysiwyg.css', media='screen')
   style(type='text/css')
     a.selectedProfile, a.unselectedProfile {
         display: block;
@@ -1389,6 +1389,7 @@ block content
               br
               p(style='font-style: italic;') Click on the profile
               label Port Sets
+              br
               select#portSets
               br
               br
@@ -1400,12 +1401,15 @@ block content
                 tbody#profileTableHook
               br
               label Ethernet Vendors
+              br
               select#vendors
               br
               label Ethernet Interfaces
+              br
               select#interfaces
               br
               label Ip Address Allocation Type
+              br
               select#allocationType(onchange='showIpBlock()')
                 option DHCP
                 option IP Range

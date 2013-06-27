@@ -314,7 +314,7 @@
 }
 
 #profileFadeInfo {
-  width: 300px;
+  width: 350px;
   height: auto;
   min-height: 300px;
   border: 2px solid #000;
@@ -344,12 +344,14 @@
 }
 
 #profileFadeInfo label {
-  margin-left: -10px;
+  width: 100%;
 }
 
 #pres {
   margin: 10px 10px 10px 10px;
   position: relative;
+  max-height: 800px;
+  overflow: auto;
 }
 
 #slideInfo {
