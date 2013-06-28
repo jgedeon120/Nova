@@ -1066,6 +1066,45 @@ block headerAdditions
       window.location.href = 'editHoneydNode?node=' + nodeName;
     }
 
+    function RefreshNodeGrid(updateNodeList)
+    {
+      grid.Clear();
+      
+      for(var i in updateNodeList)
+      {
+        var row = [];
+        row.push(String(updateNodeList[i].enabled));
+        
+        if(updateNodeList[i].ip != 'DHCP') 
+        {
+          row.push(String(updateNodeList[i].ip));
+        } 
+        else 
+        {
+          row.push('DHCP');
+        }
+        
+        var alias = '';
+        for(var j = 0; j < interfaces.length; j++) 
+        {
+          if(interfaces[j] == nodeList[i].interface) 
+          {
+            alias = interfaceAliases[j];
+          }
+        }
+
+        row.push(alias); 
+        row.push(String(updateNodeList[i].mac));
+        row.push(String(updateNodeList[i].pfile));
+
+        grid.PushEntry(row);
+      }
+       
+      grid.Render();
+    
+      var gridElements = grid.GetElements();
+    }
+
     function LoadNodeGrid()
     {
         var gridStructure = [];
@@ -1181,7 +1220,6 @@ block content
       button(onclick='window.location="/autoConfig"', title='Run the haystack autoconfiguration tool to create honeypots that mimic an existing network') 
         img.buttonIcon(src='images/details.png')
         span.buttonSpan Create Haystack From Network Scan
-      
       br
       br
       h2 Current Haystack
@@ -1195,72 +1233,51 @@ block content
       div#piChart(style='display: inline-block; margin: 10px')
       div#piChart2(style='display: inline-block; margin: 10px; float: left')
       br
-
-
     div.contentBox#settingsProfiles(style='display: none;')
       h1 Edit Profiles
-
       div#treeDiv
       br
       br
-     
-
       button(onClick='deleteSelectedProfileItems()')
         img.buttonIcon(src='images/delete.png')
         span.buttonSpan Delete Selected Profiles 
-      
       button(onClick='editSelectedProfileItem()')
         img.buttonIcon(src='images/edit.png')
         span.buttonSpan Edit Selected Profile
-      
       button(onClick='addChildSelectedItem()') 
         img.buttonIcon(src='images/add.png')
         span.buttonSpan Add Child Profile
-    
     div.contentBox#settingsNodes(style='display: none;')
       h1 Edit Nodes
       div#node_header
       span#nodeTable(style="display: inline-block;")
       br
       br
-      
-      
       button.button(onclick='window.location = "/configHoneydNodes"')
         img.buttonIcon(src='images/add.png')
         span.buttonSpan Add New Nodes
-      
       button.button(onclick='editSelectedItem()')
         img.buttonIcon(src='images/edit.png')
         span.buttonSpan Edit Selected Node
-
       button.button(onclick='deleteSelectedItems()') 
         img.buttonIcon(src='images/delete.png')
         span.buttonSpan Delete Selected Nodes
-
-
       br
       br
-      
       button.button(onclick='window.location="/nodeState.csv"')
         img.buttonIcon(src='images/save.png')
         span.buttonSpan Save as CSV
       br
-      
       button.button(onclick='window.location="/editHoneydNode?node=doppelganger"')
         img.buttonIcon(src='images/edit.png')
         span Edit Doppelganger
-
       br
       button.button(onclick='deleteAllNodes()')
         img.buttonIcon(src='images/delete.png')
         span.buttonSpan Delete All Nodes
       br
-      
       br
       div#generateHook
-
-      br
-
     div.contentBox#settingsScripts(style='display: none;')
       h1 Current Script Usage
       button(onclick='window.location="/scripts"')
@@ -1268,14 +1285,12 @@ block content
         span.buttonSpan Edit Scripts
       br
       br
-      
       table(border='1', id='sizeAnchor')
         thead
           tr
             th(style='background-color: #d0e9fc;') Scripts
             th(style='background-color: #d0e9fc;') Profile:Port Binding
         tbody#appendHook      
-    
     div.contentBox#settingsWysiwyg(style='display: none;')
       div#pageWrap(onmouseover='hideProfileInfo(event)')
         div(style='width: 250px;')
@@ -1404,9 +1419,11 @@ block content
               br
               select#vendors
               br
+              br
               label Ethernet Interfaces
               br
               select#interfaces
+              br
               br
               label Ip Address Allocation Type
               br
@@ -1423,7 +1440,6 @@ block content
               button(onclick='saveSelectedParameters()')
                 img.buttonIcon(src='images/start.png', alt='Confirm button image')
                 span.buttonSpan Save Parameters
-  
   div#lightbox(class='white_content')
     div#addConfigForm
       form(method='post', id='addConfig', onsubmit='return checkParametersAdd();')
@@ -1481,5 +1497,3 @@ block content
     button#closeLB(onclick='closeLightbox()')
       img.buttonIcon(src='images/cancel.png')
       span.buttonSpan Cancel
-
-

@@ -111,19 +111,19 @@ function showProfileInfo(e)
             var td1 = theDoc.createElement('td');
             $(td0).toggleClass('left').html(pNum + '_' + pProtoc);
             $(td1).toggleClass('right').html(pBehav);
-                $(tr).append(td0, td1);
-                $table.append(tr);
-              }
-              
-              for(var i in portsets)
-              {
-                if(portsets[i].setName == $portSets.val())
-                {
-                  var udp = portsets[i].UDPBehavior;
-                  var tcp = portsets[i].TCPBehavior;
-                  var icmp = portsets[i].ICMPBehavior;
+            $(tr).append(td0, td1);
+            $table.append(tr);
+          }
+          
+          for(var i in portsets)
+          {
+            if(portsets[i].setName == $portSets.val())
+            {
+              var udp = portsets[i].UDPBehavior;
+              var tcp = portsets[i].TCPBehavior;
+              var icmp = portsets[i].ICMPBehavior;
  
-                  generateDefaultRow(udp, 'UDP');
+              generateDefaultRow(udp, 'UDP');
               generateDefaultRow(tcp, 'TCP');
               generateDefaultRow(icmp, 'ICMP');
               
@@ -265,8 +265,9 @@ function saveSelectedParameters()
   $dragMe.draggable('enable').css(dragMeCss);
   hideProfileInfo();
   var profileObject = {};
-  profileObject.selectedProfile = selectedProfile;
+  profileObject.pfile = selectedProfile;
   placeBackgroundImage($dragMe, selectedProfile);
+  profileObject.enabled = true;
   profileObject.count = $('#nodeNumber').val();
   profileObject.portset = $('#portSets').val();
   profileObject.vendor = $('#vendors').val();
@@ -487,7 +488,11 @@ function changeTab(e)
 function deleteCanvasEleClick(e, source)
 {
   e.stopImmediatePropagation();
+  macsToRemove = nodeTopology[source].mac.split(',');
   delete nodeTopology[source];
+  now.deleteNodes(macsToRemove, function(retVal){
+    RefreshNodeGrid(nodeTopology);
+  });
   $('#' + source).remove();
   if(hoverNode == source || hoverNode == undefined)
   {
@@ -537,7 +542,7 @@ function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitDa
   
   var prepopCss = {position:'absolute', left:(x + 'px'), top:(y + 'px')};
   var bgSize = zoom.width + 'px ' + zoom.height + 'px';
-  $(div).data('profile', nodeObj.selectedProfile)
+  $(div).data('profile', nodeObj.pfile)
         .css(prepopCss)
         .css(zoom)
         .attr('class', 'canvasElement ui-draggable');
@@ -552,7 +557,7 @@ function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitDa
   }
   div.id = eleCount;
   
-  placeBackgroundImage($(div), nodeObj.selectedProfile);
+  placeBackgroundImage($(div), nodeObj.pfile);
   setCanvasElementEventHandlers(div);
   
   var text = theDoc.createElement('label');
@@ -589,7 +594,7 @@ function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitDa
     {
       ipType = 'DHCP';
     }
-    var profile = nodeTopology[eleCount].selectedProfile;
+    var profile = nodeTopology[eleCount].pfile;
     var portset = nodeTopology[eleCount].portset.toString();
     var vendor = nodeTopology[eleCount].vendor;
     var ethInterface = nodeTopology[eleCount].iface;
@@ -627,6 +632,8 @@ function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitDa
         nodeTopology[eleCount].coordinates = {x:x, y:y};
         $topology.append(div);
 
+        RefreshNodeGrid(nodesList);
+
         eleCount++;
       });
     }
@@ -645,12 +652,13 @@ function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitDa
         if(nodeList[j].mac == macSplit)
         {
           nodeTopology[eleCount] = {};
+          nodeTopology[eleCount].enabled = true;
           nodeTopology[eleCount].iface = nodeList[j].interface;
           nodeTopology[eleCount].count = nodeObj.count.toString();
           nodeTopology[eleCount].portset = nodeList[j].portset.toString();
           nodeTopology[eleCount].vendor = nodeList[j].vendor;
           nodeTopology[eleCount].ip = nodeList[j].ip;
-          nodeTopology[eleCount].selectedProfile = nodeObj.selectedProfile;
+          nodeTopology[eleCount].pfile = nodeObj.pfile;
           nodeTopology[eleCount].mac = nodeObj.mac;
           nodeTopology[eleCount].coordinates = {x:x, y:y};
           $('#nodeCanvas' + nodeList[j].interface).append(div);
@@ -661,12 +669,13 @@ function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitDa
     else
     {
       nodeTopology[eleCount] = {};
+      nodeTopology[eleCount].enabled = true;
       nodeTopology[eleCount].iface = nodeObj.iface;
       nodeTopology[eleCount].count = nodeObj.count.toString();
       nodeTopology[eleCount].portset = nodeObj.portset.toString();
       nodeTopology[eleCount].vendor = nodeObj.vendor;
       nodeTopology[eleCount].ip = nodeObj.ip;
-      nodeTopology[eleCount].selectedProfile = nodeObj.selectedProfile;
+      nodeTopology[eleCount].pfile = nodeObj.pfile;
       nodeTopology[eleCount].mac = nodeObj.mac;
       nodeTopology[eleCount].coordinates = {x:x, y:y};
       $('#nodeCanvas' + nodeObj.iface).append(div);
@@ -684,12 +693,13 @@ function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitDa
         if(nodeList[j].mac == macSplit)
         {
           nodeTopology[eleCount] = {};
+          nodeTopology[eleCount].enabled = true;
           nodeTopology[eleCount].iface = nodeList[j].interface;
           nodeTopology[eleCount].count = nodeObj.count.toString();
           nodeTopology[eleCount].portset = nodeList[j].portset.toString();
           nodeTopology[eleCount].vendor = nodeList[j].vendor;
           nodeTopology[eleCount].ip = nodeList[j].ip;
-          nodeTopology[eleCount].selectedProfile = nodeObj.selectedProfile;
+          nodeTopology[eleCount].pfile = nodeObj.pfile;
           nodeTopology[eleCount].mac = nodeObj.mac;
           nodeTopology[eleCount].coordinates = {x:x, y:y};
           $('#nodeCanvasstatic').append(div);
@@ -700,12 +710,13 @@ function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitDa
     else
     {
       nodeTopology[eleCount] = {};
+      nodeTopology[eleCount].enabled = true;
       nodeTopology[eleCount].iface = nodeObj.iface;
       nodeTopology[eleCount].count = nodeObj.count.toString();
       nodeTopology[eleCount].portset = nodeObj.portset.toString();
       nodeTopology[eleCount].vendor = nodeObj.vendor;
       nodeTopology[eleCount].ip = nodeObj.ip;
-      nodeTopology[eleCount].selectedProfile = nodeObj.selectedProfile;
+      nodeTopology[eleCount].pfile = nodeObj.pfile;
       nodeTopology[eleCount].mac = nodeObj.mac;
       nodeTopology[eleCount].coordinates = {x:x, y:y};
       $('#nodeCanvasstatic').append(div);
@@ -721,12 +732,13 @@ function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitDa
       if(nodeList[j].mac == macSplit)
       {
         nodeTopology[eleCount] = {};
+        nodeTopology[eleCount].enabled = true;
         nodeTopology[eleCount].iface = nodeList[j].interface;
         nodeTopology[eleCount].count = nodeObj.count.toString();
         nodeTopology[eleCount].portset = nodeList[j].portset.toString();
         nodeTopology[eleCount].vendor = nodeList[j].vendor;
         nodeTopology[eleCount].ip = nodeList[j].ip;
-        nodeTopology[eleCount].selectedProfile = nodeObj.selectedProfile;
+        nodeTopology[eleCount].pfile = nodeObj.pfile;
         nodeTopology[eleCount].mac = nodeObj.mac;
         nodeTopology[eleCount].coordinates = {x:x, y:y};
         if(nodeList[j].ip == 'DHCP')
@@ -756,12 +768,13 @@ function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitDa
       if(nodes[j].mac == testMac)
       {
         nodeTopology[eleCount] = {};
+        nodeTopology[eleCount].enabled = true;
         nodeTopology[eleCount].iface = nodes[j].interface;
         nodeTopology[eleCount].count = splitData.splCount;
         nodeTopology[eleCount].portset = nodes[j].portset.toString();
         nodeTopology[eleCount].vendor = nodes[j].vendor;
         nodeTopology[eleCount].ip = nodes[j].ip;
-        nodeTopology[eleCount].selectedProfile = nodeObj.selectedProfile;
+        nodeTopology[eleCount].pfile = nodeObj.pfile;
         nodeTopology[eleCount].mac = splitData.splNodeMacs;
         nodeTopology[eleCount].coordinates = {x:x, y:y};
         break;
@@ -947,7 +960,7 @@ function prepopulateCanvasWithNodes(cb)
                 nodeCount[key] = {};
                 nodeCount[key].count = 1;
                 nodeCount[key].mac = nodeList[i].mac;
-                nodeCount[key].selectedProfile = nodeList[i].pfile;
+                nodeCount[key].pfile = nodeList[i].pfile;
               }
               else
               {
@@ -1033,7 +1046,7 @@ function prepopulateCanvasWithNodes(cb)
               nodeCount[key] = {};
               nodeCount[key].count = 1;
               nodeCount[key].mac = nodeList[i].mac;
-              nodeCount[key].selectedProfile = nodeList[i].pfile;
+              nodeCount[key].pfile = nodeList[i].pfile;
             }
             else
             {
@@ -1439,7 +1452,7 @@ function splitSelected(ele)
       var group2Macs = [];
       var nodeObj = {};
       var newCount = parseInt($('#' + ele.id + 'text').html()) - splitEnd;
-      nodeObj.selectedProfile = $(ele).data('profile');
+      nodeObj.pfile = $(ele).data('profile');
       
       splitData.src = ele;
       
@@ -1505,7 +1518,7 @@ function splitSelected(ele)
       var splitEnd = parseInt($('#splitRange').val());
       var getSplitMacs = $(ele).data('mac').split(',');
       var newCount = parseInt($('#' + ele.id + 'text').html()) - splitEnd;
-      nodeObj.selectedProfile = $(ele).data('profile');
+      nodeObj.pfile = $(ele).data('profile');
       
       splitData.src = ele;
       
@@ -1671,7 +1684,7 @@ function appendTopoListeners(topo)
       && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
       {
         var nodeObj = {};
-        nodeObj.selectedProfile = selectedProfile;
+        nodeObj.pfile = selectedProfile;
         nodeObj.count = $('#nodeNumber').val();
         
         clearProfileSelected();
@@ -1749,7 +1762,7 @@ function mergeSelected(base)
     {
       return;
     }
-    if(nodeTopology[id].selectedProfile != baseProfile || nodeTopology[id].vendor != baseVendor
+    if(nodeTopology[id].pfile != baseProfile || nodeTopology[id].vendor != baseVendor
        || nodeTopology[id].portset != basePortset || nodeTopology[id].ip != baseIp
        || nodeTopology[id].iface != baseInterface)
     {
@@ -1810,7 +1823,7 @@ function updateCount()
       ip = nodeTopology[hoverNode].ip;
       ipType = '';
     }
-    var profile = nodeTopology[hoverNode].selectedProfile;
+    var profile = nodeTopology[hoverNode].pfile;
     var portset = nodeTopology[hoverNode].portset;
     var vendor = nodeTopology[hoverNode].vendor;
     var ethInterface = nodeTopology[hoverNode].iface;
@@ -1859,6 +1872,7 @@ function updateCount()
       now.deleteNodes(macsToRemove);
       delete nodeTopology[hoverNode];
       $('#' + hoverNode).remove();
+      RefreshNodeGrid(nodeTopology);
     }
     else
     {
@@ -1884,7 +1898,10 @@ function updateCount()
       }
       nodeTopology[hoverNode].mac = newMacAssignment.join(',');
       
-      now.deleteNodes(macsToRemove);
+      now.deleteNodes(macsToRemove, function(retVal){
+        if(retVal == true)
+        {}
+      });
     }
   }
   hoverhold = false;
@@ -1929,7 +1946,12 @@ function deleteSelected()
     fadeEleIn = true;
   });
   
-  now.deleteNodes(deleteNodes);
+  now.deleteNodes(deleteNodes, function(retVal){
+    if(retVal == true)
+    {
+      RefreshNodeGrid(nodeTopology);
+    }
+  });
 }
 
 function clearSelectedCanvas()
