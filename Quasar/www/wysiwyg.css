@@ -351,7 +351,7 @@
   margin: 10px 10px 10px 10px;
   position: relative;
   max-height: 800px;
-  overflow: auto;
+  overflow: hidden;
 }
 
 #slideInfo {
@@ -651,6 +651,7 @@
   background-color: #F1CC91;
   border: 2px solid black;
   border-radius: 5px;
+  text-align: left;
   z-index: 3000;
   width: 760px;
   display: none;

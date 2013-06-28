@@ -19,7 +19,6 @@ extends layout
 block headerAdditions
   link(rel='stylesheet', type='text/css', href='novagrid.css', media='screen')
   link(rel='stylesheet', type='text/css', href='configstyle.css', media='screen')
-  link(rel='stylesheet', type='text/css', href='wysiwyg.css', media='screen')
   style(type='text/css')
     a.selectedProfile, a.unselectedProfile {
         display: block;
@@ -128,7 +127,6 @@ block headerAdditions
     
   script(type='text/javascript', src='scripts/NovaGrid.js')
   script(type='text/javascript', src='scripts/NovaPiChart.js')
-  script(type='text/javascript', src='scripts/wysiwyg.js')
   script
     var grid;
     var interfaces = !{JSON.stringify(INTERFACES)};
@@ -1187,7 +1185,6 @@ block headerAdditions
         tabNames.push('settingsProfiles');
         tabNames.push('settingsNodes');
         tabNames.push('settingsScripts');
-        tabNames.push('settingsWysiwyg');
 
         for (var i = 0; i < tabNames.length; i++) {
             $('#' + tabNames[i]).css('display', 'none');
@@ -1206,7 +1203,6 @@ block content
     button.unselectedTab#bsettingsProfiles(onclick='showTab("settingsProfiles")') Profiles
     button.unselectedTab#bsettingsNodes(onclick='showTab("settingsNodes")') Nodes
     button.unselectedTab#bsettingsScripts(onclick='showTab("settingsScripts")') Scripts
-    button.unselectedTab#bsettingsWysiwyg(onclick='showTab("settingsWysiwyg"); adjustColumns();') WYSIWYG
 
     div.contentBox#settingsHaystacks
       h1 Edit Haystacks
@@ -1268,6 +1264,10 @@ block content
         img.buttonIcon(src='images/save.png')
         span.buttonSpan Save as CSV
       br
+      button.button(onclick='window.location="/wysiwyg"')
+        img.buttonIcon(src='images/edit.png')
+        span.buttonSpan Enter WYSIWYG
+      br
       button.button(onclick='window.location="/editHoneydNode?node=doppelganger"')
         img.buttonIcon(src='images/edit.png')
         span Edit Doppelganger
@@ -1291,155 +1291,6 @@ block content
             th(style='background-color: #d0e9fc;') Scripts
             th(style='background-color: #d0e9fc;') Profile:Port Binding
         tbody#appendHook      
-    div.contentBox#settingsWysiwyg(style='display: none;')
-      div#pageWrap(onmouseover='hideProfileInfo(event)')
-        div(style='width: 250px;')
-          label(style='font-size: 20px; font-weight: bold;') Haystack WYSIWYG
-          div#expandHelp(onclick='handleHelpPaneSlide()') ?
-            div#helpPane
-              h1(style='margin-left: 5px;') User Actions
-              p(style='margin-left: 5px; font-weight: bold;') 
-                span.kbk Ctrl 
-                + 
-                span.kbk Shift
-                + 
-                span.kbk S
-                span : Save Topology
-              p(style='margin-left: 5px') 
-                span(style='font-weight: bold;') Middle Mouse Drag: 
-                Move all nodes
-              p(style='margin-left: 5px;') User can drag lasso over nodes to capture them for:
-              p(style='margin-left: 10px; font-weight: bold;') 
-                span.kbk Del
-                span : Delete Selected Nodes
-              p(style='margin-left: 10px;') 
-                span(style='font-weight: bold;') Left Click Mouse Drag: 
-                Move all selected nodes 
-              p(style='margin-left: 10px; font-size: 24px;') Right-Click menu:
-              p(style='margin-left: 15px;') 
-                span(style='font-weight: bold;') Delete Selected: 
-                Delete all selected nodes
-              p(style='margin-left: 15px;') 
-                span(style='font-weight: bold;') Merge Selected: 
-                Nodes can only be merged if they share the same interface, portset, ethernet vendor, and IP address allocation type
-              p(style='margin-left: 15px;')
-                span(style='font-weight: bold;') Split Selected: 
-                Split selected node into two nodes (will only appear if one node is selected)
-              p(style='margin-left: 5px;') Making a new Node:
-              p(style='margin-left: 10px;') 
-                span(style='font-weight: bold;') 1) 
-                span Select Configuration from Dropdown
-              p(style='margin-left: 10px;') 
-                span(style='font-weight: bold;') 2) 
-                span Select number of Nodes to create
-              p(style='margin-left: 10px;') 
-                span(style='font-weight: bold;') 3) 
-                span Click on desired profile - configure as desired, Save Parameters
-              p(style='margin-left: 10px;') 
-                span(style='font-weight: bold;') 4) 
-                span Drag highlighted node in left bar onto Canvas
-              br
-        br
-        br
-        div(id='tabDock', style='margin-left: 152px')
-        div#modalDialog(title='Split Nodes')
-          div#rangeDiv
-          button#splitAccept
-            img.buttonIcon(src='images/start.png', alt='Confirm button image')
-            span.buttonSpan Split Nodes
-        div#container
-          div#dragBar(class='sameHeight')
-            br
-            p Configurations
-            select#configurationSelect(onchange='nodeList = {}; repopulateNodeCanvas(function(){prepopulateCanvasWithNodes()})')
-            br
-            p Number of nodes 
-            input#nodeNumber(type='number', min='1', max='50', value='1', onchange='updateDragHeader()')
-            br
-            p Profiles
-            table#profilesHookTable
-              tbody#profilesHook(onmouseover='showProfileInfo(event)')
-            br
-            div#dragMe(class='notDraggableYet')
-              header#setNumNodes
-            br
-            div#saveMessage(style='font-weight: bold; color: green; font-size: 18px;') Topology Saved
-          div#canvasContainer
-            div#slideInfo(class='sameHeight')
-              div#pres
-                h1 Click Node to Edit:
-                label#hoverName
-                br
-                br
-                label Port Set: 
-                br
-                div#hoverPortset
-                br
-                label Ethernet Vendor:
-                br 
-                div#hoverVendor
-                br
-                label Ethernet Interface:
-                br 
-                div#hoverInterface
-                br
-                label Ip Address Type: 
-                br
-                div#hoverAddress
-                br
-                label New Amount Value:
-                br
-                input#changeCount(type='number', min='0', step='1')
-                br
-                button#updateCount(onclick='updateCount()')
-                  img.buttonIcon(src='images/start.png', alt='Confirm button image')
-                  span.buttonSpan Update Node Amount
-          div#nodeContextMenu
-            div#deleteNodes Delete Selected
-            div#mergeNodes Merge Selected
-            div#splitNodes Split Selected
-          div#profileFadeInfo
-            div#pres
-              label#name
-              br
-              p(style='font-style: italic;') Click on the profile
-              label Port Sets
-              br
-              select#portSets
-              br
-              br
-              table#portsetTable
-                thead
-                  tr
-                    th(class='left') Port
-                    th(class='right') Behavior
-                tbody#profileTableHook
-              br
-              label Ethernet Vendors
-              br
-              select#vendors
-              br
-              br
-              label Ethernet Interfaces
-              br
-              select#interfaces
-              br
-              br
-              label Ip Address Allocation Type
-              br
-              select#allocationType(onchange='showIpBlock()')
-                option DHCP
-                option IP Range
-              br
-              div#ipBlock(style='display: none;')
-                input#ip1(type='number', min='0', max='255', value='0', step='1')
-                input#ip2(type='number', min='0', max='255', value='0', step='1')
-                input#ip3(type='number', min='0', max='255', value='0', step='1')
-                input#ip4(type='number', min='0', max='255', value='0', step='1')
-              br
-              button(onclick='saveSelectedParameters()')
-                img.buttonIcon(src='images/start.png', alt='Confirm button image')
-                span.buttonSpan Save Parameters
   div#lightbox(class='white_content')
     div#addConfigForm
       form(method='post', id='addConfig', onsubmit='return checkParametersAdd();')

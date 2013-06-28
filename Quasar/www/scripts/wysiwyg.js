@@ -148,7 +148,7 @@ function showProfileInfo(e)
             }
           }
 
-          var pointerCss = {top:($(source).position().top - ($profileInfo.outerHeight() / 2) + 106),
+          var pointerCss = {top:($(source).position().top - ($profileInfo.outerHeight() / 2)),
                             left:($(source).position().left + $(source).outerWidth() + 20)};
 
           $profileInfo.css(pointerCss).stop(false, true).fadeIn(400);
@@ -490,9 +490,7 @@ function deleteCanvasEleClick(e, source)
   e.stopImmediatePropagation();
   macsToRemove = nodeTopology[source].mac.split(',');
   delete nodeTopology[source];
-  now.deleteNodes(macsToRemove, function(retVal){
-    RefreshNodeGrid(nodeTopology);
-  });
+  now.deleteNodes(macsToRemove);
   $('#' + source).remove();
   if(hoverNode == source || hoverNode == undefined)
   {
@@ -631,8 +629,6 @@ function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitDa
         nodeTopology[eleCount].mac = setMAC.join();
         nodeTopology[eleCount].coordinates = {x:x, y:y};
         $topology.append(div);
-
-        RefreshNodeGrid(nodesList);
 
         eleCount++;
       });
@@ -825,6 +821,8 @@ function regenTabDock()
 
 function prepopulateCanvasWithNodes(cb)
 {
+  // TODO: Need to check for MAC mismatch between TOPO file and 
+  // pulled info, if using a topo file.
   var xEleCount = 0;
   var yEleCount = 0;
   var eleCountUpdate = {};
@@ -1134,6 +1132,10 @@ function placeBackgroundImage(ele, profile)
 
 function handleOffscreenIndicators()
 {
+  if($topology == undefined || $topology == '')
+  {
+    return;
+  }
   var width = $topology.outerWidth();
   var height = $topology.outerHeight();
   $('.canvasElement').each(function(){
@@ -1872,7 +1874,6 @@ function updateCount()
       now.deleteNodes(macsToRemove);
       delete nodeTopology[hoverNode];
       $('#' + hoverNode).remove();
-      RefreshNodeGrid(nodeTopology);
     }
     else
     {
@@ -1898,10 +1899,7 @@ function updateCount()
       }
       nodeTopology[hoverNode].mac = newMacAssignment.join(',');
       
-      now.deleteNodes(macsToRemove, function(retVal){
-        if(retVal == true)
-        {}
-      });
+      now.deleteNodes(macsToRemove);
     }
   }
   hoverhold = false;
@@ -1946,12 +1944,7 @@ function deleteSelected()
     fadeEleIn = true;
   });
   
-  now.deleteNodes(deleteNodes, function(retVal){
-    if(retVal == true)
-    {
-      RefreshNodeGrid(nodeTopology);
-    }
-  });
+  now.deleteNodes(deleteNodes);
 }
 
 function clearSelectedCanvas()
@@ -1972,6 +1965,55 @@ function clearSelectedCanvas()
   fadeEleIn = true;
   hoverhold = false;
   selected = [];
+}
+
+function generateTempCanvas()
+{
+  var tabDiv = theDoc.createElement('div');
+  tabDiv.id = 'tempTab';
+  tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
+  var canvasDiv = theDoc.createElement('div');
+  canvasDiv.id = 'nodeCanvasTemp';
+  canvasDiv.className = 'canvas sameHeight';
+  tabDiv.appendChild(canvasDiv);
+  
+  $topology = $(canvasDiv);
+  
+  var droppableOptions = {accept:'.ui-draggable'};
+  // set up custom droppable here
+  $topology.droppable(droppableOptions)
+  .on('dropover', function(event, ui){
+    $topology.addClass('over');
+  })
+  .on('dropout', function(event, ui){
+    $topology.removeClass('over');
+  })
+  .on('drop', function(event, ui){
+    noclick = true;
+    $topology.removeClass('over');
+    $dragMe.draggable('disable');
+    placeBackgroundImage($dragMe);
+    var dragMeCss = {border:'2px dashed black',
+                     opacity:'0.4'};
+    $dragMe.css(dragMeCss);
+    
+    if(ui.draggable.attr('class').indexOf('canvasElement') == -1 
+    && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
+    {
+      var nodeObj = {};
+      nodeObj.pfile = selectedProfile;
+      nodeObj.count = $('#nodeNumber').val();
+      
+      clearProfileSelected();
+      
+      var x = ui.helper.offset().left - $topology.offset().left;
+      var y = ui.helper.offset().top - $topology.offset().top;
+      // Here generate new canvas, append correct listeners, 
+      // add node to that canvas, and set this one to be removed
+      //addNodeToCanvas(nodeObj, 'drop', x, y);
+    }
+  });
+  $topoHook.append(tabDiv);
 }
 
 $(function(){
@@ -2019,8 +2061,16 @@ $(function(){
           
     repopulateNodeCanvas(function(){
       prepopulateCanvasWithNodes(function(){
-        appendTopoListeners($topology);
-        handleOffscreenIndicators();
+        if($topology != undefined && $topology != '')
+        {
+          appendTopoListeners($topology);
+          handleOffscreenIndicators(); 
+        }
+        else
+        {
+          // add TempCanvas to $topoHook; TempCanvas will require different droppable rules
+          generateTempCanvas();
+        }
         adjustColumns();
         $('#pageWrap').attr('style', '');
       });
