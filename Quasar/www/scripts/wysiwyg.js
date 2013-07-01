@@ -147,9 +147,9 @@ function showProfileInfo(e)
               break;
             }
           }
-
-          var pointerCss = {top:($(source).position().top - ($profileInfo.outerHeight() / 2)),
-                            left:($(source).position().left + $(source).outerWidth() + 20)};
+          var offset = $('#tabDock').outerHeight() + $('#headContainer').outerHeight() + 2;
+          var pointerCss = {top:($(source).position().top - ($profileInfo.outerHeight() / 2) + offset),
+                            left:($(source).position().left + $(source).outerWidth() + 10)};
 
           $profileInfo.css(pointerCss).stop(false, true).fadeIn(400);
         });
@@ -628,7 +628,10 @@ function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitDa
         $(div).data('mac', setMAC.join());
         nodeTopology[eleCount].mac = setMAC.join();
         nodeTopology[eleCount].coordinates = {x:x, y:y};
-        $topology.append(div);
+        if($topology != undefined && $topology != '')
+        {
+          $topology.append(div);
+        }
 
         eleCount++;
       });
@@ -843,7 +846,6 @@ function prepopulateCanvasWithNodes(cb)
           {
             if(configIfaces[currentConfig].indexOf(topo[i].iface) == -1)
             {
-
               configIfaces[currentConfig].push(topo[i].iface);  
             }
             if($('#' + topo[i].iface + 'tab').length == 0)
@@ -1979,6 +1981,32 @@ function generateTempCanvas()
   
   $topology = $(canvasDiv);
   
+  var draggableOptions = {helper:'clone',
+                  tolerance: 'pointer',
+                  cursorAt: {top:25,left:15},
+                  cursor: 'move',
+                  containment: '#' + $topology.attr('id'),
+                  revert: 'invalid'};
+  
+  $dragMe.draggable(draggableOptions)
+    .on('dragstart', function(event, ui){
+      var evt = (event ? event : window.event);
+      var source = evt.target || evt.srcElement;
+      source.style.opacity = '0.4';
+    })
+    .on('dragstop', function(event, ui){
+      var evt = (event ? event : window.event);
+      var source = evt.target || evt.srcElement;
+      var dragMeCss = {border:'2px dashed black',
+                       opacity:'0.4'};
+      $dragMe.css(dragMeCss);
+    })
+    .draggable('disable');
+    
+  var dragMeCss = {border:'2px dashed black',
+                   opacity:'0.4'};
+  $dragMe.css(dragMeCss);
+  
   var droppableOptions = {accept:'.ui-draggable'};
   // set up custom droppable here
   $topology.droppable(droppableOptions)
@@ -1997,8 +2025,8 @@ function generateTempCanvas()
                      opacity:'0.4'};
     $dragMe.css(dragMeCss);
     
-    if(ui.draggable.attr('class').indexOf('canvasElement') == -1 
-    && ui.draggable.attr('class').indexOf('ui-dialog') == -1)
+    if((ui.draggable.attr('class').indexOf('canvasElement') == -1) 
+    && (ui.draggable.attr('class').indexOf('ui-dialog') == -1))
     {
       var nodeObj = {};
       nodeObj.pfile = selectedProfile;
@@ -2008,9 +2036,77 @@ function generateTempCanvas()
       
       var x = ui.helper.offset().left - $topology.offset().left;
       var y = ui.helper.offset().top - $topology.offset().top;
-      // Here generate new canvas, append correct listeners, 
-      // add node to that canvas, and set this one to be removed
-      //addNodeToCanvas(nodeObj, 'drop', x, y);
+      $topology.remove();
+      $topology = '';
+      
+      var ipType = '';
+      var ip1, ip2, ip3, ip4 = '0';
+      if(nodeTopology[eleCount].ip != 'DHCP')
+      {
+        ip1 = nodeTopology[eleCount].ip.ip1;
+        ip2 = nodeTopology[eleCount].ip.ip2;
+        ip3 = nodeTopology[eleCount].ip.ip3;
+        ip4 = nodeTopology[eleCount].ip.ip4;
+      }
+      else
+      {
+        ipType = 'DHCP';
+      }
+      var profile = nodeTopology[eleCount].pfile;
+      var portset = nodeTopology[eleCount].portset.toString();
+      var vendor = nodeTopology[eleCount].vendor;
+      var ethInterface = nodeTopology[eleCount].iface;
+      var count = nodeTopology[eleCount].count.toString();
+      delete nodeTopology[eleCount];
+      eleCount--;
+      if((typeof now.createHoneydNodes == 'function') && (typeof now.GetNodes == 'function'))
+      {
+        now.createHoneydNodes(ipType, ip1, ip2, ip3, ip4, profile, portset, vendor, ethInterface, count);
+  
+        nodes = [];
+        var setMAC = [];
+  
+        now.GetNodes(function(nodesList){
+          nodes = nodesList;
+          nodeList = nodesList;
+          var add = true;
+          for(var i in nodes)
+          {
+            add = true;
+            for(var j in haveMac)
+            {
+              if(haveMac[j] == nodes[i].mac)
+              {
+                add = false;
+                break;
+              }
+            }
+            if(add)
+            {
+              haveMac.push(nodes[i].mac);
+              setMAC.push(nodes[i].mac);
+            } 
+          }
+          //$(div).data('mac', setMAC.join());
+        });
+      }
+      else
+      {
+        alert('Could not create honeyd nodes: No connection to server');
+      }
+      
+      prepopulateCanvasWithNodes(function(){
+        if($topology != undefined && $topology != '')
+        {
+          appendTopoListeners($topology);
+          handleOffscreenIndicators(); 
+        }
+        else
+        {
+          console.log('topo not set');
+        }
+        adjustColumns();
+      });
     }
   });
   $topoHook.append(tabDiv);

@@ -364,7 +364,7 @@
   border-bottom-right-radius: 10px;
   background-color: #E4F2FF;
   float: left;
-  right: 14px;
+  right: 2px;
   margin-top: 2px;
   padding-left: 10px;
   /*margin-right: 14px;*/
@@ -638,13 +638,10 @@
   width: 20px;
   height: 20px;
   font-size: 18px;
-  float: right;
   cursor: pointer;
   text-align: center;
   border: 2px solid black;
-  border-radius: 5px;
-  position: absolute;
-  left: 250px;
+  border-radius: 10px;
 }
 
 #helpPane {
