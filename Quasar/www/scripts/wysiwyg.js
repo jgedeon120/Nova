@@ -1,5 +1,6 @@
 var theDoc = document;
 var haveMac = [];
+var macsTotal = [];
 var nodes = {};
 var configIfaces = {};
 var $topology = '';
@@ -18,6 +19,7 @@ var zoom = {width:50, height:50};
 var oldX = 0;
 var oldY = 0;
 var selected = [];
+var profiles = [];
 var topoDrag = false;
 var noclick = false;
 var hoverhold = false;
@@ -228,7 +230,7 @@ function repopulateNodeCanvas(cb)
   });
   if(typeof now.GetConfigSummary == 'function')
   { 
-    now.GetConfigSummary(currentConfig, function(scriptProfileBindings, profileObj, profiles, nodes){
+    now.GetConfigSummary(currentConfig, function(scriptProfileBindings, profileObj){
       var profHook = $('#profilesHook');
       profHook.empty();
       
@@ -236,6 +238,7 @@ function repopulateNodeCanvas(cb)
       {
         var profile = {};
         profile.name = profileObj[i].name;
+        profiles.push(profile.name);
         profile.parent = profileObj[i].parent;
         profile.children = [];
         var append = theDoc.createElement('tr');
@@ -816,9 +819,12 @@ function generateTab(iface)
 function regenTabDock()
 {
   $('#tabDock').empty();
-  for(var i in configIfaces[currentConfig])
+  if($('#0').length != 0)
   {
-    generateTab(configIfaces[currentConfig][i]);
+    for(var i in configIfaces[currentConfig])
+    {
+      generateTab(configIfaces[currentConfig][i]);
+    }
   }
 }
 
@@ -848,7 +854,9 @@ function prepopulateCanvasWithNodes(cb)
             {
               configIfaces[currentConfig].push(topo[i].iface);  
             }
-            if($('#' + topo[i].iface + 'tab').length == 0)
+            if($('#' + topo[i].iface + 'tab').length == 0 
+            && macsTotal.indexOf(topo[i].mac) != -1
+            && profiles.indexOf(topo[i].pfile) != -1)
             {
               var tabDiv = theDoc.createElement('div');
               tabDiv.id = topo[i].iface + 'tab';
@@ -873,7 +881,9 @@ function prepopulateCanvasWithNodes(cb)
             {
               configIfaces[currentConfig].push('static');  
             }
-            if($('#statictab').length == 0)
+            if($('#statictab').length == 0
+            && macsTotal.indexOf(topo[i].mac) != -1
+            && profiles.indexOf(topo[i].pfile) != -1)
             {
               var tabDiv = theDoc.createElement('div');
               tabDiv.id = 'statictab';
@@ -1097,6 +1107,10 @@ function placeBackgroundImage(ele, profile)
   if(typeof now.GetProfile == 'function')
   {
     now.GetProfile(profile, function(pfile){
+      if(pfile == null || pfile == undefined)
+      {
+        return;
+      }
       var pers = pfile.personality;
       if(pers.indexOf('Windows') != -1)
       {
@@ -2058,7 +2072,6 @@ function generateTempCanvas()
       var ethInterface = nodeTopology[eleCount].iface;
       var count = nodeTopology[eleCount].count.toString();
       delete nodeTopology[eleCount];
-      eleCount--;
       if((typeof now.createHoneydNodes == 'function') && (typeof now.GetNodes == 'function'))
       {
         now.createHoneydNodes(ipType, ip1, ip2, ip3, ip4, profile, portset, vendor, ethInterface, count);
@@ -2087,7 +2100,6 @@ function generateTempCanvas()
               setMAC.push(nodes[i].mac);
             } 
           }
-          //$(div).data('mac', setMAC.join());
         });
       }
       else
@@ -2103,7 +2115,7 @@ function generateTempCanvas()
         }
         else
         {
-          console.log('topo not set');
+          generateTempCanvas();
         }
         adjustColumns();
       });
@@ -2155,20 +2167,26 @@ $(function(){
     $('#saveMessage').hide();
     $('#placeHolder').hide();
           
-    repopulateNodeCanvas(function(){
-      prepopulateCanvasWithNodes(function(){
-        if($topology != undefined && $topology != '')
-        {
-          appendTopoListeners($topology);
-          handleOffscreenIndicators(); 
-        }
-        else
-        {
-          // add TempCanvas to $topoHook; TempCanvas will require different droppable rules
-          generateTempCanvas();
-        }
-        adjustColumns();
-        $('#pageWrap').attr('style', '');
+    now.GetNodes(function(nlist){
+      for(var i in nlist)
+      {
+        macsTotal.push(nlist[i].mac);
+      }
+      repopulateNodeCanvas(function(){
+        prepopulateCanvasWithNodes(function(){
+          if($topology != undefined && $topology != '')
+          {
+            appendTopoListeners($topology);
+            handleOffscreenIndicators(); 
+          }
+          else
+          {
+            // add TempCanvas to $topoHook; TempCanvas will require different droppable rules
+            generateTempCanvas();
+          }
+          adjustColumns();
+          $('#pageWrap').attr('style', '');
+        });
       });
     });
   });
