@@ -860,7 +860,7 @@ function prepopulateCanvasWithNodes(cb)
             {
               var tabDiv = theDoc.createElement('div');
               tabDiv.id = topo[i].iface + 'tab';
-              tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
+              tabDiv.setAttribute('onclick', 'clearSelectedCanvas(); if(!$("#helpPane").is(":hidden")){handleHelpPaneSlide();}');
               var canvasDiv = theDoc.createElement('div');
               canvasDiv.id = 'nodeCanvas' + topo[i].iface;
               canvasDiv.style.display = 'none';
@@ -887,7 +887,7 @@ function prepopulateCanvasWithNodes(cb)
             {
               var tabDiv = theDoc.createElement('div');
               tabDiv.id = 'statictab';
-              tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
+              tabDiv.setAttribute('onclick', 'clearSelectedCanvas(); if(!$("#helpPane").is(":hidden")){handleHelpPaneSlide();}');
               var canvasDiv = theDoc.createElement('div');
               canvasDiv.id = 'nodeCanvasstatic';
               canvasDiv.style.display = 'none';
@@ -925,7 +925,7 @@ function prepopulateCanvasWithNodes(cb)
                 {
                   var tabDiv = theDoc.createElement('div');
                   tabDiv.id = nodeList[i].interface + 'tab';
-                  tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
+                  tabDiv.setAttribute('onclick', 'clearSelectedCanvas(); if(!$("#helpPane").is(":hidden")){handleHelpPaneSlide();}');
                   var canvasDiv = theDoc.createElement('div');
                   canvasDiv.id = 'nodeCanvas' + nodeList[i].interface;
                   canvasDiv.style.display = 'none';
@@ -949,7 +949,7 @@ function prepopulateCanvasWithNodes(cb)
                 {
                   var tabDiv = theDoc.createElement('div');
                   tabDiv.id = 'statictab';
-                  tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
+                  tabDiv.setAttribute('onclick', 'clearSelectedCanvas(); if(!$("#helpPane").is(":hidden")){handleHelpPaneSlide();}');
                   var canvasDiv = theDoc.createElement('div');
                   canvasDiv.id = 'nodeCanvasstatic';
                   canvasDiv.style.display = 'none';
@@ -1012,7 +1012,7 @@ function prepopulateCanvasWithNodes(cb)
               {
                 var tabDiv = theDoc.createElement('div');
                 tabDiv.id = nodeList[i].interface + 'tab';
-                tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
+                tabDiv.setAttribute('onclick', 'clearSelectedCanvas(); if(!$("#helpPane").is(":hidden")){handleHelpPaneSlide();}');
                 var canvasDiv = theDoc.createElement('div');
                 canvasDiv.id = 'nodeCanvas' + nodeList[i].interface;
                 canvasDiv.style.display = 'none';
@@ -1036,7 +1036,7 @@ function prepopulateCanvasWithNodes(cb)
               {
                 var tabDiv = theDoc.createElement('div');
                 tabDiv.id = 'statictab';
-                tabDiv.setAttribute('onclick', 'clearSelectedCanvas()');
+                tabDiv.setAttribute('onclick', 'clearSelectedCanvas(); if(!$("#helpPane").is(":hidden")){handleHelpPaneSlide();}');
                 var canvasDiv = theDoc.createElement('div');
                 canvasDiv.id = 'nodeCanvasstatic';
                 canvasDiv.style.display = 'none';

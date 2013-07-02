@@ -650,6 +650,7 @@
   border-radius: 5px;
   text-align: left;
   padding-left: 5px;
+  margin-top: -24px;
   z-index: 3000;
   width: 760px;
   display: none;
@@ -663,7 +664,6 @@
 #helpPane li {
   margin-top: 10px; 
   margin-bottom: 10px;
-  font-weight: bold;
   list-style-type: none;
 }
 
