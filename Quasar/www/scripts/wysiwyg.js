@@ -848,14 +848,26 @@ function prepopulateCanvasWithNodes(cb)
       {
         for(var i in topo)
         {
+          var checkSplit = topo[i].mac.split(',');
+          var allow = true;
+          
+          for(var j in checkSplit)
+          {
+            if(macsTotal.indexOf(checkSplit[j]) == -1)
+            {
+              allow = false;
+            }
+          }
+          
           if(topo[i].ip == 'DHCP')
           {
             if(configIfaces[currentConfig].indexOf(topo[i].iface) == -1)
             {
               configIfaces[currentConfig].push(topo[i].iface);  
             }
-            if($('#' + topo[i].iface + 'tab').length == 0 
-            && macsTotal.indexOf(topo[i].mac) != -1
+            
+            if($('#' + topo[i].iface + 'tab').length == 0
+            && allow 
             && profiles.indexOf(topo[i].pfile) != -1)
             {
               var tabDiv = theDoc.createElement('div');
@@ -882,7 +894,7 @@ function prepopulateCanvasWithNodes(cb)
               configIfaces[currentConfig].push('static');  
             }
             if($('#statictab').length == 0
-            && macsTotal.indexOf(topo[i].mac) != -1
+            && allow
             && profiles.indexOf(topo[i].pfile) != -1)
             {
               var tabDiv = theDoc.createElement('div');
@@ -2119,6 +2131,25 @@ function generateTempCanvas()
         }
         adjustColumns();
       });
+    }
+  })
+  .mousemove(function(e){
+    if(topoDrag)
+    {
+      $('.canvasElement').each(function(){
+        var newPos = {left:parseInt($(this).css('left')) + parseInt(e.clientX - oldX),
+                      top:parseInt($(this).css('top')) + parseInt(e.clientY - oldY)};
+        $(this).css(newPos);
+      });
+      // shift background while dragging
+      var backgroundShiftLeft = parseInt(e.clientX - oldX) + parseInt($topology.css('background-position').split(' ')[0]);
+      var backgroundShiftTop = parseInt(e.clientY - oldY) + parseInt($topology.css('background-position').split(' ')[1]);
+      var backgroundShift = backgroundShiftLeft + 'px ' + backgroundShiftTop + 'px';
+      $topology.css('background-position', backgroundShift);
+      
+      handleOffscreenIndicators();
+      oldX = e.clientX;
+      oldY = e.clientY;
     }
   });
   $topoHook.append(tabDiv);
