@@ -263,7 +263,7 @@ function repopulateNodeCanvas(cb)
 function saveSelectedParameters()
 {
   clicked = false;
-  var dragMeCss = {border:'2px solid black',
+  var dragMeCss = {border:'1px solid black',
                    opacity:'1'};
   $dragMe.draggable('enable').css(dragMeCss);
   hideProfileInfo();
@@ -2213,11 +2213,11 @@ $(window).resize(function(){
 });
 
 $(window).keydown(function(event){
-  if(!(event.shiftKey && event.ctrlKey && event.keyCode == 83) && !(event.which == 19))
+  if(!(event.shiftKey && event.ctrlKey && (event.keyCode == 83 || event.keyCode == 72)) && !(event.which == 19))
   {
     event.stopPropagation();
   }
-  else
+  else if(event.keyCode == 83)
   {
     if(typeof now.WriteWysiwygTopology == 'function')
     {
@@ -2231,6 +2231,10 @@ $(window).keydown(function(event){
       console.log('Could not write topology out to file: No connection to server!');
     }
     event.stopPropagation();
+  }
+  else if(event.keyCode == 72)
+  {
+    handleHelpPaneSlide();
   }
 });
 

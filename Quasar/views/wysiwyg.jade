@@ -39,50 +39,46 @@ block content
       div#dragBar(class='sameHeight')
         div#expandHelp(onclick='handleHelpPaneSlide()') ?
           div#helpPane
-            h1(style='margin-left: 5px;') User Actions
-            p(style='margin-left: 5px; font-weight: bold;') 
-              span.kbk Ctrl 
-              + 
-              span.kbk Shift
-              + 
-              span.kbk S
-              span : Save Topology
-            p(style='margin-left: 5px') 
-              span(style='font-weight: bold;') Middle Mouse Drag: 
-              Move viewport
-            p(style='margin-left: 5px;') User can drag lasso over nodes to capture them for:
-            p(style='margin-left: 10px; font-weight: bold;') 
-              span.kbk Del
-              span : Delete Selected Nodes
-            p(style='margin-left: 10px;') 
-              span(style='font-weight: bold;') Left Click Mouse Drag: 
-              Move all selected nodes 
-            p(style='margin-left: 10px; font-size: 24px;') Right-Click menu:
-            p(style='margin-left: 15px;') 
-              span(style='font-weight: bold;') Delete Selected: 
-              Delete all selected nodes
-            p(style='margin-left: 15px;') 
-              span(style='font-weight: bold;') Merge Selected: 
-              Nodes can only be merged if they share the same interface, portset, ethernet vendor, and IP address allocation type
-            p(style='margin-left: 15px;')
-              span(style='font-weight: bold;') Split Selected: 
-              Split selected node into two nodes (will only appear if one node is selected)
-            p(style='margin-left: 5px;') Making a new Node:
-            p(style='margin-left: 10px;') 
-              span(style='font-weight: bold;') 1) 
-              span Select Configuration from Dropdown
-            p(style='margin-left: 10px;') 
-              span(style='font-weight: bold;') 2) 
-              span Select number of Nodes to create
-            p(style='margin-left: 10px;') 
-              span(style='font-weight: bold;') 3) 
-              span Click on desired profile - configure as desired, Save Parameters
-            p(style='margin-left: 10px;') 
-              span(style='font-weight: bold;') 4) 
-              span Drag highlighted node in left bar onto Canvas
-            br
+            h1 WYSIWYG Actions
+            label Keyboard Shortcuts:
+            ul
+              li 
+                span.kbk Ctrl 
+                + 
+                span.kbk Shift
+                + 
+                span.kbk S
+                span : Save Topology
+              li
+                span.kbk Ctrl
+                +
+                span.kbk Shift
+                +
+                span.kbk H
+                span : Toggle help dialog
+              li
+                span.kbk Del
+                span : When elements are lassoed, delete all selected
+            label Mouse Actions:
+            ul
+              li Middle Mouse Click-Drag: Move viewport
+              li Left Click Drag: Lasso for selecting nodes
+              li Left Click Drag on Lassoed Nodes: Drag all selected nodes
+              li Right Click on Nodes: Show Context Menu
+            label To Create A New Node:
+            ul
+              li Select the Haystack you would like to create nodes in
+              li Select how many nodes you will create
+              li Click the profile you would like to use, and select
+                ul
+                  li Port Set
+                  li Ethernet Vendor
+                  li Ethernet Interfaces
+                  li IP Allocation Type
+              li Click "Save Parameters"
+              li Drag template beneath profiles onto viewport
           br
-        p Configurations
+        p Haystacks
         select#configurationSelect(onchange='nodeList = {}; repopulateNodeCanvas(function(){prepopulateCanvasWithNodes()})')
         br
         p Number of nodes 
