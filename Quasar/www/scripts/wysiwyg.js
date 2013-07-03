@@ -25,6 +25,7 @@ var noclick = false;
 var hoverhold = false;
 var group = {type:'DHCP', iface:'eth0'};
 var showHideTime = 200;
+var canvasCount = 0;
 
 jQuery.expr[':'].regex = function(elem, index, match) {
   var matchParams = match[3].split(','),
@@ -493,7 +494,15 @@ function deleteCanvasEleClick(e, source)
   e.stopImmediatePropagation();
   macsToRemove = nodeTopology[source].mac.split(',');
   delete nodeTopology[source];
-  now.deleteNodes(macsToRemove);
+  now.deleteNodes(macsToRemove, function(retVal){
+    if(retVal)
+    {
+      if($('.canvasElements').length == 0)
+      {
+        handleCanvasRemove();
+      }
+    }
+  });
   $('#' + source).remove();
   if(hoverNode == source || hoverNode == undefined)
   {
@@ -608,6 +617,11 @@ function addNodeToCanvas(nodeObj, type, left, top, xEleCount, yEleCount, splitDa
       var setMAC = [];
 
       now.GetNodes(function(nodesList){
+        macsTotal = [];
+        for(var i in nodesList)
+        {
+          macsTotal.push(nodesList[i].mac);
+        }
         nodes = nodesList;
         nodeList = nodesList;
         var add = true;
@@ -819,7 +833,7 @@ function generateTab(iface)
 function regenTabDock()
 {
   $('#tabDock').empty();
-  if($('#0').length != 0)
+  if($('.canvasElement').length != 0)
   {
     for(var i in configIfaces[currentConfig])
     {
@@ -830,8 +844,6 @@ function regenTabDock()
 
 function prepopulateCanvasWithNodes(cb)
 {
-  // TODO: Need to check for MAC mismatch between TOPO file and 
-  // pulled info, if using a topo file.
   var xEleCount = 0;
   var yEleCount = 0;
   var eleCountUpdate = {};
@@ -884,6 +896,7 @@ function prepopulateCanvasWithNodes(cb)
                 canvasDiv.style.display = 'block';
                 $topology = $(canvasDiv);
               }
+              canvasCount++;
             }
             addNodeToCanvas(topo[i], 'prepopDHCP', topo[i].coordinates.x, topo[i].coordinates.y); 
           }
@@ -911,6 +924,7 @@ function prepopulateCanvasWithNodes(cb)
                 canvasDiv.style.display = 'block';
                 $topology = $(canvasDiv);
               }
+              canvasCount++;
             }
             addNodeToCanvas(topo[i], 'prepopStatic', topo[i].coordinates.x, topo[i].coordinates.y);
           }
@@ -924,6 +938,11 @@ function prepopulateCanvasWithNodes(cb)
         if(nodeList.length == undefined || nodeList.length == 0)
         {
           now.GetNodes(function(nodesList){
+            macsTotal = [];
+            for(var i in nodesList)
+            {
+              macsTotal.push(nodesList[i].mac);
+            }
             nodeList = nodesList;
             for(var i in nodeList)
             {
@@ -949,6 +968,7 @@ function prepopulateCanvasWithNodes(cb)
                     canvasDiv.style.display = 'block';
                     $topology = $(canvasDiv);
                   }
+                  canvasCount++;
                 }
               }
               else
@@ -973,6 +993,7 @@ function prepopulateCanvasWithNodes(cb)
                     canvasDiv.style.display = 'block';
                     $topology = $(canvasDiv);
                   }
+                  canvasCount++;
                 }
               }
               haveMac.push(nodeList[i].mac);
@@ -1036,6 +1057,7 @@ function prepopulateCanvasWithNodes(cb)
                   canvasDiv.style.display = 'block';
                   $topology = $(canvasDiv);
                 }
+                canvasCount++;
               }
             }
             else
@@ -1059,7 +1081,8 @@ function prepopulateCanvasWithNodes(cb)
                 {
                   canvasDiv.style.display = 'block';
                   $topology = $(canvasDiv);
-                }                
+                }
+                canvasCount++;           
               }
             }
             var key = nodeList[i].pfile + nodeList[i].portset + nodeList[i].interface + nodeList[i].ip;
@@ -1865,6 +1888,11 @@ function updateCount()
     if(typeof now.GetNodes == 'function')
     {
       now.GetNodes(function(nodesList){
+        macsTotal = [];
+        for(var i in nodesList)
+        {
+          macsTotal.push(nodesList[i].mac);
+        }
         nodes = nodesList;
         var add = true;
         for(var i in nodes)
@@ -1899,7 +1927,15 @@ function updateCount()
     if(newValue <= 0)
     {
       macsToRemove = nodeTopology[hoverNode].mac.split(',');
-      now.deleteNodes(macsToRemove);
+      now.deleteNodes(macsToRemove, function(retVal){
+        if(retVal)
+        {
+          if($('.canvasElement').length == 0)
+          {
+            handleCanvasRemove();
+          }
+        }
+      });
       delete nodeTopology[hoverNode];
       $('#' + hoverNode).remove();
     }
@@ -1927,7 +1963,15 @@ function updateCount()
       }
       nodeTopology[hoverNode].mac = newMacAssignment.join(',');
       
-      now.deleteNodes(macsToRemove);
+      now.deleteNodes(macsToRemove, function(retVal){
+        if(retVal)
+        {
+          if($('.canvasElement').length == 0)
+          {
+            handleCanvasRemove();
+          }
+        }
+      });
     }
   }
   hoverhold = false;
@@ -1936,6 +1980,27 @@ function updateCount()
     $slideInfo.removeAttr('style').hide().css({height:$topology.css('height')});
     fadeEleIn = true;
   });
+}
+
+function handleCanvasRemove()
+{
+  var id = $topology.attr('id');
+  id = id.substring('nodeCanvas'.length);
+  var tabToRemove = 'b' + $topology.attr('id');
+  var divToRemove = id + 'tab';
+  $('#' + divToRemove).remove();
+  $('#' + tabToRemove).remove();
+  canvasCount--;
+  if(canvasCount == 0)
+  {
+    generateTempCanvas();
+  }
+  else
+  {
+    $topology = $('.canvas').first();
+    adjustColumns();
+  }
+  now.WriteWysiwygTopology(nodeTopology);
 }
 
 function handleHelpPaneSlide()
@@ -1972,7 +2037,15 @@ function deleteSelected()
     fadeEleIn = true;
   });
   
-  now.deleteNodes(deleteNodes);
+  now.deleteNodes(deleteNodes, function(retVal){
+    if(retVal)
+    {
+      if($('.canvasElement').length == 0)
+      {
+        handleCanvasRemove();
+      }
+    }
+  });
 }
 
 function clearSelectedCanvas()
@@ -2062,8 +2135,6 @@ function generateTempCanvas()
       
       var x = ui.helper.offset().left - $topology.offset().left;
       var y = ui.helper.offset().top - $topology.offset().top;
-      $topology.remove();
-      $topology = '';
       
       var ipType = '';
       var ip1, ip2, ip3, ip4 = '0';
@@ -2092,6 +2163,11 @@ function generateTempCanvas()
         var setMAC = [];
   
         now.GetNodes(function(nodesList){
+          macsTotal = [];
+          for(var i in nodesList)
+          {
+            macsTotal.push(nodesList[i].mac);
+          }
           nodes = nodesList;
           nodeList = nodesList;
           var add = true;
@@ -2119,9 +2195,13 @@ function generateTempCanvas()
         alert('Could not create honeyd nodes: No connection to server');
       }
       
+      $topology = '';
+      $('#tempTab').remove();
+      
       prepopulateCanvasWithNodes(function(){
         if($topology != undefined && $topology != '')
         {
+          $topology.show();
           appendTopoListeners($topology);
           handleOffscreenIndicators(); 
         }
@@ -2153,6 +2233,7 @@ function generateTempCanvas()
     }
   });
   $topoHook.append(tabDiv);
+  adjustColumns();
 }
 
 $(function(){
@@ -2208,14 +2289,14 @@ $(function(){
           if($topology != undefined && $topology != '')
           {
             appendTopoListeners($topology);
-            handleOffscreenIndicators(); 
+            handleOffscreenIndicators();
+            adjustColumns(); 
           }
           else
           {
             // add TempCanvas to $topoHook; TempCanvas will require different droppable rules
             generateTempCanvas();
           }
-          adjustColumns();
           $('#pageWrap').attr('style', '');
         });
       });
