@@ -1,6 +1,9 @@
 UPDATE_FILE=novaInstallHelper.sh.gpg
 UPDATE_SCRIPT=novaInstallHelper.sh
 
+rm -f $UPDATE_FILE
+rm -f $UPDATE_SCRIPT
+
 echo "############################ Stopping Novad and Haystack ############################"
 novacli stop nova
 novacli stop haystack
