@@ -18,10 +18,12 @@
 
 var dns = require('dns');
 var fs = require('fs');
+var http = require('http');
 var exec = require('child_process').exec;
 var sanitizeCheck = require('validator').sanitize;
 var NovaCommon = require('./NovaCommon.js');
 var LOG = NovaCommon.LOG;
+var spawn = require('child_process').spawn;
 
 var NovaHomePath = NovaCommon.config.GetPathHome();
 var NovaSharedPath = NovaCommon.config.GetPathShared();
@@ -665,7 +667,7 @@ everyone.now.RenamePortset = function(profile, oldName, newName, cb)
 everyone.now.ShowAutoConfig = function (nodeInterface, numNodesType, numNodes, subnets, groupName, append, cb, route)
 {
     if(!(new RegExp('^[a-zA-Z0-9 \\-_]+$')).test(groupName))
-	{
+    {
         cb && cb("Haystack name must not be blank and must contain only letters, numbers, and hyphens. Invalid haystack name given.");
         return;
     }
@@ -1488,30 +1490,58 @@ everyone.now.GetPacketSizes = function(ip, iface, cb) {
 
 
 everyone.now.GetBroadcasts = function(profile, cb) {
-	var bcasts = NovaCommon.honeydConfig.GetBroadcasts(profile);
-	
-	for (var i = 0; i < bcasts.length; i++) {
-		bcasts[i].srcPort = bcasts[i].GetSrcPort();
-		bcasts[i].dstPort = bcasts[i].GetDstPort();
-		bcasts[i].time = bcasts[i].GetTime();
-		bcasts[i].script = bcasts[i].GetScript();
-	}
-	cb && cb(bcasts);
+    var bcasts = NovaCommon.honeydConfig.GetBroadcasts(profile);
+    
+    for (var i = 0; i < bcasts.length; i++) {
+        bcasts[i].srcPort = bcasts[i].GetSrcPort();
+        bcasts[i].dstPort = bcasts[i].GetDstPort();
+        bcasts[i].time = bcasts[i].GetTime();
+        bcasts[i].script = bcasts[i].GetScript();
+    }
+    cb && cb(bcasts);
 };
 
 everyone.now.ClearBroadcasts = function(profile, cb) {
-	NovaCommon.honeydConfig.ClearBroadcasts(profile);
-	cb && cb();
+    NovaCommon.honeydConfig.ClearBroadcasts(profile);
+    cb && cb();
 };
 
 everyone.now.AddBroadcast = function(profile, script, srcport, dstport, time, cb) {
-	NovaCommon.honeydConfig.AddBroadcast(script, srcport, dstport, time);
-	cb && cb();
+    NovaCommon.honeydConfig.AddBroadcast(script, srcport, dstport, time);
+    cb && cb();
+};
+
+everyone.now.AutoUpdate = function(cb)
+{
+    var executionString = "sudo";
+    var args = new Array();
+
+    args.push("/bin/bash");
+    args.push("/usr/share/nova/sharedFiles/autoUpdate.sh");
+    
+    var updater = spawn(executionString.toString(), args);
+            
+    updater.stdout.on('data', function (data){
+        console.log('UPDATER: ' + data);
+        cb(null, 'UPDATER: ' + data);
+    });
+            
+    updater.stderr.on('data', function (data){
+      console.log('UPDATER: ' + data);
+      cb(null, 'UPDATER: ' + data);
+    });
+    
+    updater.on('exit', function (code){
+      console.log("UPDATER exited with code " + code);
+      cb(null, 'UPDATER exited with code ' + code);
+    
+      LOG("ALERT", "Quasar is exiting due to Nova update");
+      process.exit(1);
+    });
 };
 
 
 }
-
 
 
 module.exports = NowjsMethods;

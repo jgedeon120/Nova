@@ -1,0 +1,26 @@
+extends layout
+
+block headerAdditions
+  script
+    function checkForUpdates() {
+      now.AutoUpdate(function(err, res) {
+        if (err) {
+          console.log("ERROR: "+ err);
+          return;
+        }
+
+        console.log(res);
+        $("#status")[0].innerHTML += res;
+        $("#status")[0].innerHTML += "<BR>";
+        $("#status")[0].scrollTop = $("#status")[0].scrollHeight;
+      });
+    }
+
+block content
+  div.contentBox
+    h1 Nova Updater
+
+    button(onclick="checkForUpdates()") Check for updates
+
+    br
+    p#status

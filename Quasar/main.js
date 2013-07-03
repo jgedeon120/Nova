@@ -1378,6 +1378,11 @@ app.get('/createNewUser', function (req, res)
     res.render('createNewUser.jade');
 });
 
+app.get('/updates', function (req, res)
+{
+    res.render('updates.jade');
+});
+
 app.get('/welcome', function (req, res)
 {
     res.render('welcome.jade');
