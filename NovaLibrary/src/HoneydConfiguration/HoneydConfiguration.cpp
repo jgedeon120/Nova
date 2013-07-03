@@ -151,6 +151,30 @@ Profile *HoneydConfiguration::ReadProfilesXML_helper(ptree &ptree, Profile *pare
 			LOG(DEBUG, "Unable to parse Ethernet settings for profile", "");
 		};
 
+		// Broadcast scripts
+		try
+		{
+			BOOST_FOREACH(ptree::value_type &broadcasts, ptree.get_child("broadcasts"))
+			{
+				if(!string(broadcasts.first.data()).compare("broadcast"))
+				{
+					Broadcast *bcast = new Broadcast();
+					bcast->m_script = broadcasts.second.get<string>("script");
+					bcast->m_dstPort = broadcasts.second.get<int>("dstport");
+					bcast->m_srcPort = broadcasts.second.get<int>("srcport");
+					bcast->m_time = broadcasts.second.get<int>("time");
+
+					profile->m_broadcasts.push_back(bcast);
+				}
+			}
+		}
+		catch(boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::property_tree::ptree_bad_path> > &e)
+		{
+			LOG(DEBUG, "Unable to parse Broacdast settings for profile:" + string(e.what()), "");
+		};
+
+
+
 		//Port Sets
 		try
 		{
@@ -375,6 +399,7 @@ bool HoneydConfiguration::ReadScriptsXML()//write complex test that moves the xm
 				script.m_path = value.second.get<string>("path");
 				script.m_defaultPort = value.second.get<string>("defaultport");
 				script.m_defaultProtocol = value.second.get<string>("defaultprotocol");
+				script.m_isBroadcastScript = value.second.get<bool>("broadcast");
 				script.m_isConfigurable = value.second.get<bool>("configurable");
 
 				//cout << "Configurable is " << script.m_isConfigurable << endl;
@@ -446,6 +471,7 @@ bool HoneydConfiguration::WriteScriptsToXML()
 		propTree.put<string>("path", m_scripts[i].m_path);
 		propTree.put<string>("defaultport", m_scripts[i].m_defaultPort);
 		propTree.put<string>("defaultprotocol", m_scripts[i].m_defaultProtocol);
+		propTree.put<bool>("broadcast", m_scripts[i].m_isBroadcastScript);
 		propTree.put<bool>("configurable", m_scripts[i].m_isConfigurable);
 
 		for (std::map<std::string, std::vector<std::string>>::iterator it = m_scripts[i].options.begin(); it != m_scripts[i].options.end(); it++)
@@ -559,6 +585,21 @@ bool HoneydConfiguration::WriteProfilesToXML_helper(Profile *root, ptree &propTr
 		vendors.add_child("vendor", vendor);
 	}
 	propTree.add_child("ethernet_vendors", vendors);
+
+
+	ptree broadcasts;
+	for (uint i = 0; i < root->m_broadcasts.size(); i++)
+	{
+		ptree broadcast;
+		broadcast.put<std::string>("script", root->m_broadcasts[i]->m_script);
+		broadcast.put<int>("srcport", root->m_broadcasts[i]->m_srcPort);
+		broadcast.put<int>("dstport", root->m_broadcasts[i]->m_dstPort);
+		broadcast.put<int>("time", root->m_broadcasts[i]->m_time);
+
+		broadcasts.add_child("broadcast", broadcast);
+	}
+
+	propTree.add_child("broadcasts",broadcasts);
 
 	//Describe what port sets are available for this profile
 	{
@@ -880,7 +921,23 @@ vector<string> HoneydConfiguration::GetScriptNames()
 	vector<string> scriptNames;
 	for(uint i = 0; i < m_scripts.size(); i++)
 	{
-		scriptNames.push_back(m_scripts[i].m_name);
+		if (!m_scripts[i].m_isBroadcastScript)
+		{
+			scriptNames.push_back(m_scripts[i].m_name);
+		}
+	}
+	return scriptNames;
+}
+
+vector<string> HoneydConfiguration::GetBroadcastScriptNames()
+{
+	vector<string> scriptNames;
+	for(uint i = 0; i < m_scripts.size(); i++)
+	{
+		if (m_scripts[i].m_isBroadcastScript)
+		{
+			scriptNames.push_back(m_scripts[i].m_name);
+		}
 	}
 	return scriptNames;
 }
@@ -969,7 +1026,7 @@ bool HoneydConfiguration::AddProfile(Profile *profile)
 	{
 		//Copy over the contents of this profile, and quit
 		duplicate->Copy(profile);
-
+	
 		//We don't need this new profile anymore, so get rid of it
 		if(profile != NULL)
 		{

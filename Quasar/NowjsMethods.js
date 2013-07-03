@@ -359,7 +359,7 @@ everyone.now.deleteNodes = function (nodeNames, cb)
     nodeName = nodeNames[i];
     if(nodeName != null && !NovaCommon.honeydConfig.DeleteNode(nodeName))
     {
-      cb && cb(false, "Failed to delete node " + nodeName);
+      cb(false, "Failed to delete node " + nodeName);
       return;
     }
 
@@ -367,11 +367,11 @@ everyone.now.deleteNodes = function (nodeNames, cb)
 
   if(!NovaCommon.honeydConfig.SaveAll())
   {
-    cb && cb(false, "Failed to save XML templates");
+    cb(false, "Failed to save XML templates");
     return;
   }
 
-  cb && cb(true, "");
+  cb(true, "");
 };
 
 everyone.now.deleteProfiles = function (profileNames, cb)
@@ -537,6 +537,12 @@ function jsProfileToHoneydProfile(profile)
         }
     }
 
+    honeydProfile.ClearBroadcasts();
+    for (var i = 0; i < profile.broadcasts.length; i++)
+    {
+        honeydProfile.AddBroadcast(profile.broadcasts[i].script, Number(profile.broadcasts[i].srcPort), Number(profile.broadcasts[i].dstPort), Number(profile.broadcasts[i].time));
+    }
+        
     return honeydProfile;
 }
 
@@ -1165,6 +1171,7 @@ everyone.now.GetProfile = function (profileName, cb)
     cb(profile);
 };
 
+
 everyone.now.GetHostileEvents = function (cb)
 {
     NovaCommon.dbqSuspectAlertsGet.all(function(err, results){
@@ -1534,7 +1541,32 @@ everyone.now.GetPacketSizes = function(ip, iface, cb) {
     });
 };
 
+
+everyone.now.GetBroadcasts = function(profile, cb) {
+	var bcasts = NovaCommon.honeydConfig.GetBroadcasts(profile);
+	
+	for (var i = 0; i < bcasts.length; i++) {
+		bcasts[i].srcPort = bcasts[i].GetSrcPort();
+		bcasts[i].dstPort = bcasts[i].GetDstPort();
+		bcasts[i].time = bcasts[i].GetTime();
+		bcasts[i].script = bcasts[i].GetScript();
+	}
+	cb && cb(bcasts);
+};
+
+everyone.now.ClearBroadcasts = function(profile, cb) {
+	NovaCommon.honeydConfig.ClearBroadcasts(profile);
+	cb && cb();
+};
+
+everyone.now.AddBroadcast = function(profile, script, srcport, dstport, time, cb) {
+	NovaCommon.honeydConfig.AddBroadcast(script, srcport, dstport, time);
+	cb && cb();
+};
+
+
 }
+
 
 module.exports = NowjsMethods;
 
