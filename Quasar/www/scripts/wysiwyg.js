@@ -101,7 +101,7 @@ function showProfileInfo(e)
           {
             var tr = theDoc.createElement('tr');
             var td = theDoc.createElement('td');
-            $(td).attr('colspan', 2).html('Default ' + sType  + ' Action: ' + udp)
+            $(td).attr('colspan', 2).html('Default ' + sType  + ' Action: ' + type)
             .toggleClass('right');
             $(tr).append(td);
             $table.append(tr);
