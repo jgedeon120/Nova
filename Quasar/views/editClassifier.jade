@@ -14,10 +14,12 @@
 //-   along with Nova.  If not, see <http://www.gnu.org/licenses/>.
 //- ============================================================================
 
+include mixins/headers.jade
+
 extends layout
 
 block headerAdditions
-  script
+  script.
     var classifier = {};
 
     function init() {
@@ -29,6 +31,7 @@ block headerAdditions
         // Make the enabled state observable so we can update things when enabled checkboxes change
         classifier.features[i].enabled = ko.observable(classifier.features[i].enabled);
       }
+      
 
       console.log(classifier);
 
@@ -49,9 +52,7 @@ block headerAdditions
     }
 
 block content
-  div.contentBox
-    h1 Classifier Editing
-
+  +header("Classifier Editing")
     table
       tr
         td
@@ -61,6 +62,7 @@ block content
             option KNN
             option THRESHOLD_TRIGGER
             option SCRIPT_ALERT
+            option UNAUTHORIZED_SUSPECTS
       tr
         td
           span Mode
@@ -77,13 +79,14 @@ block content
 
     br
 
-    table(data-bind='visible: classifier.type() != "SCRIPT_ALERT"')
+    table(data-bind='visible: classifier.type() != "SCRIPT_ALERT" && classifier.type() != "UNAUTHORIZED_SUSPECTS"')
       theader
         td Feature Name
         td Enabled
         td(data-bind='visible: classifier.type() == "KNN"') Weight
         td(data-bind='visible: classifier.type() == "THRESHOLD_TRIGGER"') Hostile Threshold
         td(data-bind='visible: classifier.type() == "SCRIPT_ALERT"') Script Triggered Alerts
+        td(data-bind='visible: classifier.type() == "UNAUTHORIZED_SUSPECTS"') Unauthorized Suspect Detector
       tbody(data-bind='foreach: classifier.features')
         tr
           td(data-bind='text: name')

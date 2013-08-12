@@ -191,6 +191,7 @@ clean-test:
 
 clean-nodejsmodule:
 	-cd NodejsModule; node-waf clean
+	-cd NodejsModule; node-gyp clean
 
 clean-quasar: clean-nodejsmodule
 	-rm -rf NodejsModule/build

@@ -134,7 +134,7 @@ void Database::Connect()
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"UPDATE suspects "
-		" SET startTime = ?3, endTime = ?4, lastTime = ?5"
+		" SET startTime = ?3, endTime = ?4, lastTime = ?5, mac = ?6"
 		" WHERE ip = ?1 AND interface = ?2",
 		-1, &updateSuspectTimestamps,  NULL));
 
@@ -235,7 +235,7 @@ void Database::Connect()
 		-1, &updateClassification, NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
-		"INSERT INTO suspect_alerts (ip, interface, startTime, endTime, lastTime, classification, hostileNeighbors, isHostile, classificationNotes, ip_traffic_distribution, port_traffic_distribution, packet_size_mean, packet_size_deviation, distinct_ips, distinct_tcp_ports, distinct_udp_ports, avg_tcp_ports_per_host, avg_udp_ports_per_host, tcp_percent_syn, tcp_percent_fin, tcp_percent_rst, tcp_percent_synack, haystack_percent_contacted) "
+		"INSERT INTO suspect_alerts (ip, interface, mac, startTime, endTime, lastTime, classification, hostileNeighbors, isHostile, classificationNotes, ip_traffic_distribution, port_traffic_distribution, packet_size_mean, packet_size_deviation, distinct_ips, distinct_tcp_ports, distinct_udp_ports, avg_tcp_ports_per_host, avg_udp_ports_per_host, tcp_percent_syn, tcp_percent_fin, tcp_percent_rst, tcp_percent_synack, haystack_percent_contacted) "
 		" SELECT * FROM suspects"
 		" WHERE ip = ? AND interface = ?",
 		-1 , &createHostileAlert, NULL));
@@ -278,6 +278,7 @@ void Database::WriteTimestamps(Suspect *s)
 	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(updateSuspectTimestamps, 3, static_cast<long int>(s->m_features.m_startTime)));
 	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(updateSuspectTimestamps, 4, static_cast<long int>(s->m_features.m_endTime)));
 	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(updateSuspectTimestamps, 5, static_cast<long int>(s->m_features.m_lastTime)));
+	SQL_RUN(SQLITE_OK,sqlite3_bind_int64(updateSuspectTimestamps, 6, static_cast<long int>(s->m_lastMac)));
 
 	m_count++;
 	SQL_RUN(SQLITE_DONE,sqlite3_step(updateSuspectTimestamps));
@@ -924,15 +925,15 @@ std::vector<Suspect> Database::GetSuspects(enum SuspectListType listType)
 
 	if (listType == SUSPECTLIST_ALL)
 	{
-	   SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db, "SELECT * FROM suspects", -1, &stmt, NULL));
+	   SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db, "SELECT * FROM suspects ORDER BY classification DESC", -1, &stmt, NULL));
 	}
 	else if (listType == SUSPECTLIST_HOSTILE)
 	{
-	   SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db, "SELECT * FROM suspects WHERE isHostile = 1", -1, &stmt, NULL));
+	   SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db, "SELECT * FROM suspects WHERE isHostile = 1 ORDER BY classification DESC", -1, &stmt, NULL));
 	}
 	else if (listType == SUSPECTLIST_BENIGN)
 	{
-	   SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db, "SELECT * FROM suspects WHERE isHostile = 0", -1, &stmt, NULL));
+	   SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db, "SELECT * FROM suspects WHERE isHostile = 0 ORDER BY classification DESC", -1, &stmt, NULL));
 	}
 
 	res = sqlite3_step(stmt);
@@ -946,15 +947,16 @@ std::vector<Suspect> Database::GetSuspects(enum SuspectListType listType)
 		id.set_m_ifname(string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1))));
 		s.SetIdentifier(id);
 
-		s.m_features.m_startTime = sqlite3_column_int(stmt, 2);
-		s.m_features.m_endTime = sqlite3_column_int(stmt, 3);
-		s.m_features.m_lastTime = sqlite3_column_int(stmt, 4);
-		s.SetClassification(sqlite3_column_double(stmt, 5));
-		s.SetIsHostile(sqlite3_column_double(stmt, 7));
-		s.m_classificationNotes = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 8)));
-		for (int i = 9; i < 9 + DIM; i++)
+		s.m_lastMac = sqlite3_column_int64(stmt, 2);
+		s.m_features.m_startTime = sqlite3_column_int(stmt, 3);
+		s.m_features.m_endTime = sqlite3_column_int(stmt, 4);
+		s.m_features.m_lastTime = sqlite3_column_int(stmt, 5);
+		s.SetClassification(sqlite3_column_double(stmt, 6));
+		s.SetIsHostile(sqlite3_column_double(stmt, 8));
+		s.m_classificationNotes = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 9)));
+		for (int i = 10; i < 10 + DIM; i++)
 		{
-			s.m_features.m_features[i - 9] = sqlite3_column_double(stmt, i);
+			s.m_features.m_features[i - 10] = sqlite3_column_double(stmt, i);
 		}
 
 		suspects.push_back(s);
@@ -983,15 +985,16 @@ Suspect Database::GetSuspect(SuspectID_pb id)
 	if (res == SQLITE_ROW)
 	{
 		s.SetIdentifier(id);
-		s.m_features.m_startTime = sqlite3_column_int(stmt, 2);
-		s.m_features.m_endTime = sqlite3_column_int(stmt, 3);
-		s.m_features.m_lastTime = sqlite3_column_int(stmt, 4);
-		s.SetClassification(sqlite3_column_double(stmt, 5));
-		s.SetIsHostile(sqlite3_column_double(stmt, 7));
-		s.m_classificationNotes = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 8)));
-		for (int i = 9; i < 9 + DIM; i++)
+		s.m_lastMac = sqlite3_column_int64(stmt, 2);
+		s.m_features.m_startTime = sqlite3_column_int(stmt, 3);
+		s.m_features.m_endTime = sqlite3_column_int(stmt, 4);
+		s.m_features.m_lastTime = sqlite3_column_int(stmt, 5);
+		s.SetClassification(sqlite3_column_double(stmt, 6));
+		s.SetIsHostile(sqlite3_column_double(stmt, 8));
+		s.m_classificationNotes = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 9)));
+		for (int i = 10; i < 10 + DIM; i++)
 		{
-			s.m_features.m_features[i - 9] = sqlite3_column_double(stmt, i);
+			s.m_features.m_features[i - 10] = sqlite3_column_double(stmt, i);
 		}
 	}
 

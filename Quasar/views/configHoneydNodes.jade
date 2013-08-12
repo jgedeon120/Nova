@@ -14,20 +14,22 @@
 //-   along with Nova.  If not, see <http://www.gnu.org/licenses/>.
 //- ============================================================================
 
+include mixins/headers.jade
+
 extends layout
 
 block headerAdditions
   link(rel='stylesheet', type='text/css', href='configstyle.css', media='screen')
   link(rel='stylesheet', type='text/css', href='novagrid.css', media='screen')
 
-  style
+  style.
     label.nodeAdd {
         text-align: right;
         margin-right: 5px;
         margin-top: 5px;
     }
 
-  script
+  script.
     var currentInterface;
     var pfile;
     var interfaces;
@@ -187,10 +189,16 @@ block headerAdditions
         var restartHaystack = confirm('You must restart the haystack for this to take effect. Restart it now?');
         if(restartHaystack)
         {
-          now.RestartHaystack();
+          now.RestartHaystack(function() {
+            window.location = '/honeydConfigManage?tab=settingsNodes';
+          });
+        } else {
+          window.location = '/honeydConfigManage?tab=settingsNodes';
         }
+      } else {
+        window.location = '/honeydConfigManage?tab=settingsNodes';
+
       }
-      window.location = '/honeydConfigManage?tab=settingsNodes';
     }
     
     function ipTypeChanged()
@@ -360,8 +368,7 @@ block headerAdditions
     }
 
 block content
-  div.contentBox
-    h1 Create Honeyd Nodes
+  +header("Create Honeyd Nodes")
     label.nodeAdd Show Only Leaf Profiles?
     input(type='checkbox', checked=true, onclick='repopulateSelect(this)')
     br

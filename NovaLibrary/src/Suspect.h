@@ -20,7 +20,6 @@
 #ifndef SUSPECT_H_
 #define SUSPECT_H_
 
-#include "SerializationHelper.h"
 #include "Point.h"
 #include "Evidence.h"
 #include "EvidenceAccumulator.h"
@@ -116,6 +115,9 @@ public:
 	EvidenceAccumulator m_features;
 
 	std::string m_classificationNotes;
+
+	// Last MAC address we saw for the suspect
+	uint64_t m_lastMac;
 
 private:
 	SuspectID_pb m_id;

@@ -950,7 +950,6 @@ app.get('/advancedOptions', function (req, res)
         , THRESHOLD_HOSTILE_TRIGGERS: NovaCommon.config.ReadSetting("THRESHOLD_HOSTILE_TRIGGERS")
         , ONLY_CLASSIFY_HONEYPOT_TRAFFIC: NovaCommon.config.ReadSetting("ONLY_CLASSIFY_HONEYPOT_TRAFFIC")
         , TRAINING_DATA_PATH: NovaCommon.config.ReadSetting("TRAINING_DATA_PATH")
-        , supportedEngines: NovaCommon.nova.GetSupportedEngines()
         , MESSAGE_WORKER_THREADS: NovaCommon.config.ReadSetting("MESSAGE_WORKER_THREADS")
     });
 });
@@ -1087,6 +1086,11 @@ app.get('/configHoneydNodes', function (req, res)
   });
 });
 
+app.get('/help', function (req, res)
+{
+    res.render('help.jade');   
+});
+
 app.get('/getSuspectDetails', function (req, res)
 {
   if(req.query['ip'] === undefined)
@@ -1188,6 +1192,7 @@ app.get('/addHoneydProfile', function (req, res)
       newProfile: true,
       vendors: NovaCommon.vendorToMacDb.GetVendorNames(),
       scripts: NovaCommon.honeydConfig.GetScriptNames(),
+      bcastScripts: NovaCommon.honeydConfig.GetBroadcastScriptNames(),
       personalities: NovaCommon.osPersonalityDb.GetPersonalityOptions()
     })
 });
@@ -1418,6 +1423,29 @@ app.get('/about', function (req, res)
     res.render('about.jade', {version: NovaCommon.config.GetVersionString()});
 });
 
+app.get('/editAuthorizedIPs', function(req, res) {
+
+    fs.readFile(NovaHomePath + "/config/authorizedIPs.config", function(err, data) {
+        if (err) {
+            RenderError(res, "Unable to open authorizedIPs.config", "/advancedOptions");
+            return;
+        }
+
+        var array = data.toString().split("\n");
+        var IPs = [];
+
+        for (var i in array) {
+            if (array[i].length < 7) {continue;}
+            if (array[i][0] == '#') {continue;}
+            IPs.push(array[i]);
+        }
+
+        res.render('authorizedIPs.jade', {authorizedIPs: JSON.stringify(IPs)});
+
+    });
+
+});
+
 app.get('/newInformation', function (req, res)
 {
     res.render('newInformation.jade');
@@ -1612,6 +1640,22 @@ app.get("/interfaceAliases", function (req, res)
     res.render('interfaceAliases.jade', {
       interfaceAliases: interfaceAliases
       , INTERFACES: NovaCommon.config.ListInterfaces().sort(),
+    });
+});
+
+app.post("/editAuthorizedIPs", function (req, res) {
+    if (req.files["IPs"] == undefined || req.files["IPs"].size == 0) {
+        RenderError(res, "Invalid form submission. This was likely caused by refreshing a page you shouldn't.", "/editAuthorizedIPs");
+        return;
+    }
+    
+    fs.rename(req.files["IPs"].path, NovaHomePath + "/config/authorizedIPs.config", function (err) {
+        if (err) {
+            RenderError(res, "Something went wrong when reading the uploaded file: " + err.toString(), "/editAuthorizedIPs");
+            return;
+        }
+
+        res.redirect('/editAuthorizedIPs');
     });
 });
 
@@ -1865,7 +1909,6 @@ app.post('/configureNovaSave', function (req, res)
     {
         key:  "RECIPIENTS"
         ,validator: function(val) {
-            console.log("Got RECIPIENTS " + val);
             validator.check(val, "Must have at least one email address").notEmpty();
             if (val.length != 0) {
                 var emails = val;
@@ -2170,7 +2213,7 @@ app.post('/configureNovaSave', function (req, res)
 
       NovaCommon.config.ReloadConfiguration();
 
-      if(req.body["EMAIL_ALERTS_ENABLED"] == undefined)
+      if(req.body["EMAIL_ALERTS_ENABLED"] == "0")
       {
         var spawn = require('sudo');
         var options = {
@@ -2181,13 +2224,12 @@ app.post('/configureNovaSave', function (req, res)
         var execution = ['cleannovasendmail.sh'];
         var rm = spawn(execution, options); 
         rm.on('exit', function(code){
-          console.log('code == ' + code);
+          //console.log('code == ' + code);
         });
         if(maildaemon != '')
         {
           maildaemon.kill('SIGINT');
         }
-        req.body["EMAIL_ALERTS_ENABLED"] = "0";
         NovaCommon.config.WriteSetting("EMAIL_ALERTS_ENABLED", "0");
       }
       else
@@ -2213,22 +2255,21 @@ app.post('/configureNovaSave', function (req, res)
               if(code === 0)
               {
                 var spawn = require('child_process').spawn;
-                var execstring = 'novamaildaemon.py';
+                var execstring = 'novamaildaemon.pl';
                 maildaemon = spawn(execstring.toString());
                 maildaemon.on('close', function(code){
                   if(code !== 0)
                   {
-                    console.log('nova mail daemon died an unnatural death with code ' + code);
+                    console.log('novamaildaemon.pl died an unnatural death with code ' + code);
                   }
                 }); 
               }
               else
               {
-                RenderError(res, 'Could not start mail daemon, check /etc/cron.' + interval + ' for orphaned script novasendmail.py', '/suspects');
+                RenderError(res, 'Could not start mail daemon, check /etc/cron.' + interval + ' for orphaned script novasendmail', '/suspects');
               }
             });
           }
-          req.body["EMAIL_ALERTS_ENABLED"] = "1";
           NovaCommon.config.WriteSetting("EMAIL_ALERTS_ENABLED", "1");
         }
       }
@@ -2323,7 +2364,7 @@ process.on('exit', function ()
     var execution = ['cleannovasendmail.sh'];
     var rm = spawn(execution, options); 
     rm.on('exit', function(code){
-      console.log('code == ' + code);
+      //console.log('code == ' + code);
       LOG("ALERT", "Quasar is exiting cleanly.");
     });
 });

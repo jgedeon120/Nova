@@ -117,6 +117,24 @@ everyone.now.createHoneydNodes = function(ipType, ip1, ip2, ip3, ip4, profile, p
     cb && cb(result);
 };
 
+everyone.now.checkVendor = function(vendorName, cb) {
+  var vendors = NovaCommon.vendorToMacDb.GetVendorNames();
+  if(vendorName == '')
+  {
+    cb && cb(false);
+    return;
+  }
+  var ok = false;
+  for(var i in vendors)
+  {
+    if(vendors[i] == vendorName)
+    {
+      ok = true;
+    }
+  }
+  cb && cb(ok);
+}
+
 everyone.now.SaveDoppelganger = function(node, cb)
 {
     var ipAddress = node.ip;
@@ -532,6 +550,11 @@ function jsProfileToHoneydProfile(profile)
     {
         honeydProfile.AddBroadcast(profile.broadcasts[i].script, Number(profile.broadcasts[i].srcPort), Number(profile.broadcasts[i].dstPort), Number(profile.broadcasts[i].time));
     }
+
+    honeydProfile.ClearProxies();
+    for (var i = 0; i < profile.proxies.length; i++) {
+        honeydProfile.AddProxy(profile.proxies[i].protocol, Number(profile.proxies[i].honeypotPort), profile.proxies[i].proxyIP, Number(profile.proxies[i].proxyPort));
+    }
         
     return honeydProfile;
 }
@@ -651,17 +674,6 @@ everyone.now.SaveProfile = function (profile, newProfile, cb)
     }
 
     cb();
-};
-
-everyone.now.RenamePortset = function(profile, oldName, newName, cb)
-{
-  var encodedName = sanitizeCheck(newName).entityEncode();
-  var result = NovaCommon.honeydConfig.RenamePortset(oldName, encodedName, profile);
-  NovaCommon.honeydConfig.SaveAll();
-  if(typeof cb == 'function')
-  {
-    cb();
-  }
 };
 
 everyone.now.ShowAutoConfig = function (nodeInterface, numNodesType, numNodes, subnets, groupName, append, cb, route)
@@ -1107,6 +1119,11 @@ everyone.now.saveClassifier = function(classifier, index, cb)
     {
         classifier.strings = {};
     }
+    else if (classifier.type == "UNAUTHORIZED_SUSPECTS")
+    {
+        classifier.strings = {};
+    }
+
 
     NovaCommon.classifiers.saveClassifier(classifier, index);
     if(cb) cb();
@@ -1501,18 +1518,23 @@ everyone.now.GetBroadcasts = function(profile, cb) {
     cb && cb(bcasts);
 };
 
-everyone.now.ClearBroadcasts = function(profile, cb) {
-    NovaCommon.honeydConfig.ClearBroadcasts(profile);
-    cb && cb();
+everyone.now.GetProxies = function(profile, cb) {
+    var proxies = NovaCommon.honeydConfig.GetProxies(profile);
+
+    for (var i = 0; i < proxies.length; i++) {
+        proxies[i].protocol = proxies[i].GetProtocol();
+        proxies[i].honeypotPort = proxies[i].GetHoneypotPort();
+        proxies[i].proxyIP = proxies[i].GetProxyIP();
+        proxies[i].proxyPort = proxies[i].GetProxyPort();
+    }
+
+    cb && cb(proxies);  
 };
 
-everyone.now.AddBroadcast = function(profile, script, srcport, dstport, time, cb) {
-    NovaCommon.honeydConfig.AddBroadcast(script, srcport, dstport, time);
-    cb && cb();
-};
-
+    
 everyone.now.AutoUpdate = function(cb)
 {
+
     var executionString = "sudo";
     var args = new Array();
 

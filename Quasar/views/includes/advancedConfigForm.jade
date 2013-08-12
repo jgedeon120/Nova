@@ -14,12 +14,12 @@
 //-   along with Nova.  If not, see <http://www.gnu.org/licenses/>.
 //- ============================================================================
 
-style
+style.
   span.labelSpan {
     font-weight: bold;
   }
 
-script
+script.
   var ifaces = !{JSON.stringify(INTERFACES)};
   var used = '#{WEB_UI_IFACE}';
   
@@ -205,6 +205,8 @@ form(method="post", action="/configureNovaSave")
     
     h2 Classification Settings
     a(style='text-decoration: none; font-weight: bold;', href='/editClassifiers') Edit Classifiers (advanced users only)
+    br
+    a(style='text-decoration: none; font-weight: bold;', href='/editAuthorizedIPs') Edit Authorized IP file (for UNAUTHORIZED_SUSPECTS classifier)
     br
     br
     

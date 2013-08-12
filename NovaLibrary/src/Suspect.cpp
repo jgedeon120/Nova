@@ -18,7 +18,6 @@
 //					features so that each entity can be monitored and classified.
 //============================================================================
 
-#include "SerializationHelper.h"
 #include "Suspect.h"
 #include "Logger.h"
 #include "Config.h"
@@ -121,6 +120,8 @@ string Suspect::ToString()
 //Just like Consume but doesn't deallocate
 void Suspect::ReadEvidence(Evidence *evidence, bool deleteEvidence)
 {
+
+	m_lastMac = evidence->m_evidencePacket.srcmac;
 
 	if(m_id.m_ip() == 0)
 	{
