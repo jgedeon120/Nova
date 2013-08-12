@@ -1,7 +1,7 @@
 extends layout
 
 block headerAdditions
-  script
+  script.
     function checkForUpdates() {
       now.AutoUpdate(function(err, res) {
         if (err) {
@@ -10,9 +10,8 @@ block headerAdditions
         }
 
         console.log(res);
-        $("#status")[0].innerHTML += res;
-        $("#status")[0].innerHTML += "<BR>";
-        $("#status")[0].scrollTop = $("#status")[0].scrollHeight;
+        $("#status").append("<span>" + res + "<BR></span>");
+        $('#status').scrollTo( '100%' );
       });
     }
 
@@ -23,4 +22,4 @@ block content
     button(onclick="checkForUpdates()") Check for updates
 
     br
-    p#status
+    div#status
