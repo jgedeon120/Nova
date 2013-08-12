@@ -1007,6 +1007,7 @@ everyone.now.addTrainingPoint = function(ip, ethinterface, features, hostility, 
     }); 
 };
 
+var insertingIntoDatabase = false;
 everyone.now.GetHaystackDHCPStatus = function(cb)
 {
     fs.readFile("/var/log/honeyd/ipList", 'utf8', function (err, data)
@@ -1045,11 +1046,23 @@ everyone.now.GetHaystackDHCPStatus = function(cb)
                             current: 1
                         };
 
-
-                        NovaCommon.dbqAddLastHoneydNodeIP.run(entry.mac, entry.ip, function(err) {
-                            if (err) {LOG("ERROR", "Database error:" + err);}
-                        });
-                        DHCPIps.push(entry);
+                       DHCPIps.push(entry);
+                    }
+                    
+                    // Make sure this section isn't already running
+                    if (!insertingIntoDatabase) {
+                        insertingIntoDatabase = true;
+                        var cbCount = 0;
+                        for (var i = 0; i < DHCPIps.length; i++) {
+                            var entry = DHCPIps[i];
+                            NovaCommon.dbqAddLastHoneydNodeIP.run(entry.mac, entry.ip, function(err) {
+                                if (err) {LOG("ERROR", "Database error:" + err);}
+                                cbCount++;
+                                if (cbCount == DHCPIps.length) {
+                                    insertingIntoDatabase = false;
+                                }
+                            });
+                        }
                     }
                     cb(DHCPIps);
                 });
