@@ -22,6 +22,17 @@ rm -fr ${BUILDDIR}
 mkdir -p ${BUILDDIR}
 cd ${BUILDDIR}
 
+
+echo "##############################################################################"
+echo "#                          Backing up current configuration files...         #"
+echo "##############################################################################"
+
+rm -fr ~/.config/nova-oldConfigs
+mv ~/.config/nova ~/.config/nova-oldConfigs
+
+rm -fr ~/.config/honeyd-oldConfigs
+mv ~/.config/honeyd ~/.config/honeyd-oldConfigs
+
 echo "##############################################################################"
 echo "#                          Downloading updates... please wait.               #"
 echo "##############################################################################"
@@ -114,6 +125,16 @@ chown -R -f $NEW_PERM .node-gyp/
 
 cd /usr/share/honeyd/scripts/
 chown -R -f $NEW_PERM misc/
+
+echo "##############################################################################"
+echo "#                       Restoring old configuration files                    #"
+echo "##############################################################################"
+
+rm -fr ~/.config/nova
+cp -fr ~/.config/nova-oldConfigs ~/.config/nova
+
+rm -fr ~/.config/honeyd
+cp -fr ~/.config/honeyd-oldConfigs ~/.config/honeyd
 
 echo "##############################################################################"
 echo "#                                    DONE                                    #"
