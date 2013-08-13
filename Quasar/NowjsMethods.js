@@ -1554,9 +1554,10 @@ everyone.now.AutoUpdate = function(cb)
     updater.on('exit', function (code){
       console.log("UPDATER exited with code " + code);
       cb(null, 'UPDATER exited with code ' + code);
-    
-      LOG("ALERT", "Quasar is exiting due to Nova update");
-      process.exit(1);
+      if (code == 0) {
+        LOG("ALERT", "Quasar is exiting due to Nova update");
+        process.exit(1);
+      }
     });
 };
 

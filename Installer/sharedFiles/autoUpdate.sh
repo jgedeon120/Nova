@@ -30,7 +30,7 @@ if check_version $(cat ~/.config/nova/config/version.txt) $(cat $VERSION_FILE); 
 	echo "#### Your version of nova is currently at: \"$(cat ~/.config/nova/config/version.txt)\", but the newest version on update server is \"$(cat $VERSION_FILE)\" ####"
 	echo "#### No updates are currently available ####"
 
-	exit 0
+	exit 1
 else
 	echo "#### Your version of nova is currently at : \"$(cat ~/.config/nova/config/version.txt)\" and can be upgraded to \"$(cat $VERSION_FILE)\" ####"
 fi
