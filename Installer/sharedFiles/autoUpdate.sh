@@ -1,5 +1,5 @@
-UPDATE_FILE=novaInstallHelper.sh.gpg
-UPDATE_SCRIPT=novaInstallHelper.sh
+UPDATE_FILE=updater.sh.gpg
+UPDATE_SCRIPT=updater.sh
 VERSION_FILE=newestVersion.txt
 
 UPDATE_SERVER=http://projectnova.org/updates
@@ -18,7 +18,7 @@ check_version()
 }
 
 echo "############################ Checking if new updates available ############################"
-wget $UPDATE_SERVER/$VERSION_FILE
+wget -nv $UPDATE_SERVER/$VERSION_FILE
 
 if [ $? -ne 0 ]
 then
@@ -41,7 +41,7 @@ novacli stop nova
 novacli stop haystack
 
 echo "############################ Downloading Update File ############################"
-wget $UPDATE_SERVER/$UPDATE_FILE
+wget -nv $UPDATE_SERVER/$UPDATE_FILE
 
 
 echo "############################ Checking Update File Integrity ############################"
