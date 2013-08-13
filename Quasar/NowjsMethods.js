@@ -1544,13 +1544,11 @@ everyone.now.AutoUpdate = function(cb)
     var updater = spawn(executionString.toString(), args);
             
     updater.stdout.on('data', function (data){
-        console.log('UPDATER: ' + data);
-        cb(null, 'UPDATER: ' + data);
+        cb(null, data);
     });
             
     updater.stderr.on('data', function (data){
-      console.log('UPDATER: ' + data);
-      cb(null, 'UPDATER: ' + data);
+      cb(null, data);
     });
     
     updater.on('exit', function (code){
