@@ -136,6 +136,9 @@ cp -fr ~/.config/nova-oldConfigs ~/.config/nova
 rm -fr ~/.config/honeyd
 cp -fr ~/.config/honeyd-oldConfigs ~/.config/honeyd
 
+chown -R $NEW_PERM ~/.config/nova
+chown -R $NEW_PERM ~/.config/honeyd
+
 echo "##############################################################################"
 echo "#                                    DONE                                    #"
 echo "##############################################################################"
