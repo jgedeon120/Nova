@@ -9,9 +9,9 @@ block headerAdditions
           return;
         }
 
-        console.log(res);
-        $("#status").append("<span>" + res + "<BR></span>");
-        $('#status').scrollTo( '100%' );
+        res = res.replace(/\n/g, '<br />');
+        $("#status")[0].innerHTML += res;
+        window.scrollTo(0,document.body.scrollHeight);
       });
     }
 
@@ -22,4 +22,5 @@ block content
     button(onclick="checkForUpdates()") Check for updates
 
     br
-    div#status
+    p#status
+
