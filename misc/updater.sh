@@ -45,7 +45,7 @@ check_err
 echo "##############################################################################"
 echo "#                              BUILDING HONEYD                               #"
 echo "##############################################################################"
-cd ${BUILDDIR}/Honeyd
+cd ${BUILDDIR}/honeyd
 ./autogen.sh
 check_err
 automake
