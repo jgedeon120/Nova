@@ -136,6 +136,16 @@ cp -fr ~/.config/nova-oldConfigs ~/.config/nova
 rm -fr ~/.config/honeyd
 cp -fr ~/.config/honeyd-oldConfigs ~/.config/honeyd
 
+
+echo "##############################################################################"
+echo "#                       Copying over any new configuration files             #"
+echo "##############################################################################"
+yes n | cp -R -i ${BUILDDIR}/Nova/Installer/userFiles/* ~/.config/nova/
+
+
+echo "##############################################################################"
+echo "#                       Fixing file permissions                              #"
+echo "##############################################################################"
 chown -R $NEW_PERM ~/.config/nova
 chown -R $NEW_PERM ~/.config/honeyd
 
