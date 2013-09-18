@@ -1579,6 +1579,10 @@ app.get("/editClassifiers", function (req, res)
     }); 
 });
 
+app.get("/generateNewCerts", function (req, res) {
+    res.render("generateNewCerts.jade");
+});
+
 app.get("/editClassifier", function (req, res)
 {
     var featureNames = NovaCommon.nova.GetFeatureNames();
