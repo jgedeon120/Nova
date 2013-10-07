@@ -120,6 +120,11 @@ echo "#                       Copying over any new configuration files          
 echo "##############################################################################"
 yes n | cp -R -i ${BUILDDIR}/Nova/Installer/userFiles/* ~/.config/nova/
 
+echo "##############################################################################"
+echo "#                       Updating version.txt file                            #"
+echo "##############################################################################"
+
+cp -f ${BUILDDIR}/Nova/Installer/userFiles/config/version.txt ~/.config/nova/config/version.txt
 
 echo "##############################################################################"
 echo "#                       Fixing file permissions                              #"
