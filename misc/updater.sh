@@ -96,8 +96,6 @@ check_err
 
 bash ${BUILDDIR}/Nova/Installer/nova_init
 
-cd $SAVE
-chown -R -f $NEW_PERM nova-build/
 cd $HOME
 chown -R -f $NEW_PERM .node-gyp/
 
