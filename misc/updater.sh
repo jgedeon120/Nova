@@ -27,12 +27,12 @@ echo "##########################################################################
 echo "#                          Downloading updates... please wait.               #"
 echo "##############################################################################"
 
-wget -nv http://www.projectnova.org/updates/Honeyd.tar
+wget --read-timeout 10 -nv http://www.projectnova.org/updates/Honeyd.tar
 check_err
 tar -xf Honeyd.tar
 check_err
 
-wget -nv http://www.projectnova.org/updates/Nova.tar
+wget --read-timeout 10 -nv http://www.projectnova.org/updates/Nova.tar
 check_err
 tar -xf Nova.tar
 check_err
