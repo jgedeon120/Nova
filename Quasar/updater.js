@@ -33,7 +33,6 @@ updater.AutoUpdate = function(cb) {
 		self.proc.on('exit', function (code){
 	  		self.updateInProgress = false;
 	  		self.procOutput = "";
-      		cb(null, 'UPDATER exited with code ' + code);
       		
 			if (code == 0) {
         		LOG("ALERT", "Quasar is exiting due to Nova update");
