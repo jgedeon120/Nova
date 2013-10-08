@@ -38,7 +38,7 @@ fi
 
 echo "############################ Stopping Novad and Haystack ############################"
 stop haystack
-stop nova
+stop novad
 novacli stop nova
 novacli stop haystack
 
