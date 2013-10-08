@@ -214,6 +214,15 @@ html(lang="en", onclick='removeContextMenu();')
           now.updateNovadStatus = updateNovadStatus;
           now.IsHaystackUp(updateHaystackStatus);
           now.IsNovadConnected(updateNovadStatus);
+
+          now.IsUpdateInProgress(function(updating) {
+            if (updating) {
+                if (window.location.pathname != "/updates") {
+                    alert("WARNING: Nova is currently updating! You will be redirected to the update page now.")
+                    window.location = "/updates";
+                }
+            }
+          });
         
           init();
         });
