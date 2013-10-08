@@ -23,6 +23,7 @@ var exec = require('child_process').exec;
 var child_process = require('child_process');
 var sanitizeCheck = require('validator').sanitize;
 var NovaCommon = require('./NovaCommon.js');
+var updater = require('./updater.js');
 var LOG = NovaCommon.LOG;
 var spawn = require('child_process').spawn;
 
@@ -1535,31 +1536,7 @@ everyone.now.GetProxies = function(profile, cb) {
     
 everyone.now.AutoUpdate = function(cb)
 {
-
-    var executionString = "sudo";
-    var args = new Array();
-
-    args.push("/bin/bash");
-    args.push("/usr/share/nova/sharedFiles/autoUpdate.sh");
-    
-    var updater = spawn(executionString.toString(), args);
-            
-    updater.stdout.on('data', function (data){
-        cb(null, String(data));
-    });
-            
-    updater.stderr.on('data', function (data){
-      cb(null, String(data));
-    });
-    
-    updater.on('exit', function (code){
-      console.log("UPDATER exited with code " + code);
-      cb(null, 'UPDATER exited with code ' + code);
-      if (code == 0) {
-        LOG("ALERT", "Quasar is exiting due to Nova update");
-        process.exit(1);
-      }
-    });
+	updater.AutoUpdate(cb);
 };
 
 
@@ -1613,6 +1590,18 @@ everyone.now.generateNewCerts = function(certInfo, cb) {
         });
     });
 };
+
+everyone.now.IsUpdateInProgress = function(cb) {
+	if (updater.IsUpdateInProgress()) {
+		cb(true);
+	} else {
+		cb(false);
+	}
+}
+
+everyone.now.GetUpdateStatus = function(cb) {
+	updater.AutoUpdate(cb);
+}
 
 }
 

@@ -2,6 +2,18 @@ extends layout
 
 block headerAdditions
   script.
+    function init() {
+        now.IsUpdateInProgress(function(isUpdateInProgress) {
+            if (isUpdateInProgress) {
+                $("#status")[0].innerHTML += "<b>Update is already in progress! Results will be shown below.</b><br/>";
+                checkForUpdates();
+            } else {
+                console.log("show");
+                $("#updateButton").show();
+            }
+        });
+    }
+
     function checkForUpdates() {
       now.AutoUpdate(function(err, res) {
         if (err) {
@@ -19,7 +31,7 @@ block content
   div.contentBox
     h1 Nova Updater
 
-    button(onclick="checkForUpdates()") Click to update Nova and Honeyd to the newest version
+    button#updateButton(onclick="checkForUpdates()", style="display: none") Click to update Nova and Honeyd to the newest version
 
     br
     p#status
