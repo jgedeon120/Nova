@@ -130,6 +130,9 @@ echo "##########################################################################
 chown -R $NEW_PERM ~/.config/nova
 chown -R $NEW_PERM ~/.config/honeyd
 
+# Needs to be accessed by the nobody user
+chmod a+rw ~/.config/nova/data/scriptAlerts.db*
+
 echo "##############################################################################"
 echo "#                                    DONE                                    #"
 echo "##############################################################################"
