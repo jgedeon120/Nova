@@ -24,17 +24,34 @@ cd ${BUILDDIR}
 
 
 echo "##############################################################################"
-echo "#                          Downloading updates... please wait.               #"
+echo "#      Downloading updates... please wait. This could take a while.          #"
 echo "##############################################################################"
 
+wget --read-timeout 10 -nv http://www.projectnova.org/updates/Honeyd.md5
+check_err
+
+echo "Downloading Honeyd.tar..."
 wget --read-timeout 10 -nv http://www.projectnova.org/updates/Honeyd.tar
 check_err
 tar -xf Honeyd.tar
 check_err
 
+wget --read-timeout 10 -nv http://www.projectnova.org/updates/Nova.md5
+check_err
+
+echo "Downloading Nova.tar..."
 wget --read-timeout 10 -nv http://www.projectnova.org/updates/Nova.tar
 check_err
 tar -xf Nova.tar
+check_err
+
+echo "##############################################################################"
+echo "#                          Using md5sum to check file integrity              #"
+echo "##############################################################################"
+
+md5sum -c Honeyd.md5
+check_err
+md5sum -c Nova.md5
 check_err
 
 echo "##############################################################################"
