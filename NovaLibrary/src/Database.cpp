@@ -223,6 +223,10 @@ void Database::Connect()
 		-1, &insertHoneypotIp, NULL));
 
 	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
+			"DELETE FROM honeypots",
+			-1, &clearHoneypots, NULL));
+
+	SQL_RUN(SQLITE_OK, sqlite3_prepare_v2(db,
 		"SELECT 1.0*(SELECT COUNT(DISTINCT honeypots.ip)"
 		" FROM honeypots, ip_port_counts "
 		" WHERE ip_port_counts.ip = ?1 AND ip_port_counts.interface = ?2 AND honeypots.ip = ip_port_counts.dstip AND ip_port_counts.interface = honeypots.interface) / (1.0*(SELECT COUNT(ip) FROM honeypots WHERE interface = ?2));",
@@ -538,6 +542,7 @@ bool Database::Disconnect()
 	sqlite3_finalize(computeMaxPacketsToPort);
 	sqlite3_finalize(computeHoneypotsContacted);
 	sqlite3_finalize(insertHoneypotIp);
+	sqlite3_finalize(clearHoneypots);
 	sqlite3_finalize(updateClassification);
 	sqlite3_finalize(updateSuspectTimestamps);
 	sqlite3_finalize(createHostileAlert);
@@ -551,21 +556,6 @@ bool Database::Disconnect()
 	}
 
 	return true;
-}
-
-void Database::ResetPassword()
-{
-	stringstream ss;
-	ss << "REPLACE INTO credentials VALUES (\"nova\", \"934c96e6b77e5b52c121c2a9d9fa7de3fbf9678d\", \"root\")";
-
-	char *zErrMsg = 0;
-	int state = sqlite3_exec(db, ss.str().c_str(), callback, 0, &zErrMsg);
-	if (state != SQLITE_OK)
-	{
-		string errorMessage(zErrMsg);
-		sqlite3_free(zErrMsg);
-		throw DatabaseException(string(errorMessage));
-	}
 }
 
 void Database::ClearAllSuspects()
@@ -812,7 +802,15 @@ void Database::InsertHoneypotIp(std::string ip, std::string interface)
 	m_count++;
 	SQL_RUN(SQLITE_DONE, sqlite3_step(insertHoneypotIp));
 	SQL_RUN(SQLITE_OK, sqlite3_reset(insertHoneypotIp));
+}
 
+// Deletes entries from the table that keeps track of the current honeypot IPs
+void Database::ClearHoneypots() {
+	int res;
+	m_count++;
+
+	SQL_RUN(SQLITE_DONE, sqlite3_step(clearHoneypots));
+	SQL_RUN(SQLITE_OK, sqlite3_reset(clearHoneypots));
 }
 
 void Database::SetFeatureSetValue(const string &ip, const string &interface, const vector<double> &features)

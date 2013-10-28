@@ -59,6 +59,8 @@ public:
 	void StopTransaction();
 
 	void InsertSuspect(Suspect *suspect);
+	void ClearHoneypots();
+
 	void InsertHoneypotIp(std::string ip, std::string interface);
 
 	void InsertSuspectHostileAlert(const std::string &ip, const std::string &interface);
@@ -78,8 +80,6 @@ public:
 	void SetFeatureSetValue(const std::string &ip, const std::string &interface, const std::vector<double> &features);
 
 	bool IsSuspectHostile(const std::string &ip, const std::string &interface);
-
-	void ResetPassword();
 
 	std::vector<SuspectID_pb> GetHostileSuspects();
 
@@ -136,6 +136,7 @@ private:
 
 	sqlite3_stmt *computeHoneypotsContacted;
 	sqlite3_stmt *insertHoneypotIp;
+	sqlite3_stmt *clearHoneypots;
 
 	sqlite3_stmt *updateClassification;
 	sqlite3_stmt *updateSuspectTimestamps;

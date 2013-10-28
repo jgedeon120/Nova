@@ -914,7 +914,6 @@ app.get('/advancedOptions', function (req, res)
         , HS_HONEYD_CONFIG: NovaCommon.config.ReadSetting("HS_HONEYD_CONFIG")
         , READ_PCAP: NovaCommon.config.ReadSetting("READ_PCAP")
         , PCAP_FILE: NovaCommon.config.ReadSetting("PCAP_FILE")
-        , GO_TO_LIVE: NovaCommon.config.ReadSetting("GO_TO_LIVE")
         , CLASSIFICATION_TIMEOUT: NovaCommon.config.ReadSetting("CLASSIFICATION_TIMEOUT")
         , K: NovaCommon.config.ReadSetting("K")
         , EPS: NovaCommon.config.ReadSetting("EPS")
@@ -951,6 +950,7 @@ app.get('/advancedOptions', function (req, res)
         , ONLY_CLASSIFY_HONEYPOT_TRAFFIC: NovaCommon.config.ReadSetting("ONLY_CLASSIFY_HONEYPOT_TRAFFIC")
         , TRAINING_DATA_PATH: NovaCommon.config.ReadSetting("TRAINING_DATA_PATH")
         , MESSAGE_WORKER_THREADS: NovaCommon.config.ReadSetting("MESSAGE_WORKER_THREADS")
+        , ADDITIONAL_HONEYD_ARGS: NovaCommon.config.ReadSetting("ADDITIONAL_HONEYD_ARGS")
     });
 });
 
@@ -1852,12 +1852,6 @@ app.post('/configureNovaSave', function (req, res)
         }
     },
     {
-        key:  "GO_TO_LIVE"
-        ,validator: function(val) {
-            validator.check(val, this.key + ' must be a boolean').isInt();
-        }
-    },
-    {
         key:  "CLASSIFICATION_TIMEOUT"
         ,validator: function(val) {
             validator.check(val, this.key + ' must be an integer').isInt();
@@ -2061,6 +2055,11 @@ app.post('/configureNovaSave', function (req, res)
         ,validator: function(val) {
             validator.check(val, this.key + ' must be an integer').isInt();
             validator.check(val, this.key + ' must be a positive integer greater than 1').min(1);
+        }
+    },
+    {
+        key: "ADDITIONAL_HONEYD_ARGS"
+        ,validator: function(val) {
         }
     }];
 
