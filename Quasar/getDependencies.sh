@@ -10,12 +10,12 @@
 
 
 version=$(node --version)
-if [[ $version != "v0.8.5" ]];
+if [[ $version != "v0.10.30" ]];
 then
 
-	wget http://nodejs.org/dist/v0.8.5/node-v0.8.5.tar.gz
-	tar -xf node-v0.8.5.tar.gz
-	cd node-v0.8.5
+	wget http://nodejs.org/dist/v0.10.30/node-v0.10.30.tar.gz
+	tar -xf node-v0.10.30.tar.gz
+	cd node-v0.10.30
 
 	./configure
 	make
@@ -26,6 +26,7 @@ else
 fi
 
 # Install the forever daemon
+npm config set strict-ssl false
 npm install -g forever
 
 # Get cvv8

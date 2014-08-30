@@ -40,9 +40,9 @@ echo "##########################################################################
 cd ${BUILDDIR}
 rm -fr Honeyd
 rm -fr Nova
-git clone git://github.com/DataSoft/Honeyd.git
+git clone git://github.com/jgedeon120/Honeyd.git
 check_err
-git clone git://github.com/DataSoft/Nova.git
+git clone git://github.com/jgedeon120/Nova.git
 check_err
 
 echo "##############################################################################"
@@ -79,6 +79,7 @@ cd ${HOME}
 chown -R $NEW_PERM .npm/
 check_err
 cd ${BUILDDIR}/Nova/Quasar
+npm config set strict-ssl false
 npm install -g forever
 check_err
 
