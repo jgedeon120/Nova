@@ -78,7 +78,7 @@ Automatic Installation Script
   make installation easiest. We provide a helper script which should get all
   dependencies and download, build, and install Nova and Honeyd. 
 
-        wget https://raw.github.com/DataSoft/Nova/master/debian/novaInstallHelper.sh
+        wget https://raw.github.com/jgedeon120/Nova/master/debian/novaInstallHelper.sh
         sudo bash novaInstallHelper.sh
 
 - This script has only been tested on the most recent stable version of Ubuntu.
@@ -87,8 +87,8 @@ Automatic Installation Script
 - NOTE: The above will install the newest stable version of Nova. If you want
   the newest but possibly unstable version, instead run,
         
-        wget https://raw.github.com/DataSoft/Nova/master/debian/novaInstallHelper.sh
-        sudo bash novaInstallHelper.sh integration
+        wget https://raw.github.com/jgedeon120/Nova/master/debian/novaInstallHelper.sh
+        sudo bash novaInstallHelper.sh J-Dev
 
 =============================== 
 Getting the newest code manually
@@ -97,8 +97,8 @@ Getting the newest code manually
 - Nova and Honeyd are stored as seperate Git repositories on github. Go to the
   directory you wish to download the code to and run the following commands,
 
-    git clone git://github.com/DataSoft/Honeyd.git    
-    git clone git://github.com/DataSoft/Nova.git Nova
+    git clone git://github.com/jgedeon120/Honeyd.git    
+    git clone git://github.com/jgedeon120/Nova.git Nova
     
     # You also need to get the git submodules where training data is stored
     # in it's own repo
@@ -216,7 +216,7 @@ User's Manual
 
 - The Nova User's Manual can be found at,
 
-  https://raw.github.com/DataSoft/NovaCollaborate/master/Nova%20User%20Manual.odt
+  https://raw.github.com/jgedeon120/NovaCollaborate/master/Nova%20User%20Manual.odt
 
 =============================== 
 Daemonizing with Upstart
@@ -291,7 +291,7 @@ NovaTest: Unit Tests
 - If you're a developer interested in using the unit tests in NovaTest, you can
   find instructions at,
 
-https://github.com/DataSoft/Nova/wiki/Unit-Testing
+https://github.com/jgedeon120/Nova/wiki/Unit-Testing
 
 
 ===============================
@@ -574,7 +574,7 @@ Contact us
 Feel free to contact the authors with issues and suggestions. 
 
 Found a bug? Had an install problem? Tell us about it on our issue tracker:
-  https://github.com/DataSoft/Nova/issues
+  https://github.com/jgedeon120/Nova/issues
 
 Want to chat with us? Hop on IRC: 
   Server: irc.oftc.net
