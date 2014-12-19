@@ -27,7 +27,7 @@ fi
 
 # Install the forever daemon
 npm config set strict-ssl false
-npm install -g forever
+npm install --force -g forever
 
 # Get cvv8
 wget http://v8-juice.googlecode.com/files/libv8-convert-20120219.tar.gz
