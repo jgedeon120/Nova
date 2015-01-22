@@ -1,3 +1,3 @@
 [submodule "Installer/userFiles/config/training"]
 	path = Installer/userFiles/config/training
-	url = git://github.com/jgedeon120/NovaData.git
+	url = https://github.com/jgedeon120/NovaData.git
