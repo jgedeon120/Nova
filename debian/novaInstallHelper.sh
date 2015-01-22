@@ -40,9 +40,9 @@ echo "##########################################################################
 cd ${BUILDDIR}
 rm -fr Honeyd
 rm -fr Nova
-git clone git://github.com/jgedeon120/Honeyd.git
+git clone https://github.com/jgedeon120/Honeyd.git
 check_err
-git clone git://github.com/jgedeon120/Nova.git
+git clone https://github.com/jgedeon120/Nova.git
 check_err
 
 echo "##############################################################################"
